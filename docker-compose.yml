@@ -1,0 +1,34 @@
+# Local + simple-prod compose. Single service — admin/log SQLite is per-process.
+# Override `image` and drop `build:` to deploy a prebuilt image from CI.
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-unknown}
+        GIT_BRANCH:     ${GIT_BRANCH:-unknown}
+        GIT_DIRTY:      ${GIT_DIRTY:-0}
+    image: litestar-base:local
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      # Container-only overrides; .env still feeds APP_NAME / AUTH_ADMIN_TOKEN / etc.
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      APP_WORKERS: 1
+      VOLUME_PATH: /data
+    volumes:
+      - app_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  app_data:

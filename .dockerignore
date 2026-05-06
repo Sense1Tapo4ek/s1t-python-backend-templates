@@ -1,0 +1,20 @@
+# Build context — keep it tight.
+.git
+.gitignore
+.env
+.venv
+.python-version
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+storage/
+docs/
+tests/
+TODO
+README.md
+*.md
+docker-compose.yml
+Dockerfile

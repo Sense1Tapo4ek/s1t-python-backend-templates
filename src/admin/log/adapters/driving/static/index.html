@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin · Logs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/admin/logs/static/style.css" />
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="title"><a href="/admin/">litestar-base</a></span>
+      <span class="path">/admin/<em>logs</em></span>
+    </div>
+    <div class="topbar-right">
+      <span id="live-badge" class="live">live</span>
+      <span id="stat-rate">— / min</span>
+      <span id="stat-retention">retention —</span>
+    </div>
+  </header>
+
+  <section class="filters">
+    <label class="time-field">
+      <span class="lbl">from</span>
+      <input id="time-from" type="datetime-local" step="1" />
+    </label>
+    <label class="time-field">
+      <span class="lbl">to</span>
+      <input id="time-to" type="datetime-local" step="1" />
+    </label>
+    <label class="live-toggle">
+      <input id="live-toggle" type="checkbox" checked />
+      <span>live</span>
+    </label>
+
+    <div class="search">
+      <span class="icon">⌕</span>
+      <input
+        id="search-input"
+        placeholder='level:ERROR+ logger:admin.* kv.user_id=abc free text'
+        spellcheck="false" />
+      <span class="kbd">/</span>
+    </div>
+
+    <div class="actions-bar">
+      <button id="btn-reload" class="act-btn" title="re-fetch snapshot">↻ reload</button>
+      <button id="btn-older" class="act-btn" title="prepend older entries">↑ older</button>
+      <button id="btn-clear" class="act-btn danger" title="wipe log history (two clicks)">✕ clear</button>
+    </div>
+
+    <div id="search-error" class="search-error"></div>
+  </section>
+
+  <section class="chips">
+    <span class="label">levels</span>
+    <span class="level-group" id="level-group">
+      <label class="level-pill" data-level="DEBUG"><input type="checkbox" value="DEBUG" /><span>DEBUG</span></label>
+      <label class="level-pill" data-level="INFO"><input type="checkbox" value="INFO" /><span>INFO</span></label>
+      <label class="level-pill" data-level="WARN"><input type="checkbox" value="WARNING" /><span>WARN</span></label>
+      <label class="level-pill" data-level="ERROR"><input type="checkbox" value="ERROR" /><span>ERROR</span></label>
+      <label class="level-pill" data-level="CRIT"><input type="checkbox" value="CRITICAL" /><span>CRIT</span></label>
+    </span>
+    <span class="label">presets</span>
+    <span class="chip" data-preset="access">logger:access</span>
+    <span class="chip" data-preset="lifespan">logger:root.lifespan</span>
+    <span class="chip add" id="preset-clear">+ clear</span>
+  </section>
+
+  <section class="table-wrap" id="table">
+    <div class="thead grid-cols">
+      <div class="th">timestamp<span class="resizer" data-col="ts"></span></div>
+      <div class="th">level<span class="resizer" data-col="lv"></span></div>
+      <div class="th">logger<span class="resizer" data-col="lg"></span></div>
+      <div class="th">event<span class="resizer" data-col="ev"></span></div>
+      <div class="th">context</div>
+    </div>
+    <div id="rows"></div>
+    <div id="empty" class="empty" style="display:none; padding:40px; text-align:center; color:var(--ink-faded); font-style:italic;">no records</div>
+  </section>
+
+  <footer class="statusbar">
+    <span class="key"><b>↵</b> expand</span>
+    <span class="key"><b>/</b> search</span>
+    <span class="key"><b>esc</b> close</span>
+    <span class="grow"></span>
+    <span id="stat-count">— records</span>
+    <span>· export <a id="export-json">NDJSON</a> <a id="export-csv">CSV</a></span>
+  </footer>
+</div>
+
+<script src="/admin/logs/static/app.js"></script>
+</body>
+</html>

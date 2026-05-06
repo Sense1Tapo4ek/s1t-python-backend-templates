@@ -1,0 +1,97 @@
+[project]
+name = "litestar-base"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.20",
+    "dishka>=1.10.1",
+    "litestar>=2.21.1",
+    "orjson>=3.10",
+    "pydantic-settings>=2.12.0",
+    "snitchbot>=1.2.0",
+    "structlog>=25.5.0",
+    "uvicorn>=0.40.0",
+    "yoyo-migrations>=9.0",
+]
+
+[project.scripts]
+start_litestar = "root.entrypoints.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+]
+
+[tool.pytest_asyncio]
+mode = "auto"
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+addopts = "--import-mode=importlib"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+extend-exclude = ["migrations", "storage"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # bugbear
+    "UP",   # pyupgrade
+    "SIM",  # simplify
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "E501",  # line length — formatter handles it
+    "B008",  # function call in default arg — common Litestar/FastAPI pattern
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["B011", "SIM117"]  # asserts and nested with-blocks are fine in tests
+
+[tool.ruff.lint.isort]
+known-first-party = ["admin", "auth", "root", "shared"]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "src"
+files = ["src"]
+namespace_packages = true
+explicit_package_bases = true
+strict = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["snitchbot.*", "yoyo.*", "aiosqlite.*"]
+ignore_missing_imports = true
