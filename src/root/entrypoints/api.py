@@ -47,6 +47,7 @@ from admin.log.config import AdminLogConfig
 from admin.log.domain import DslSyntaxError, InvalidLogFilterError
 from admin.log.ports.driven.gateways import RedisStreamPublisher
 from admin.metrics.adapters.driving.api import build_prom_controller
+from admin.metrics.adapters.lifespan import MetricsLifespanManager
 from admin.metrics.config import MetricsConfig
 from auth.adapters.middleware import AuthMiddleware
 from auth.ports.driving import AuthFacade
@@ -136,10 +137,16 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     app.state.auth_facade = await container.get(AuthFacade)
 
     manager: LogLifespanManager | None = None
+    metrics_manager: MetricsLifespanManager | None = None
     try:
         manager = await container.get(LogLifespanManager)
         log.info("log subsystem starting")
         await manager.start()
+
+        metrics_manager = await container.get(MetricsLifespanManager)
+        log.info("metrics subsystem starting")
+        await metrics_manager.start()
+
         log.info(
             "lifespan started",
             duration_ms=round((time.perf_counter() - started) * 1000, 2),
@@ -153,6 +160,12 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     finally:
         log.info("lifespan stopping")
         stop_started = time.perf_counter()
+        try:
+            if metrics_manager is not None:
+                await metrics_manager.stop()
+                log.info("metrics subsystem stopped")
+        except Exception:
+            log.exception("metrics_lifespan_stop_failed")
         try:
             if manager is not None:
                 await manager.stop()
