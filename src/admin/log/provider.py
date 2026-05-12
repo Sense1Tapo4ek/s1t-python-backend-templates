@@ -18,7 +18,7 @@ from litestar.channels import ChannelsPlugin
 from redis.asyncio import Redis
 
 from admin.metrics.adapters.driven.samplers import RedisStreamQueueDepthProvider
-from admin.metrics.app.interfaces import IQueueDepthProvider
+from admin.metrics.app.interfaces import IMetricsModulePlugin, IQueueDepthProvider
 from shared.adapters.driven.db import SQLiteConnection
 from shared.config import BaseAppConfig
 
@@ -35,6 +35,7 @@ from .app.use_cases import (
 from .config import AdminLogConfig
 from .ports.driven.dispatchers import ChannelsLogSubscriber, RedisPubSubLogPublisher
 from .ports.driven.gateways import RedisStreamPublisher
+from .ports.driven.plugins import LogsMetricsPlugin
 from .ports.driven.repos import SQLiteLogRepo
 from .ports.driving.facades import LogsFacade
 
@@ -137,6 +138,22 @@ class AdminLogWebProvider(Provider):
         publisher: RedisStreamPublisher,
     ) -> RedisStreamQueueDepthProvider:
         return RedisStreamQueueDepthProvider(_publisher=publisher)
+
+    @provide(provides=IMetricsModulePlugin)
+    def logs_metrics_plugin(
+        self,
+        redis: Redis,
+        publisher: RedisStreamPublisher,
+        config: AdminLogConfig,
+    ) -> LogsMetricsPlugin:
+        return LogsMetricsPlugin(
+            _redis=redis,
+            _publisher=publisher,
+            _stream_key=config.log_stream_key,
+            _consumer_group=config.log_consumer_group,
+            _stream_maxlen=config.log_stream_maxlen,
+            _batch_size=config.log_batch_size,
+        )
 
     @provide
     def lifespan_manager(
