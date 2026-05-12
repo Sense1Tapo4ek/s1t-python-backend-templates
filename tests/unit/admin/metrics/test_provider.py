@@ -4,7 +4,6 @@ from dishka import make_async_container
 from admin.metrics.config import MetricsConfig
 from admin.metrics.provider import AdminMetricsProvider
 
-
 pytestmark = pytest.mark.asyncio
 
 
