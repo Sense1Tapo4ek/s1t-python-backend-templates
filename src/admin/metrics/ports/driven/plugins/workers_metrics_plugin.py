@@ -5,11 +5,10 @@ severity thresholds (rss/loop_lag) as plugin constants - projects with
 different SLOs subclass to override.
 """
 
-from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from html import escape as html_escape
-from typing import Any, Protocol
+from typing import Any
 
 from ....domain import (
     DetailSectionVo,
@@ -20,22 +19,15 @@ from ....domain import (
     classify,
 )
 
-
 _RSS_WARN_BYTES = 256 * 1024 * 1024
 _RSS_BAD_BYTES = 512 * 1024 * 1024
 _LOOP_WARN_MS = 10.0
 _LOOP_BAD_MS = 100.0
 
 
-class IRedisClient(Protocol):
-    def scan_iter(self, match: str, count: int = 100) -> AsyncIterator[Any]: ...
-
-    async def hgetall(self, key: Any) -> Any: ...
-
-
 @dataclass(slots=True, kw_only=True)
 class WorkersMetricsPlugin:
-    _redis: IRedisClient
+    _redis: Any  # redis.asyncio.Redis — typed as Any to sidestep redis-py stub impedance
     _key_prefix: str
     name: str = "Workers"
     slug: str = "workers"
@@ -72,7 +64,7 @@ class WorkersMetricsPlugin:
 
     async def detail(self) -> ModuleDetailVo:
         rows = await self._load()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         enriched = [
             {
                 **row,
@@ -155,7 +147,7 @@ def _parse_dt(raw: str) -> datetime:
     try:
         return datetime.fromisoformat(raw)
     except ValueError:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 def _fmt_bytes(n: int) -> str:

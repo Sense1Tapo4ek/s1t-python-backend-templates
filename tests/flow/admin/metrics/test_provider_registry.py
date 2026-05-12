@@ -69,3 +69,22 @@ class TestRegistryCollectsExternalPlugins:
             assert any(p.slug == "stub" for p in reg.all())
         finally:
             await container.close()
+
+
+class TestBuiltInPlugins:
+    async def test_workers_plugin_registered(self) -> None:
+        """
+        Given the metrics provider + shared provider,
+        When the container resolves the registry,
+        Then 'workers' is among the plugin slugs.
+        """
+        container = make_async_container(
+            SharedProvider(channels_plugin=_channels_plugin()),
+            AdminMetricsProvider(),
+        )
+        try:
+            reg = await container.get(IModulePluginRegistry)
+            slugs = [p.slug for p in reg.all()]
+            assert "workers" in slugs
+        finally:
+            await container.close()
