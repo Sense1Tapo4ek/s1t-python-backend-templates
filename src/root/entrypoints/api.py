@@ -1,4 +1,5 @@
-import asyncio
+import os
+import socket
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -11,7 +12,7 @@ import structlog
 from dishka.integrations.litestar import setup_dishka
 from litestar import Litestar, Response
 from litestar.channels import ChannelsPlugin
-from litestar.channels.backends.memory import MemoryChannelsBackend
+from litestar.channels.backends.redis import RedisChannelsPubSubBackend
 from litestar.connection import Request
 from litestar.datastructures import CacheControlHeader
 from litestar.exceptions import (
@@ -22,7 +23,9 @@ from litestar.exceptions import (
 )
 from litestar.middleware import DefineMiddleware
 from litestar.openapi import OpenAPIConfig
+from litestar.plugins.prometheus import PrometheusConfig
 from litestar.static_files import create_static_files_router
+from redis.asyncio import Redis
 from snitchbot.integrations.litestar import install as install_snitchbot
 
 from admin.adapters.driving.api import AdminController, HealthController, LoginController
@@ -42,6 +45,9 @@ from admin.log.adapters.driving.error_handlers import (
 from admin.log.adapters.lifespan import LogLifespanManager
 from admin.log.config import AdminLogConfig
 from admin.log.domain import DslSyntaxError, InvalidLogFilterError
+from admin.log.ports.driven.gateways import RedisStreamPublisher
+from admin.metrics.adapters.driving.api import build_prom_controller
+from admin.metrics.config import MetricsConfig
 from auth.adapters.middleware import AuthMiddleware
 from auth.ports.driving import AuthFacade
 from root.composition.container import build_container
@@ -60,13 +66,21 @@ from shared.adapters.middleware import (
     TraceIdMiddleware,
 )
 from shared.app import IEventBus
-from shared.config import AppEnv
+from shared.config import AppEnv, BaseAppConfig
 from shared.generics.errors import AdapterError, AppError, DomainError, PortError
 from shared.logging import configure_structlog
 
 
-def _build_channels_plugin(log_config: AdminLogConfig) -> ChannelsPlugin:
-    """Single ChannelsPlugin shared by Litestar (transport) and DI (publishers).
+def _build_channels_plugin(
+    log_config: AdminLogConfig,
+    base_config: BaseAppConfig,
+) -> tuple[ChannelsPlugin, Redis]:
+    """Single ChannelsPlugin shared by Litestar (transport) and DI (subscribers).
+
+    Backed by Valkey pub/sub so the out-of-process log sink (and any other
+    publisher) can fan messages out to every web worker that holds a live
+    subscription. The same Valkey instance also carries the log Stream
+    consumed by the sink — one bus for the whole observability path.
 
     `dropleft` strategy: when a slow SSE consumer's queue fills up, oldest
     messages are dropped silently. Critical for the log broadcast channel —
@@ -75,13 +89,18 @@ def _build_channels_plugin(log_config: AdminLogConfig) -> ChannelsPlugin:
     `arbitrary_channels_allowed=True`: domain events use dynamic channel
     names derived from event class FQN (`event:ordering.domain.events...`),
     so we cannot enumerate them upfront.
+
+    Returns the plugin alongside the Redis client the caller is responsible
+    for `aclose()`-ing on lifespan stop — the backend itself doesn't own it.
     """
-    return ChannelsPlugin(
-        backend=MemoryChannelsBackend(),
+    redis = Redis.from_url(base_config.valkey_url, decode_responses=False)
+    plugin = ChannelsPlugin(
+        backend=RedisChannelsPubSubBackend(redis=redis),
         arbitrary_channels_allowed=True,
         subscriber_max_backlog=log_config.log_sse_queue_size,
         subscriber_backlog_strategy="dropleft",
     )
+    return plugin, redis
 
 
 @asynccontextmanager
@@ -95,11 +114,15 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     app.state.container = container
     setup_dishka(container=container, app=app)
 
-    queue = await container.get(asyncio.Queue[str])
-    configure_structlog(queue, app_name=config.app_name)
+    publisher = await container.get(RedisStreamPublisher)
+    configure_structlog(publisher.buffer, app_name=config.app_name)
 
     log = structlog.get_logger("root.lifespan")
-    log.info("lifespan starting", service=config.app_name, queue_maxsize=queue.maxsize)
+    log.info(
+        "lifespan starting",
+        service=config.app_name,
+        buffer_maxsize=publisher.buffer.maxsize,
+    )
     log.info("container ready")
 
     event_bus = await container.get(IEventBus)
@@ -141,6 +164,10 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
         except Exception:
             log.exception("event_bus_stop_failed")
         await container.close()
+        try:
+            await app.state.channels_redis.aclose()
+        except Exception:
+            log.exception("channels_redis_close_failed")
         log.info(
             "lifespan stopped",
             duration_ms=round((time.perf_counter() - stop_started) * 1000, 2),
@@ -168,7 +195,9 @@ def _resolve_app_version() -> str:
 
 
 def create_app() -> Litestar:
+    base_config = BaseAppConfig()
     log_config = AdminLogConfig()
+    metrics_cfg = MetricsConfig()
     static_router = create_static_files_router(
         path="/admin/logs/static",
         directories=[log_config.log_static_path],
@@ -178,9 +207,19 @@ def create_app() -> Litestar:
         cache_control=CacheControlHeader(max_age=3600),
     )
 
-    channels_plugin = _build_channels_plugin(log_config)
+    channels_plugin, channels_redis = _build_channels_plugin(log_config, base_config)
     config = RootConfig()
     is_dev = config.app_env == AppEnv.DEV
+
+    prom_config = PrometheusConfig(
+        app_name=base_config.app_name,
+        prefix=base_config.app_name.replace("-", "_"),
+        group_path=True,
+        buckets=list[str | float](metrics_cfg.http_buckets),
+        exclude=[metrics_cfg.prom_endpoint_path],
+        labels={"worker_id": f"{socket.gethostname()}:{os.getpid()}"},
+    )
+    prom_controller = build_prom_controller(metrics_cfg)
 
     # In DEV we want Litestar's debug renderer to surface the full traceback
     # to the client. Registering a catch-all Exception handler would short-
@@ -211,6 +250,7 @@ def create_app() -> Litestar:
             LogsApiController,
             ExportController,
             static_router,
+            prom_controller,
         ],
         middleware=[
             # Outermost — covers responses from inner middleware that short-circuit.
@@ -222,6 +262,7 @@ def create_app() -> Litestar:
             DefineMiddleware(TraceIdMiddleware),
             DefineMiddleware(AuthMiddleware),
             DefineMiddleware(AccessLogMiddleware),
+            prom_config.middleware,
         ],
         plugins=[channels_plugin],
         openapi_config=OpenAPIConfig(
@@ -234,5 +275,8 @@ def create_app() -> Litestar:
         exception_handlers=exception_handlers,
     )
     app.state.channels_plugin = channels_plugin
+    # Stored so lifespan stop can `aclose()` it — the Channels backend
+    # doesn't own its Redis client.
+    app.state.channels_redis = channels_redis
     install_snitchbot(app)
     return app
