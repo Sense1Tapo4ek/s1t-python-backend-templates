@@ -2,6 +2,7 @@ import pytest
 from dishka import Provider, Scope, make_async_container, provide
 from litestar.channels import ChannelsPlugin
 from litestar.channels.backends.memory import MemoryChannelsBackend
+from prometheus_client import REGISTRY
 
 from admin.metrics.app.interfaces import (
     IMetricsModulePlugin,
@@ -17,6 +18,16 @@ from admin.metrics.provider import AdminMetricsProvider
 from shared.provider import SharedProvider
 
 pytestmark = pytest.mark.asyncio
+
+
+@pytest.fixture(autouse=True)
+def _isolated_registry():
+    """Tear down Prometheus collectors added by each test to avoid duplicate registration."""
+    snapshot = list(REGISTRY._collector_to_names.keys())
+    yield
+    for c in list(REGISTRY._collector_to_names.keys()):
+        if c not in snapshot:
+            REGISTRY.unregister(c)
 
 
 def _channels_plugin() -> ChannelsPlugin:
@@ -86,5 +97,22 @@ class TestBuiltInPlugins:
             reg = await container.get(IModulePluginRegistry)
             slugs = [p.slug for p in reg.all()]
             assert "workers" in slugs
+        finally:
+            await container.close()
+
+    async def test_http_plugin_registered(self) -> None:
+        """
+        Given the metrics provider + shared provider,
+        When the container resolves the registry,
+        Then 'http' is among the plugin slugs.
+        """
+        container = make_async_container(
+            SharedProvider(channels_plugin=_channels_plugin()),
+            AdminMetricsProvider(),
+        )
+        try:
+            reg = await container.get(IModulePluginRegistry)
+            slugs = [p.slug for p in reg.all()]
+            assert "http" in slugs
         finally:
             await container.close()

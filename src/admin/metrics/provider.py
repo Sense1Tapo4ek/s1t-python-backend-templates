@@ -5,7 +5,7 @@ from shared.config import BaseAppConfig
 
 from .app.interfaces import IMetricsModulePlugin, IModulePluginRegistry
 from .config import MetricsConfig
-from .ports.driven.plugins import WorkersMetricsPlugin
+from .ports.driven.plugins import HttpMetricsPlugin, WorkersMetricsPlugin
 from .ports.driven.registry import InMemoryModulePluginRegistry
 
 
@@ -35,6 +35,12 @@ class AdminMetricsProvider(Provider):
         return WorkersMetricsPlugin(
             _redis=redis,
             _key_prefix=config.key_prefix,
+        )
+
+    @provide(provides=IMetricsModulePlugin)
+    def http_plugin(self, config: MetricsConfig) -> HttpMetricsPlugin:
+        return HttpMetricsPlugin(
+            _prefix=f"{config.key_prefix.rstrip(':')}_http",
         )
 
     @provide(provides=IModulePluginRegistry)
