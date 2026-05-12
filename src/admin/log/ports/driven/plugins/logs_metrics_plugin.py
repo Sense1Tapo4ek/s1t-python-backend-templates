@@ -18,7 +18,6 @@ from admin.metrics.domain import (
     ModuleSummaryVo,
     classify,
 )
-
 from shared.logging import _QueueLogger
 
 from ..gateways.redis_stream_publisher import RedisStreamPublisher
@@ -95,9 +94,9 @@ class LogsMetricsPlugin:
         sections = detail.sections
         kpi = sections[0].payload.get("kvs", []) if sections else []
         kpi_html = "".join(
-            f"<div class='metric'><span class='label'>{html_escape(l)}</span>"
-            f"<span class='value'>{html_escape(v)}</span></div>"
-            for (l, v) in kpi
+            f"<div class='metric'><span class='label'>{html_escape(label)}</span>"
+            f"<span class='value'>{html_escape(val)}</span></div>"
+            for (label, val) in kpi
         )
         pl = sections[1].payload if len(sections) > 1 else {}
         return (

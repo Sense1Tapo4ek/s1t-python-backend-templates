@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock
 
+import fakeredis.aioredis  # type: ignore[import]
 import pytest
 import pytest_asyncio
-import fakeredis.aioredis
+from tests.conftest_helpers.plugin_contract import assert_plugin_contract
 
 from admin.log.ports.driven.plugins import LogsMetricsPlugin
-from tests.conftest_helpers.plugin_contract import assert_plugin_contract
 
 pytestmark = pytest.mark.asyncio
 
@@ -26,7 +26,7 @@ class TestLogsMetricsPlugin:
         When calling summary(),
         Then the result contains stream length and pending KVs.
         """
-        for i in range(5):
+        for _i in range(5):
             await redis.xadd("logs", {"raw": "x"})
         await redis.xgroup_create("logs", "logsink", id="0", mkstream=True)
         await redis.xreadgroup("logsink", "c1", {"logs": ">"}, count=2)
