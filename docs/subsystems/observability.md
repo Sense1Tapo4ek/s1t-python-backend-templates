@@ -7,8 +7,11 @@ the access log middleware, and the admin log dashboard.
 ## Logs
 
 `structlog` configured in `src/shared/logging.py::configure_structlog`.
-JSON output via `orjson`, async-safe via a per-process queue drained by
-the admin/log sink worker. See [contexts/admin-log.md](../contexts/admin-log.md).
+JSON output via `orjson`, fan-in via a bounded local buffer drained by a
+background task that ships batches to a Valkey Stream. The standalone
+`log-sink` process consumes the stream, writes to SQLite, and republishes
+on Valkey pub/sub so any web worker's SSE subscribers see the live tail.
+See [contexts/admin-log.md](../contexts/admin-log.md).
 
 Pipeline (in order):
 1. `merge_contextvars` — pulls `trace_id` / `span_id` from contextvars.
@@ -18,11 +21,37 @@ Pipeline (in order):
 5. `dict_tracebacks` — exception → structured dict, never a string.
 6. snitchbot processor — forwards selected events to Telegram.
 7. `JSONRenderer(serializer=_orjson_serializer)`.
-8. `QueueLoggerFactory` — emits each rendered line into `asyncio.Queue[str]`.
+8. `QueueLoggerFactory` — puts each rendered line into the producer's
+   bounded local buffer.
 
-The queue size is bounded; on overflow, `_QueueLogger` drops messages
-and emits a throttled stderr warning (1 line/sec). Producers are never
-back-pressured.
+End-to-end flow:
+
+```
+   structlog factory ──> local asyncio.Queue (10k cap)
+                                │
+                                ▼
+                  RedisStreamPublisher background task
+                                │ XADD (pipeline, MAXLEN ~)
+                                ▼
+                       Valkey Stream "logs"
+                                │ XREADGROUP "logsink"
+                                ▼
+              log-sink: LogSinkWorker
+                  ├─> SQLite executemany ──> admin_logs.db
+                  └─> XACK + PUBLISH "events:logs"
+                                              │
+                                              ▼
+                          Litestar Channels (Redis backend)
+                                              │
+                                              ▼
+                                  SSE clients in any web worker
+```
+
+The local buffer is bounded (10k entries); on overflow, `_QueueLogger`
+drops messages and emits a throttled stderr warning (1 line/sec).
+Producers are never back-pressured. On the Valkey side, `MAXLEN ~ N`
+(default 100k) caps the stream length so a wedged sink can't blow
+Valkey memory.
 
 ### Layer rules
 
@@ -98,5 +127,8 @@ restores the original status code and detail.
 
 - Code: `src/shared/logging.py`, `src/shared/adapters/middleware/`
 - Admin log subsystem: [contexts/admin-log.md](../contexts/admin-log.md)
+- Metrics subsystem: [subsystems/metrics.md](metrics.md) — Prometheus
+  endpoint and admin dashboard. Independent surface; do not duplicate
+  signals here.
 - structlog pipeline reference: [infra/structlog.md](../infra/structlog.md)
 - Build info / dashboards: [contexts/admin.md](../contexts/admin.md)

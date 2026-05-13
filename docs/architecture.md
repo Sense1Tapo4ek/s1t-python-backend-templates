@@ -19,6 +19,7 @@ API.
 | `auth` | `src/auth/` | Bearer/cookie auth: token resolution, `AuthMiddleware`, `require_role` guards. See [contexts/auth.md](contexts/auth.md). |
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
 | `admin/log` | `src/admin/log/` | Sub-context: SQLite log store, FTS5 search, SSE tail, NDJSON/CSV export, retention. See [contexts/admin-log.md](contexts/admin-log.md). |
+| `admin/metrics` | `src/admin/metrics/` | Sub-context: Prometheus `/metrics` endpoint, admin UI at `/admin/metrics`, plugin contract for cross-context modules. See [contexts/admin-metrics.md](contexts/admin-metrics.md). |
 
 Adding a context: see §8 below.
 
@@ -126,6 +127,9 @@ Order of operations on startup:
 7. `LogLifespanManager.start()` — log subsystem (sink worker, cleanup
    worker, broadcast pump) starts last because it depends on everything
    above.
+8. `MetricsLifespanManager.start()` — registers the cross-worker collector
+   on `prometheus_client.REGISTRY` and spawns the sampler / publisher loop
+   that maintains `metrics:worker:<id>` hashes in Valkey.
 
 Shutdown unwinds in reverse with each `try/finally` so a single component's
 failure never blocks the rest from stopping.
@@ -142,6 +146,7 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 | `root/config.py::RootConfig` | `APP_` (extends Base) | server bind/port/workers, security CSP/HSTS, prod invariants. |
 | `auth/config.py::AuthConfig` | `AUTH_` | `admin_token` (`SecretStr`). |
 | `admin/log/config.py::AdminLogConfig` | `LOG_` | retention, batch sizes, max query limit, paths. |
+| `admin/metrics/config.py::MetricsConfig` | `METRICS_` | UI gate, Prometheus endpoint path + public flag, Valkey key prefix + TTL, publish interval. |
 
 Rules:
 - Business logic never reads `os.environ`. Config flows through providers.
@@ -159,8 +164,14 @@ The contract for environment variables is `.env.example`. Don't commit
 Things that, if you change them, will break the app silently or in
 production.
 
-- **`APP_WORKERS=1`.** The admin/log SQLite writer is per-process. The CLI
-  rejects multi-worker starts at boot.
+- **Single SQLite writer = the sink process.** `start_log_sink`
+  (`root/entrypoints/log_sink.py`) is the only process that `INSERT`s
+  into `admin_logs.db`. Web workers read only. WAL mode handles
+  cross-process coordination. `APP_WORKERS` is a free knob.
+- **Shared bus = Valkey.** Producers write a `XADD` Stream entry per log
+  record; the sink consumes via `XREADGROUP` and re-publishes the
+  persisted batch on a pub/sub channel. Litestar Channels' Redis backend
+  delivers it to SSE subscribers in any web worker.
 - **APP-scope DI is lazy.** The graph resolves on the first HTTP request.
   Tests must warm DI before any global env-isolation fixture runs (see
   `tests/e2e/conftest.py::e2e_client`).

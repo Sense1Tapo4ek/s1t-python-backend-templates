@@ -134,6 +134,10 @@ vars (see `.env.example`).
 - **Litestar Channels** — pub/sub for SSE log fan-out and the typed event bus. Memory backend default; swap to Redis with one provider line.
 - **msgspec** — wire-format encode/decode for events.
 - **yoyo-migrations** — SQLite schema versioning.
+- **prometheus_client + Litestar `/metrics`** — per-worker counters,
+  cross-worker snapshots merged via Valkey hashes, admin dashboard at
+  `/admin/metrics` with a per-module plugin contract. See
+  [docs/subsystems/metrics.md](docs/subsystems/metrics.md).
 - **snitchbot** — optional Telegram crash reporter (disabled by default).
 
 ---
@@ -146,6 +150,7 @@ All vars in `.env.example`. Highlights:
 - `APP_WORKERS` — must be `1` (admin/log SQLite writer is single-process).
 - `VOLUME_PATH` — persistent data root (logs db, future state).
 - `LOG_*` — see [contexts/admin-log.md](docs/contexts/admin-log.md#configuration).
+- `METRICS_*` — see [contexts/admin-metrics.md](docs/contexts/admin-metrics.md#public-surface).
 
 ---
 
