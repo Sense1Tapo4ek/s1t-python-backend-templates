@@ -7,6 +7,7 @@ from dishka.integrations.litestar import inject
 from litestar import Controller, get
 from litestar.response import Response
 
+from admin.metrics.config import MetricsConfig
 from auth.ports.driving import require_role
 from shared.domain.auth import Role
 
@@ -63,6 +64,7 @@ _DASHBOARD_TEMPLATE = """<!doctype html>
       </p>
       <div class="actions">
         <a class="btn-link primary" href="/admin/logs">logs <span class="arrow">→</span></a>
+        {metrics_link}
         <a class="btn-link" href="/health">/health <span class="arrow">→</span></a>
         <a class="btn-link" href="/ping">/ping <span class="arrow">→</span></a>
         <form method="post" action="/admin/logout" style="display:contents;">
@@ -89,7 +91,11 @@ class AdminController(Controller):
 
     @get("/")
     @inject
-    async def dashboard(self, facade: FromDishka[AdminFacade]) -> Response[str]:
+    async def dashboard(
+        self,
+        facade: FromDishka[AdminFacade],
+        metrics_cfg: FromDishka[MetricsConfig],
+    ) -> Response[str]:
         view = facade.render_dashboard()
         _log.info(
             "dashboard rendered",
@@ -101,6 +107,12 @@ class AdminController(Controller):
         # Values may originate from config or git (branch can be arbitrary
         # text); escape everything so a poisoned branch name cannot inject
         # script into the dashboard.
+        metrics_link = (
+            '<a class="btn-link primary" href="/admin/metrics/">'
+            'metrics <span class="arrow">&rarr;</span></a>'
+            if metrics_cfg.enabled
+            else ""
+        )
         html = _DASHBOARD_TEMPLATE.format(
             app_name=html_escape(view.build.app_name),
             app_env=html_escape(view.app_env),
@@ -110,6 +122,7 @@ class AdminController(Controller):
             commit_short=_short_sha(view.build.commit_sha),
             branch=html_escape(view.build.branch or "—"),
             dirty="yes" if view.build.dirty else "no",
+            metrics_link=metrics_link,
         )
         return Response(content=html, media_type="text/html")
 
