@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -32,7 +32,7 @@ class TestPublishWorkerSnapshotUc:
             _queue_depth_provider=qdepth,
             _worker_id=WorkerIdVo(host="h", pid=1),
             _role="api",
-            _started_at=datetime(2026, 5, 12, 12, tzinfo=timezone.utc),
+            _started_at=datetime(2026, 5, 12, 12, tzinfo=UTC),
         )
 
         await uc()
@@ -68,7 +68,7 @@ class TestPublishWorkerSnapshotUc:
             _queue_depth_provider=None,
             _worker_id=WorkerIdVo(host="h", pid=1),
             _role="sink",
-            _started_at=datetime(2026, 5, 12, 12, tzinfo=timezone.utc),
+            _started_at=datetime(2026, 5, 12, 12, tzinfo=UTC),
         )
         await uc()
         fields = publisher.publish.call_args.kwargs["fields"]
