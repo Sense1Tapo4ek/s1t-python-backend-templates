@@ -13,6 +13,7 @@ import aiosqlite
 import pytest_asyncio
 from yoyo import get_backend, read_migrations  # type: ignore[import-untyped]
 
+from admin.log.config import YOYO_MIGRATION_TABLE
 from fixtures.log_data import generate_log_rows
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -27,9 +28,12 @@ _INSERT_SQL = (
 
 
 def _apply_migrations(db_path: Path) -> None:
-    backend = get_backend(f"sqlite:///{db_path}")
+    backend = get_backend(
+        f"sqlite:///{db_path}",
+        migration_table=YOYO_MIGRATION_TABLE,
+    )
     migrations = read_migrations(str(_MIGRATIONS_PATH))
-    with backend.lock():
+    with backend, backend.lock():
         backend.apply_migrations(backend.to_apply(migrations))
 
 

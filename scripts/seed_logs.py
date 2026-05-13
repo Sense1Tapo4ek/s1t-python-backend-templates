@@ -25,7 +25,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT / "src"))
 sys.path.insert(0, str(_REPO_ROOT / "tests"))
 
-from admin.log.config import AdminLogConfig  # noqa: E402
+from admin.log.config import YOYO_MIGRATION_TABLE, AdminLogConfig  # noqa: E402
 from fixtures.log_data import generate_log_rows  # noqa: E402
 
 _INSERT_SQL = (
@@ -38,9 +38,12 @@ _INSERT_SQL = (
 
 def _apply_migrations(db_path: Path, migrations_path: Path) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    backend = get_backend(f"sqlite:///{db_path}")
+    backend = get_backend(
+        f"sqlite:///{db_path}",
+        migration_table=YOYO_MIGRATION_TABLE,
+    )
     migrations = read_migrations(str(migrations_path))
-    with backend.lock():
+    with backend, backend.lock():
         backend.apply_migrations(backend.to_apply(migrations))
 
 
