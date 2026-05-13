@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
+from pathlib import Path
 from typing import Any
 
 import snitchbot
@@ -70,6 +71,11 @@ from shared.app import IEventBus
 from shared.config import AppEnv, BaseAppConfig
 from shared.generics.errors import AdapterError, AppError, DomainError, PortError
 from shared.logging import configure_structlog
+
+_METRICS_STATIC_DIR = (
+    Path(__file__).resolve().parents[2]
+    / "admin" / "metrics" / "adapters" / "driving" / "static"
+)
 
 
 def _build_channels_plugin(
@@ -237,6 +243,12 @@ def create_app() -> Litestar:
     extra_handlers: list = [prom_controller]
     if metrics_cfg.enabled:
         extra_handlers.append(MetricsOverviewController)
+        metrics_static_router = create_static_files_router(
+            path="/admin/metrics/static",
+            directories=[_METRICS_STATIC_DIR],
+            cache_control=CacheControlHeader(max_age=3600),
+        )
+        extra_handlers.append(metrics_static_router)
 
     # In DEV we want Litestar's debug renderer to surface the full traceback
     # to the client. Registering a catch-all Exception handler would short-
