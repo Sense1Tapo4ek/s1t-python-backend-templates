@@ -17,7 +17,6 @@ from ....config import MetricsConfig
 
 
 def build_prom_controller(config: MetricsConfig) -> type[PrometheusController]:
-    """Returns a PrometheusController subclass with path + guards set."""
     attrs: dict[str, Any] = {"path": config.prom_endpoint_path}
     if not config.prom_endpoint_public:
         attrs["guards"] = [require_role(Role.ADMIN)]

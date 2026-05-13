@@ -41,15 +41,13 @@ class ExportController(Controller):
         facade.parse_filter(schema)
         _log.info("export started", format=format, q=q, min_level=level, levels=levels)
 
-        if format == "csv":
-            return Stream(
-                content=facade.export_csv(schema),
-                media_type="text/csv",
-                headers={"Content-Disposition": "attachment; filename=logs.csv"},
-            )
-
+        content, media_type, filename = (
+            (facade.export_csv(schema), "text/csv", "logs.csv")
+            if format == "csv"
+            else (facade.export_ndjson(schema), "application/x-ndjson", "logs.ndjson")
+        )
         return Stream(
-            content=facade.export_ndjson(schema),
-            media_type="application/x-ndjson",
-            headers={"Content-Disposition": "attachment; filename=logs.ndjson"},
+            content=content,
+            media_type=media_type,
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )

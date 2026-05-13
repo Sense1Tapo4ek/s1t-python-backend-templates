@@ -1,10 +1,3 @@
-"""Overview page + JSON polling endpoint.
-
-GET /admin/metrics/   -> server-rendered HTML with initial values
-GET /admin/metrics/api?module=overview -> JSON for client polling
-GET /admin/metrics/api?module=<slug>   -> JSON detail for a module
-"""
-
 from html import escape as html_escape
 
 import msgspec
@@ -12,7 +5,6 @@ from dishka import FromDishka
 from dishka.integrations.litestar import inject
 from litestar import Controller, get
 from litestar.exceptions import NotFoundException
-from litestar.response import Response
 
 from auth.ports.driving import require_role
 from shared.domain.auth import Role
@@ -95,43 +87,41 @@ class MetricsOverviewController(Controller):
     path = "/admin/metrics"
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
 
-    @get("/")
+    @get("/", media_type="text/html")
     @inject
     async def overview_html(
         self,
         uc: FromDishka[RenderOverviewUc],
         config: FromDishka[MetricsConfig],
-    ) -> Response[str]:
+    ) -> str:
         summaries = await uc()
         cards = "".join(_render_card(s) for s in summaries)
-        html = _OVERVIEW_HTML.format(
+        return _OVERVIEW_HTML.format(
             app_name="litestar-base",
             cards=cards,
             poll_ms=int(config.publish_interval_s * 1000),
             poll_s=int(config.publish_interval_s),
         )
-        return Response(content=html, media_type="text/html")
 
-    @get("/{slug:str}")
+    @get("/{slug:str}", media_type="text/html")
     @inject
     async def detail_html(
         self,
         slug: str,
         detail_uc: FromDishka[RenderModuleDetailUc],
         config: FromDishka[MetricsConfig],
-    ) -> Response[str]:
+    ) -> str:
         try:
             detail, body_html = await detail_uc(slug=slug)
         except UnknownModuleError as exc:
             raise NotFoundException(f"unknown metrics module: {slug}") from exc
-        html = _DETAIL_HTML.format(
+        return _DETAIL_HTML.format(
             slug=html_escape(detail.slug),
             name=html_escape(detail.name),
             body=body_html,
             poll_ms=int(config.publish_interval_s * 1000),
             poll_s=int(config.publish_interval_s),
         )
-        return Response(content=html, media_type="text/html")
 
     @get("/api", media_type="application/json")
     @inject

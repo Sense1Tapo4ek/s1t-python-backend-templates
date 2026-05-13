@@ -11,8 +11,6 @@ _log = structlog.get_logger("root.errors")
 
 
 def dsl_syntax_handler(_req: Request, exc: DslSyntaxError) -> Response:
-    """Returns position + reason verbatim; bypasses the generic DomainError
-    409 handler."""
     _log.warning(
         "dsl rejected",
         position=exc.position,
@@ -27,8 +25,6 @@ def dsl_syntax_handler(_req: Request, exc: DslSyntaxError) -> Response:
 def invalid_log_filter_handler(
     _req: Request, exc: InvalidLogFilterError
 ) -> Response:
-    """Returns structured field/reason; bypasses the generic DomainError
-    409 handler."""
     _log.warning(
         "log filter rejected",
         field=exc.field,
