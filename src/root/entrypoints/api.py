@@ -46,7 +46,7 @@ from admin.log.adapters.lifespan import LogLifespanManager
 from admin.log.config import AdminLogConfig
 from admin.log.domain import DslSyntaxError, InvalidLogFilterError
 from admin.log.ports.driven.gateways import RedisStreamPublisher
-from admin.metrics.adapters.driving.api import build_prom_controller
+from admin.metrics.adapters.driving.api import MetricsOverviewController, build_prom_controller
 from admin.metrics.adapters.lifespan import MetricsLifespanManager
 from admin.metrics.config import MetricsConfig
 from auth.adapters.middleware import AuthMiddleware
@@ -234,6 +234,10 @@ def create_app() -> Litestar:
     )
     prom_controller = build_prom_controller(metrics_cfg)
 
+    extra_handlers: list = [prom_controller]
+    if metrics_cfg.enabled:
+        extra_handlers.append(MetricsOverviewController)
+
     # In DEV we want Litestar's debug renderer to surface the full traceback
     # to the client. Registering a catch-all Exception handler would short-
     # circuit that, so we only install it in PROD.
@@ -263,7 +267,7 @@ def create_app() -> Litestar:
             LogsApiController,
             ExportController,
             static_router,
-            prom_controller,
+            *extra_handlers,
         ],
         middleware=[
             # Outermost — covers responses from inner middleware that short-circuit.
