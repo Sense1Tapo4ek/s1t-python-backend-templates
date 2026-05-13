@@ -7,20 +7,10 @@ _TRACE_HEADER = b"x-trace-id"
 
 
 class TraceIdMiddleware:
-    """Generate or honor a request trace id and bind it to structlog contextvars.
+    """Bind X-Trace-Id (incoming or generated) to structlog contextvars; echo on response.
 
-    On request:
-      - Read X-Trace-Id from incoming headers if present, else uuid4().hex[:16].
-      - Bind trace_id to structlog contextvars so every downstream log record
-        carries it via merge_contextvars.
-
-    On response:
-      - Echo the trace id back as X-Trace-Id for client correlation.
-
-    Snitchbot has its own request_context (trace_id, http_method, http_path,
-    client_ip) installed via `snitchbot.integrations.litestar.install(app)` —
-    that's a separate id used in snitchbot alerts, intentionally not unified
-    with this one.
+    Snitchbot has its own request_context id (installed via
+    `snitchbot.integrations.litestar.install`), intentionally not unified.
     """
 
     def __init__(self, app: ASGIApp) -> None:

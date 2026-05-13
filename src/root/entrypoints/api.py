@@ -82,23 +82,14 @@ def _build_channels_plugin(
     log_config: AdminLogConfig,
     base_config: BaseAppConfig,
 ) -> tuple[ChannelsPlugin, Redis]:
-    """Single ChannelsPlugin shared by Litestar (transport) and DI (subscribers).
+    """Single ChannelsPlugin shared by Litestar transport and DI subscribers.
 
-    Backed by Valkey pub/sub so the out-of-process log sink (and any other
-    publisher) can fan messages out to every web worker that holds a live
-    subscription. The same Valkey instance also carries the log Stream
-    consumed by the sink — one bus for the whole observability path.
-
-    `dropleft` strategy: when a slow SSE consumer's queue fills up, oldest
-    messages are dropped silently. Critical for the log broadcast channel —
-    we never want a stuck client to back-pressure the sink writer.
-
-    `arbitrary_channels_allowed=True`: domain events use dynamic channel
-    names derived from event class FQN (`event:ordering.domain.events...`),
-    so we cannot enumerate them upfront.
-
-    Returns the plugin alongside the Redis client the caller is responsible
-    for `aclose()`-ing on lifespan stop — the backend itself doesn't own it.
+    `dropleft`: oldest frames are silently dropped when a slow SSE
+    consumer's queue fills — a stuck client must never back-pressure
+    the sink writer. `arbitrary_channels_allowed=True`: domain events
+    use dynamic channel names per event-class FQN. The caller owns the
+    Redis client and must `aclose()` it on lifespan stop; the backend
+    does not.
     """
     redis = Redis.from_url(base_config.valkey_url, decode_responses=False)
     plugin = ChannelsPlugin(

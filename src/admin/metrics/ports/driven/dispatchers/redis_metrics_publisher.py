@@ -1,12 +1,9 @@
-"""Publishes a per-worker metrics snapshot into a Valkey hash.
+"""Per-worker metrics snapshot publisher (one Valkey hash per worker).
 
-Each worker owns one hash keyed `<prefix><role>:<host>:<pid>`. The
-hash is rewritten in a pipeline (HSET + EXPIRE) so a single round trip
-covers both. TTL > publish_interval prevents live workers from
-appearing dead between ticks; dead workers disappear within one TTL.
-
-Failures are intentionally swallowed and logged — observability code
-must never crash the caller.
+Hash key: `<prefix><role>:<host>:<pid>`. Rewritten in a HSET + EXPIRE
+pipeline so a single round trip covers both. TTL > publish_interval
+keeps live workers visible between ticks; dead workers vanish within
+one TTL. Failures are swallowed — observability never crashes callers.
 """
 
 import contextlib

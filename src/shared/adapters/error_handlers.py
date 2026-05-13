@@ -1,19 +1,8 @@
-"""Generic layer-error handlers used by every bounded context.
+"""S-DDD layer-error to HTTP mappers (Domain 409, App 422, Port 503, Adapter 500).
 
-Maps the four S-DDD error layers onto HTTP responses:
-
-| Layer    | Exception     | Status | Log level     | Body to client    |
-|:---------|:--------------|:-------|:--------------|:------------------|
-| domain/  | DomainError   | 409    | warning       | "Conflict"        |
-| app/     | AppError      | 422    | warning       | "Unprocessable"   |
-| ports/   | PortError     | 503    | exception     | "Service ..."     |
-| adapters/| AdapterError  | 500    | exception     | "Internal ..."    |
-
-`str(exc)` is recorded internally for diagnosis but never sent over the
-wire — exception messages can carry internal details (paths, SQL
-fragments, stack-context) that we don't want exposed. Bounded contexts
-register specialised handlers for concrete subtypes; those run first
-and bypass these generic ones.
+`str(exc)` is logged for diagnosis but never sent over the wire —
+messages may carry internal details. Context-specific handlers
+registered against concrete subtypes run first and bypass these.
 """
 
 import structlog

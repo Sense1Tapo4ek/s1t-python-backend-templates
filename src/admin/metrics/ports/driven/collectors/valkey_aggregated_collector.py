@@ -1,13 +1,8 @@
-"""Aggregates per-worker metrics from Valkey hashes for /metrics scrapes.
+"""Aggregates per-worker metrics from Valkey hashes on every Prometheus scrape.
 
-Runs on every Prometheus scrape. Must be cheap (SCAN + HGETALL x
-small N) and must not raise — a scrape failure would surface as a
-Prometheus alert that masks the underlying outage.
-
-Sync `collect()` is the protocol Prometheus client expects. Internally
-we await `acollect()` on the current event loop via asyncio.run_coroutine
-when called from a sync context. The recommended integration point is
-via `Collector` registered on `REGISTRY` — see provider.py.
+Must be cheap (SCAN + HGETALL x small N) and must not raise — a
+scrape failure would mask the underlying outage. Sync `collect()` is
+the Prometheus protocol; internally it dispatches to `acollect()`.
 """
 
 import asyncio

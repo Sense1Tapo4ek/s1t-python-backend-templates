@@ -1,13 +1,8 @@
-"""Samples event loop scheduling latency.
+"""Event loop scheduling-latency sampler.
 
-Algorithm: schedule a coroutine to wake every `_interval_s`. The
-difference between the requested wake time and the actual one is the
-"lag" — time the event loop took before getting to us. p95 over the
-last `_window` samples is a robust indicator of whether the loop is
-healthy (~ low ms) or contended (tens of ms+).
-
-Background task is owned by this object; start()/stop() are
-lifespan-driven.
+Lag = (actual wake time) - (requested wake time). p95 over the last
+`_window` samples flags loop contention. start()/stop() are
+lifespan-driven; the task is owned by this object.
 """
 
 import asyncio
