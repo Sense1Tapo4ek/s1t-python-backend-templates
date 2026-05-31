@@ -1,42 +1,27 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncIterator
 from typing import Protocol
 
-from ...domain import LogEntryEnt, LogFilterVo, LogId
+from ...domain import Cursor, LogEntryEnt
 
 
 class ILogReader(Protocol):
-    """Read-side contract for the log store.
+    """Historical read-side of the log file.
 
-    Implementations must:
-    - return entries in chronological (ascending) order;
-    - return cursor = id of the OLDEST entry in the page, suitable for
-      passing back as `before` to fetch the previous page;
-    - report `has_more=True` iff at least one row exists beyond the
-      returned page (canonically via the `LIMIT size + 1` trick).
-
-    `stream_after` is unbounded — it backs the SSE tail.
+    read_tail returns the last `limit` entries in chronological order plus
+    the cursor of the oldest returned entry. read_before reads `limit`
+    entries ending just before `cursor`. stream_all yields raw JSONL lines
+    from a point-in-time snapshot of the file (oldest first), for export.
     """
 
-    async def tail(
+    async def read_tail(
         self,
-        size: int,
-        filter_vo: LogFilterVo | None = None,
-    ) -> tuple[list[LogEntryEnt], LogId | None, bool]: ...
+        limit: int,
+    ) -> tuple[list[LogEntryEnt], Cursor]: ...
 
     async def read_before(
         self,
-        cursor: LogId,
-        size: int,
-        filter_vo: LogFilterVo | None = None,
-    ) -> tuple[list[LogEntryEnt], LogId | None, bool]: ...
+        cursor: Cursor,
+        limit: int,
+    ) -> tuple[list[LogEntryEnt], Cursor]: ...
 
-    def stream_after(
-        self,
-        cursor: LogId | None = None,
-        filter_vo: LogFilterVo | None = None,
-    ) -> AsyncGenerator[LogEntryEnt, None]: ...
-
-    def stream_query(
-        self,
-        filter_vo: LogFilterVo | None = None,
-    ) -> AsyncGenerator[LogEntryEnt, None]: ...
+    def stream_all(self) -> AsyncIterator[str]: ...
