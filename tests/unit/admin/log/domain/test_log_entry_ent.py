@@ -1,38 +1,83 @@
-from admin.log.domain import LogEntryEnt
+import pytest
+
+from admin.log.domain import LogEntryEnt, MalformedLogLine
 
 
-def _make(**overrides) -> LogEntryEnt:
-    base = dict(
-        id=1,
-        timestamp="2026-04-29T12:00:00+00:00",
-        level="INFO",
-        logger="test",
-        event="hello",
-        pathname="/src/test.py",
-        lineno=10,
-        func_name="test_func",
-        raw_json='{"event": "hello"}',
-    )
-    base.update(overrides)
-    return LogEntryEnt(**base)
+class TestLogEntryParse:
+    def test_parse_valid_json_line(self) -> None:
+        """
+        Given a valid JSON log line,
+        When parsed,
+        Then promoted fields and raw dict are populated.
+        """
+        line = (
+            '{"timestamp": "2026-05-31T10:00:00Z", "level": "INFO", '
+            '"logger": "app", "event": "started", "extra": 1}'
+        )
 
+        ent = LogEntryEnt.parse(line)
 
-class TestLogEntryEntCore:
-    def test_required_fields_round_trip(self) -> None:
-        entry = _make()
+        assert ent.timestamp == "2026-05-31T10:00:00Z"
+        assert ent.level == "INFO"
+        assert ent.logger == "app"
+        assert ent.event == "started"
+        assert ent.raw == {
+            "timestamp": "2026-05-31T10:00:00Z",
+            "level": "INFO",
+            "logger": "app",
+            "event": "started",
+            "extra": 1,
+        }
 
-        assert entry.id == 1
-        assert entry.level == "INFO"
-        assert entry.event == "hello"
+    def test_parse_tolerates_trailing_cr(self) -> None:
+        """
+        Given a CRLF-terminated line (CR not yet stripped by caller),
+        When parsed,
+        Then the trailing CR is ignored.
+        """
+        line = '{"timestamp": "t", "level": "INFO", "logger": "a", "event": "e"}\r'
 
-    def test_trace_correlation_defaults_to_none(self) -> None:
-        entry = _make()
+        ent = LogEntryEnt.parse(line)
 
-        assert entry.trace_id is None
-        assert entry.span_id is None
+        assert ent.event == "e"
 
-    def test_trace_correlation_round_trip(self) -> None:
-        entry = _make(trace_id="t_abc123", span_id="s_xyz789")
+    def test_parse_missing_keys_uses_safe_defaults(self) -> None:
+        """
+        Given a JSON object missing promoted keys,
+        When parsed,
+        Then defaults fill the promoted fields and raw keeps the original.
+        """
+        ent = LogEntryEnt.parse('{"event": "only-event"}')
 
-        assert entry.trace_id == "t_abc123"
-        assert entry.span_id == "s_xyz789"
+        assert ent.event == "only-event"
+        assert ent.level == "INFO"
+        assert ent.logger == ""
+        assert ent.timestamp == ""
+        assert ent.raw == {"event": "only-event"}
+
+    def test_parse_non_json_raises(self) -> None:
+        """
+        Given a non-JSON line,
+        When parsed,
+        Then MalformedLogLine is raised.
+        """
+        with pytest.raises(MalformedLogLine):
+            LogEntryEnt.parse("not json at all")
+
+    def test_parse_non_object_json_raises(self) -> None:
+        """
+        Given valid JSON that is not an object (e.g. an array),
+        When parsed,
+        Then MalformedLogLine is raised.
+        """
+        with pytest.raises(MalformedLogLine):
+            LogEntryEnt.parse("[1, 2, 3]")
+
+    def test_parse_empty_line_raises(self) -> None:
+        """
+        Given an empty line,
+        When parsed,
+        Then MalformedLogLine is raised.
+        """
+        with pytest.raises(MalformedLogLine):
+            LogEntryEnt.parse("")
