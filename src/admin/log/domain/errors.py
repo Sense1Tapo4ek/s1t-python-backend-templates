@@ -15,3 +15,9 @@ class InvalidLogFilterError(DomainError):
         self.field = field
         self.reason = reason
         super().__init__(f"invalid LogFilterVo.{field}: {reason}")
+
+
+class MalformedLogLine(DomainError):
+    def __init__(self, *, preview: str) -> None:
+        self.preview = preview
+        super().__init__(f"malformed log line: {preview!r}")
