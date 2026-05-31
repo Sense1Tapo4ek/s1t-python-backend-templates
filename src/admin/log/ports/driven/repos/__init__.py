@@ -1,3 +1,3 @@
-from .sqlite_log_repo import SQLiteLogRepo
+from .file_log_reader import FileLogReader
 
-__all__ = ["SQLiteLogRepo"]
+__all__ = ["FileLogReader"]
