@@ -62,10 +62,10 @@ class LogFileSource:
         # drain the old fd to EOF then reopen the new path at its start.
         delay = poll_ms / 1000.0
         try:
-            inode = self._current_inode()
+            inode = await asyncio.to_thread(self._current_inode)
         except LogReadError:
             inode = -1
-        pos = self._initial_follow_pos()
+        pos = await asyncio.to_thread(self._initial_follow_pos)
         carry = b""
         while True:
             try:
@@ -126,13 +126,13 @@ class LogFileSource:
                     pos = seek_to
                     if buf.count(b"\n") >= limit + 1:
                         break
-                lines, first_offset = self._tail_from_buffer(buf, pos, limit, size)
+                lines, first_offset = self._tail_from_buffer(buf, pos, limit)
                 return lines, first_offset, inode
         except OSError as exc:
             raise LogReadError(path=str(self.path), reason=str(exc)) from exc
 
     def _tail_from_buffer(
-        self, buf: bytes, buf_start: int, limit: int, size: int
+        self, buf: bytes, buf_start: int, limit: int
     ) -> tuple[list[str], int]:
         # Discard trailing partial line: everything after the final newline.
         last_nl = buf.rfind(b"\n")
@@ -180,9 +180,16 @@ class LogFileSource:
     def _read_delta(
         self, pos: int, carry: bytes
     ) -> tuple[list[str], int, bytes]:
-        with open(self.path, "rb") as fh:
-            fh.seek(pos)
-            chunk = fh.read()
+        # The file may vanish in the TOCTOU window between the caller's
+        # os.stat and this read (rotation/deletion). Tolerate it the same
+        # way the follow loop swallows OSError on stat: make no progress
+        # and let the next poll observe the new state.
+        try:
+            with open(self.path, "rb") as fh:
+                fh.seek(pos)
+                chunk = fh.read()
+        except OSError:
+            return [], pos, carry
         data = carry + chunk
         *complete, rest = data.split(b"\n")
         lines = [b.decode("utf-8", "replace").rstrip("\r") for b in complete]

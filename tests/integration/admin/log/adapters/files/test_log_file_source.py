@@ -222,6 +222,68 @@ class TestFollow:
         assert collected == ["fresh"]
 
     @pytest.mark.asyncio
+    async def test_follow_survives_file_deletion_mid_stream(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given a follow loop where the file vanishes in the TOCTOU window
+        between os.stat and the offloaded read,
+        When the file is later recreated and appended,
+        Then the loop does not crash and resumes yielding the new lines.
+        """
+        path = tmp_path / "app.jsonl"
+        _write_lines(path, ["a"])
+        src = LogFileSource(path=path, chunk_bytes=64)
+
+        # Simulate the TOCTOU race: os.stat reports the file present, then
+        # _read_delta's open() fails because the file vanished in the gap.
+        # Patch the module-level open so the FIRST read raises OSError; the
+        # real _read_delta must swallow it and the loop must not crash.
+        import builtins
+
+        import admin.log.adapters.driven.files.log_file_source as mod
+
+        real_open = builtins.open
+        calls = {"n": 0}
+
+        def flaky_open(file, *args, **kwargs):
+            if str(file) == str(path):
+                calls["n"] += 1
+                if calls["n"] == 1:
+                    raise FileNotFoundError(
+                        2, "No such file or directory", str(path)
+                    )
+            return real_open(file, *args, **kwargs)
+
+        monkeypatch.setattr(mod, "open", flaky_open, raising=False)
+
+        agen = src.iter_new_lines(poll_ms=10)
+        collected: list[str] = []
+
+        async def consume() -> None:
+            async for line in agen:
+                collected.append(orjson.loads(line)["event"])
+                if "resumed" in collected:
+                    return
+
+        task = asyncio.create_task(consume())
+        await asyncio.sleep(0.05)
+        # First append triggers the flaky (vanished) read; the loop must
+        # not crash and must make no progress (pos unchanged).
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(_line("lost") + "\n")
+        await asyncio.sleep(0.05)
+        # Second append: the real read now succeeds and recovers both the
+        # earlier-skipped line and the new one (at-least-once).
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(_line("resumed") + "\n")
+        await asyncio.wait_for(task, timeout=2.0)
+
+        assert calls["n"] >= 2  # the flaky read was exercised
+        assert collected[-1] == "resumed"  # loop survived and resumed
+        assert "lost" in collected  # skipped line recovered on retry
+
+    @pytest.mark.asyncio
     async def test_follow_survives_truncation(self, tmp_path: Path) -> None:
         """
         Given a follow loop,
