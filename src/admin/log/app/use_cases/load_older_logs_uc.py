@@ -1,33 +1,21 @@
 from dataclasses import dataclass
 
-import structlog
-
-from ...app.interfaces import ILogReader
-from ...domain import LogEntryEnt, LogFilterVo, LogId
-
-_log = structlog.get_logger(__name__)
+from ...domain import Cursor, LogEntryEnt
+from ..interfaces import ILogReader
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class LoadOlderLogsUc:
+    """Reads the page of entries before `cursor`.
+
+    When the reader returns the unchanged cursor with no entries, the
+    history has been truncated by rotation (cursor inode no longer the
+    live file). The caller surfaces this sentinel to stop "load more".
+    """
+
     _reader: ILogReader
-    _chunk_size: int
 
     async def __call__(
-        self,
-        cursor: LogId,
-        filter_vo: LogFilterVo | None = None,
-    ) -> tuple[list[LogEntryEnt], LogId | None, bool]:
-        entries, next_cursor, has_more = await self._reader.read_before(
-            cursor,
-            self._chunk_size,
-            filter_vo,
-        )
-        _log.debug(
-            "older loaded",
-            cursor_in=cursor,
-            returned=len(entries),
-            cursor_out=next_cursor,
-            has_more=has_more,
-        )
-        return entries, next_cursor, has_more
+        self, cursor: Cursor, limit: int
+    ) -> tuple[list[LogEntryEnt], Cursor]:
+        return await self._reader.read_before(cursor, limit)

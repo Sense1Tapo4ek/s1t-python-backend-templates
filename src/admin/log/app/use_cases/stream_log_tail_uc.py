@@ -1,25 +1,20 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
-from ...app.interfaces import ILogReader
-from ...domain import LogEntryEnt, LogFilterVo
+from ...domain import LogEntryEnt
+from ..interfaces import ILogFollower
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class StreamLogTailUc:
-    """Yields log entries forever as they arrive.
+    """Yields log entries forever as they are appended to the file.
 
-    Backed by `ILogReader.stream_after`, which subscribes to the broadcast
-    channel before draining the catch-up tail to avoid the race window
-    where new entries land between the two reads. Caller must wrap the
-    consumer in cancellation handling.
+    No server-side filtering: level/substring filtering is the client's
+    job over already-loaded rows.
     """
 
-    _reader: ILogReader
+    _follower: ILogFollower
 
-    async def __call__(
-        self,
-        filter_vo: LogFilterVo | None = None,
-    ) -> AsyncGenerator[LogEntryEnt, None]:
-        async for entry in self._reader.stream_after(cursor=None, filter_vo=filter_vo):
+    async def __call__(self, poll_ms: int) -> AsyncIterator[LogEntryEnt]:
+        async for entry in self._follower.follow(poll_ms):
             yield entry
