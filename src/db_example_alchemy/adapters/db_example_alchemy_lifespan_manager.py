@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 
 import structlog
-from sqlalchemy.ext.asyncio import AsyncEngine
-
 from advanced_alchemy.base import UUIDAuditBase
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 _log = structlog.get_logger(__name__)
 

@@ -1,6 +1,6 @@
 from advanced_alchemy.repository import SQLAlchemyAsyncRepository
 
-from ....adapters.driven.db.orm_models import BookModel  # noqa: TID — driven ports may import adapters/driven
+from ....adapters.driven.db.orm_models import BookModel
 
 
 class BookRepository(SQLAlchemyAsyncRepository[BookModel]):

@@ -2,10 +2,13 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
+from advanced_alchemy.base import UUIDAuditBase
+from advanced_alchemy.filters import (
+    LimitOffset,
+    SearchFilter,
+)
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from advanced_alchemy.base import UUIDAuditBase
-from advanced_alchemy.filters import LimitOffset, SearchFilter  # noqa: F401 — SearchFilter used below
 from db_example_alchemy.adapters.driven.db.engine import build_engine, build_sessionmaker
 from db_example_alchemy.adapters.driven.db.orm_models import AuthorModel, BookModel
 from db_example_alchemy.ports.driven.services.author_service import AuthorService

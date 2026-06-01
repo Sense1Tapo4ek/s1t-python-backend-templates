@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from uuid import UUID
 
 from advanced_alchemy.filters import LimitOffset, OrderBy, SearchFilter
@@ -32,7 +33,7 @@ class AuthorController(Controller):
         self,
         data: DTOData[list[AuthorModel]],
         svc: FromDishka[AuthorService],
-    ) -> list[AuthorModel]:
+    ) -> Sequence[AuthorModel]:
         return await svc.create_many(data.create_instance(), auto_commit=True)
 
     @get("/")
