@@ -33,5 +33,5 @@ class BookController(Controller):
         offset: int = 0,
     ) -> OffsetPagination[BookModel]:
         filters: list = [OrderBy("title", "asc"), LimitOffset(limit=limit, offset=offset)]
-        results, total = await svc.list_and_count(*filters)
+        results, total = await svc.get_many_and_count(*filters)
         return OffsetPagination(items=list(results), total=total, limit=limit, offset=offset)

@@ -47,7 +47,7 @@ class AuthorController(Controller):
         filters: list = [OrderBy("name", "asc"), LimitOffset(limit=limit, offset=offset)]
         if search:
             filters.insert(0, SearchFilter(field_name="name", value=search, ignore_case=True))
-        results, total = await svc.list_and_count(*filters)
+        results, total = await svc.get_many_and_count(*filters)
         return OffsetPagination(items=list(results), total=total, limit=limit, offset=offset)
 
     @get("/{author_id:uuid}")
