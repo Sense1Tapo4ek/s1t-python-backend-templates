@@ -50,3 +50,30 @@ class TestLogReadEndpoints:
         """
         resp = e2e_client.delete("/api/v1/admin/logs/", headers=e2e_auth_headers)
         assert resp.status_code == 405
+
+
+@pytest.mark.asyncio
+class TestExportEndpoint:
+    async def test_ndjson_export(self, e2e_client, e2e_auth_headers) -> None:
+        """
+        Given an admin user,
+        When GET /api/v1/admin/logs/export/?format=ndjson,
+        Then a downloadable NDJSON stream is returned.
+        """
+        resp = e2e_client.get(
+            "/api/v1/admin/logs/export/?format=ndjson", headers=e2e_auth_headers
+        )
+        assert resp.status_code == 200
+        assert resp.headers["content-type"].startswith("application/x-ndjson")
+        assert "attachment" in resp.headers["content-disposition"]
+
+    async def test_unknown_format_rejected(self, e2e_client, e2e_auth_headers) -> None:
+        """
+        Given an unsupported format,
+        When GET .../export/?format=xml,
+        Then 400 is returned.
+        """
+        resp = e2e_client.get(
+            "/api/v1/admin/logs/export/?format=xml", headers=e2e_auth_headers
+        )
+        assert resp.status_code == 400
