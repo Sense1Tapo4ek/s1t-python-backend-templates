@@ -22,8 +22,8 @@ class AdminLogWebProvider(Provider):
 
     @provide
     def log_file_source(self, config: AdminLogConfig) -> LogFileSource:
-        # resolve_log_file_path validator guarantees a non-None Path.
-        assert config.file_path is not None
+        if config.file_path is None:
+            raise RuntimeError("LOG_FILE_PATH could not be resolved")
         return LogFileSource(path=config.file_path)
 
     @provide

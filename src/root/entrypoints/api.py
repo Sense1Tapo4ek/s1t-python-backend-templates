@@ -76,7 +76,8 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     setup_dishka(container=container, app=app)
 
     log_config = AdminLogConfig()
-    assert log_config.file_path is not None  # set by resolve_log_file_path
+    if log_config.file_path is None:
+        raise RuntimeError("LOG_FILE_PATH could not be resolved")
     configure_structlog(
         app_name=config.app_name,
         log_file_path=log_config.file_path,
