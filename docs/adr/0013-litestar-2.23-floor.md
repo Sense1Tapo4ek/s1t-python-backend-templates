@@ -12,7 +12,7 @@ Raise `pyproject.toml` lower bound to `litestar[jinja,prometheus]>=2.23.0`.
 ## Consequences
 - + Unblocks advanced-alchemy 1.11 integration without import-time errors.
 - - Projects forked before this bump that pin Litestar < 2.23 cannot use
-    db_example_alchemy without upgrading Litestar.
+    db_example_litestar without upgrading Litestar.
 
 ## Alternatives considered
 - Vendor a compatibility shim for NamedDependency - unnecessarily complex;
