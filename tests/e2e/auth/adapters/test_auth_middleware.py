@@ -80,10 +80,10 @@ def test_health_no_token_required() -> None:
     assert response.status_code == HTTP_200_OK
 
 
-def test_static_logs_no_token_required() -> None:
+def test_static_assets_no_token_required() -> None:
     app = create_app()
     with TestClient(app=app) as client:
-        response = client.get("/admin/logs/static/style.css")
+        response = client.get("/static/admin/log/style.css")
     # 200 if the file exists, 404 if not — the point is: NOT a redirect/401.
     assert response.status_code != HTTP_401_UNAUTHORIZED
     assert response.status_code != HTTP_303_SEE_OTHER
@@ -104,21 +104,29 @@ def test_login_form_accessible_to_anonymous() -> None:
     assert "text/html" in response.headers["content-type"]
 
 
-def test_delete_logs_without_token_returns_401() -> None:
+# Auth probes target a still-existing admin JSON API route. The old log
+# DELETE/clear endpoint was removed in the file-tail simplification; the
+# metrics overview JSON endpoint is guarded by require_role(Role.ADMIN)
+# and needs no seeded data, so it exercises the same auth path.
+_ADMIN_API_ROUTE = "/admin/metrics/api"
+
+
+def test_admin_api_without_token_returns_401() -> None:
     app = create_app()
     with TestClient(app=app) as client:
-        response = client.delete(
-            "/api/v1/admin/logs?confirm=yes-i-am-sure",
+        response = client.get(
+            _ADMIN_API_ROUTE,
             headers={"Accept": "application/json"},
         )
     assert response.status_code == HTTP_401_UNAUTHORIZED
 
 
-def test_delete_logs_with_token_succeeds(headers: dict[str, str]) -> None:
+def test_admin_api_with_token_succeeds(headers: dict[str, str]) -> None:
     app = create_app()
     with TestClient(app=app) as client:
-        response = client.delete(
-            "/api/v1/admin/logs?confirm=yes-i-am-sure",
+        response = client.get(
+            _ADMIN_API_ROUTE,
+            params={"module": "overview"},
             headers=headers,
         )
     assert response.status_code == HTTP_200_OK
@@ -127,8 +135,8 @@ def test_delete_logs_with_token_succeeds(headers: dict[str, str]) -> None:
 def test_admin_api_with_wrong_token_returns_401() -> None:
     app = create_app()
     with TestClient(app=app) as client:
-        response = client.delete(
-            "/api/v1/admin/logs?confirm=yes-i-am-sure",
+        response = client.get(
+            _ADMIN_API_ROUTE,
             headers={"Authorization": "Bearer wrong", "Accept": "application/json"},
         )
     assert response.status_code == HTTP_401_UNAUTHORIZED
@@ -137,8 +145,8 @@ def test_admin_api_with_wrong_token_returns_401() -> None:
 def test_malformed_basic_header_treated_as_unauthenticated() -> None:
     app = create_app()
     with TestClient(app=app) as client:
-        response = client.delete(
-            "/api/v1/admin/logs?confirm=yes-i-am-sure",
+        response = client.get(
+            _ADMIN_API_ROUTE,
             headers={"Authorization": "Basic xxx", "Accept": "application/json"},
         )
     assert response.status_code == HTTP_401_UNAUTHORIZED
@@ -147,8 +155,8 @@ def test_malformed_basic_header_treated_as_unauthenticated() -> None:
 def test_empty_bearer_token_treated_as_unauthenticated() -> None:
     app = create_app()
     with TestClient(app=app) as client:
-        response = client.delete(
-            "/api/v1/admin/logs?confirm=yes-i-am-sure",
+        response = client.get(
+            _ADMIN_API_ROUTE,
             headers={"Authorization": "Bearer ", "Accept": "application/json"},
         )
     assert response.status_code == HTTP_401_UNAUTHORIZED

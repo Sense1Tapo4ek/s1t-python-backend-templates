@@ -1,7 +1,5 @@
 import pytest
 from dishka import make_async_container
-from litestar.channels import ChannelsPlugin
-from litestar.channels.backends.memory import MemoryChannelsBackend
 
 from admin.metrics.config import MetricsConfig
 from admin.metrics.provider import AdminMetricsProvider
@@ -9,13 +7,6 @@ from shared.config import BaseAppConfig
 from shared.provider import SharedProvider
 
 pytestmark = pytest.mark.asyncio
-
-
-def _channels_plugin() -> ChannelsPlugin:
-    return ChannelsPlugin(
-        backend=MemoryChannelsBackend(),
-        arbitrary_channels_allowed=True,
-    )
 
 
 class TestProviderBoot:
@@ -26,7 +17,7 @@ class TestProviderBoot:
         Then both come back successfully — no DI cycles.
         """
         container = make_async_container(
-            SharedProvider(channels_plugin=_channels_plugin()),
+            SharedProvider(),
             AdminMetricsProvider(),
         )
         try:

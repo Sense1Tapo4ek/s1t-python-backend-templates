@@ -1,22 +1,13 @@
 import pytest
 from dishka import make_async_container
-from litestar.channels import ChannelsPlugin
-from litestar.channels.backends.memory import MemoryChannelsBackend
 from prometheus_client import REGISTRY
 
-from admin.log.provider import AdminLogPortBindings, AdminLogWebProvider
+from admin.log.provider import AdminLogWebProvider
 from admin.metrics.app.interfaces import IModulePluginRegistry
 from admin.metrics.provider import AdminMetricsProvider
 from shared.provider import SharedProvider
 
 pytestmark = pytest.mark.asyncio
-
-
-def _channels_plugin() -> ChannelsPlugin:
-    return ChannelsPlugin(
-        backend=MemoryChannelsBackend(),
-        arbitrary_channels_allowed=True,
-    )
 
 
 @pytest.fixture(autouse=True)
@@ -29,21 +20,21 @@ def _isolated_registry():
 
 
 class TestFullPluginRegistry:
-    async def test_http_logs_workers_all_present(self) -> None:
+    async def test_http_and_workers_present_with_log_provider(self) -> None:
         """
-        Given SharedProvider + AdminMetricsProvider + AdminLogWebProvider + AdminLogPortBindings,
+        Given SharedProvider + AdminMetricsProvider + AdminLogWebProvider,
         When the container resolves IModulePluginRegistry,
-        Then 'http', 'logs', and 'workers' plugins are all present.
+        Then only the metrics-owned 'http' and 'workers' plugins are present
+        (the log subsystem no longer registers a metrics module).
         """
         container = make_async_container(
-            SharedProvider(channels_plugin=_channels_plugin()),
+            SharedProvider(),
             AdminMetricsProvider(),
             AdminLogWebProvider(),
-            AdminLogPortBindings(),
         )
         try:
             reg = await container.get(IModulePluginRegistry)
             slugs = sorted(p.slug for p in reg.all())
-            assert slugs == ["http", "logs", "workers"]
+            assert slugs == ["http", "workers"]
         finally:
             await container.close()

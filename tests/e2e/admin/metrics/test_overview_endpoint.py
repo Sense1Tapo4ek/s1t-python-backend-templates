@@ -8,13 +8,12 @@ class TestOverviewEndpoint:
         """
         Given the app started with admin/metrics provider,
         When GET /admin/metrics/ is called as ADMIN,
-        Then HTML cards render with all 3 module names.
+        Then HTML cards render with the metrics module names.
         """
         resp = e2e_client.get("/admin/metrics/", headers=e2e_auth_headers)
         assert resp.status_code == 200
         body = resp.text
         assert "HTTP" in body
-        assert "Logs" in body
         assert "Workers" in body
 
     def test_overview_json_endpoint(
@@ -34,7 +33,7 @@ class TestOverviewEndpoint:
         body = resp.json()
         assert "modules" in body
         slugs = {m["slug"] for m in body["modules"]}
-        assert {"http", "logs", "workers"}.issubset(slugs)
+        assert {"http", "workers"}.issubset(slugs)
 
     def test_overview_requires_admin(self, e2e_client: TestClient) -> None:
         """

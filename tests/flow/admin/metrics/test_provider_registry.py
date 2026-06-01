@@ -1,7 +1,5 @@
 import pytest
 from dishka import Provider, Scope, make_async_container, provide
-from litestar.channels import ChannelsPlugin
-from litestar.channels.backends.memory import MemoryChannelsBackend
 from prometheus_client import REGISTRY
 
 from admin.metrics.app.interfaces import (
@@ -28,13 +26,6 @@ def _isolated_registry():
     for c in list(REGISTRY._collector_to_names.keys()):
         if c not in snapshot:
             REGISTRY.unregister(c)
-
-
-def _channels_plugin() -> ChannelsPlugin:
-    return ChannelsPlugin(
-        backend=MemoryChannelsBackend(),
-        arbitrary_channels_allowed=True,
-    )
 
 
 class _Stub:
@@ -71,7 +62,7 @@ class TestRegistryCollectsExternalPlugins:
         Then the external plugin is in registry.all().
         """
         container = make_async_container(
-            SharedProvider(channels_plugin=_channels_plugin()),
+            SharedProvider(),
             AdminMetricsProvider(),
             _StubProvider(),
         )
@@ -90,7 +81,7 @@ class TestBuiltInPlugins:
         Then 'workers' is among the plugin slugs.
         """
         container = make_async_container(
-            SharedProvider(channels_plugin=_channels_plugin()),
+            SharedProvider(),
             AdminMetricsProvider(),
         )
         try:
@@ -107,7 +98,7 @@ class TestBuiltInPlugins:
         Then 'http' is among the plugin slugs.
         """
         container = make_async_container(
-            SharedProvider(channels_plugin=_channels_plugin()),
+            SharedProvider(),
             AdminMetricsProvider(),
         )
         try:

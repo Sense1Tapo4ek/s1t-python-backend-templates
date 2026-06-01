@@ -3,7 +3,6 @@ from pathlib import Path
 
 import orjson
 import pytest
-
 import structlog
 
 from shared.logging import configure_structlog
