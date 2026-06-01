@@ -7,6 +7,7 @@ from typing import Any
 
 import snitchbot
 import structlog
+from advanced_alchemy.exceptions import NotFoundError as AlchemyNotFoundError
 from dishka.integrations.litestar import setup_dishka
 from litestar import Litestar, Response
 from litestar.connection import Request
@@ -41,6 +42,13 @@ from admin.metrics.adapters.lifespan import MetricsLifespanManager
 from admin.metrics.config import MetricsConfig
 from auth.adapters.middleware import AuthMiddleware
 from auth.ports.driving import AuthFacade
+from db_example.adapters.db_example_lifespan_manager import DbExampleLifespanManager
+from db_example.adapters.driving.api import PerRequestItemController, PooledItemController
+from db_example.app import ItemNotFound
+from db_example_alchemy.adapters.db_example_alchemy_lifespan_manager import (
+    DbExampleAlchemyLifespanManager,
+)
+from db_example_alchemy.adapters.driving.api import AuthorController, BookController
 from root.composition.container import build_container
 from root.config import RootConfig
 from shared.adapters.error_handlers import (
@@ -48,6 +56,7 @@ from shared.adapters.error_handlers import (
     app_error_handler,
     domain_error_handler,
     fallback_500_handler,
+    not_found_handler,
     port_error_handler,
     validation_exception_handler,
 )
@@ -94,10 +103,20 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     app.state.auth_facade = await container.get(AuthFacade)
 
     metrics_manager: MetricsLifespanManager | None = None
+    db_manager: DbExampleLifespanManager | None = None
+    alchemy_manager: DbExampleAlchemyLifespanManager | None = None
     try:
         metrics_manager = await container.get(MetricsLifespanManager)
         log.info("metrics subsystem starting")
         await metrics_manager.start()
+
+        db_manager = await container.get(DbExampleLifespanManager)
+        log.info("db_example starting")
+        await db_manager.start()
+
+        alchemy_manager = await container.get(DbExampleAlchemyLifespanManager)
+        log.info("db_example_alchemy starting")
+        await alchemy_manager.start()
 
         log.info(
             "lifespan started",
@@ -112,6 +131,18 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     finally:
         log.info("lifespan stopping")
         stop_started = time.perf_counter()
+        try:
+            if alchemy_manager is not None:
+                await alchemy_manager.stop()
+                log.info("db_example_alchemy stopped")
+        except Exception:
+            log.exception("db_example_alchemy_stop_failed")
+        try:
+            if db_manager is not None:
+                await db_manager.stop()
+                log.info("db_example stopped")
+        except Exception:
+            log.exception("db_example_stop_failed")
         try:
             if metrics_manager is not None:
                 await metrics_manager.stop()
@@ -183,6 +214,9 @@ def create_app() -> Litestar:
         HTTPException: _http_exception_handler,
         DomainError: domain_error_handler,
         AppError: app_error_handler,
+        # Specific lookup-miss exceptions -> 404 (more specific than AppError 422).
+        ItemNotFound: not_found_handler,
+        AlchemyNotFoundError: not_found_handler,
         PortError: port_error_handler,
         AdapterError: adapter_error_handler,
     }
@@ -197,6 +231,10 @@ def create_app() -> Litestar:
             LogsPageController,
             LogsApiController,
             ExportController,
+            PooledItemController,
+            PerRequestItemController,
+            AuthorController,
+            BookController,
             static_router,
             *extra_handlers,
         ],

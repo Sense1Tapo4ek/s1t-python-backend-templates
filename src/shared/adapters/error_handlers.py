@@ -3,6 +3,7 @@ from litestar import Response
 from litestar.connection import Request
 from litestar.exceptions import ValidationException
 from litestar.status_codes import (
+    HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
     HTTP_422_UNPROCESSABLE_ENTITY,
     HTTP_500_INTERNAL_SERVER_ERROR,
@@ -46,6 +47,17 @@ def port_error_handler(_req: Request, exc: PortError) -> Response:
         status_code=HTTP_503_SERVICE_UNAVAILABLE,
         content={"detail": "Service unavailable"},
     )
+
+
+def not_found_handler(_req: Request, exc: Exception) -> Response:
+    """404 for lookup misses.
+
+    Register specific not-found exceptions against this (e.g. a context's
+    `ItemNotFound`, advanced-alchemy's `NotFoundError`) so they map to 404
+    instead of the generic AppError 422.
+    """
+    _log.warning("not found", error_type=type(exc).__name__, message=str(exc))
+    return Response(status_code=HTTP_404_NOT_FOUND, content={"detail": "Not found"})
 
 
 def adapter_error_handler(_req: Request, exc: AdapterError) -> Response:
