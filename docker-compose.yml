@@ -26,6 +26,9 @@ services:
       # UI history + live tail source of truth. Rotated by logrotate (create
       # mode) so an open export fd reads a consistent inode (spec 10.5 F).
       LOG_FILE_PATH: /data/logs/app.jsonl
+      # Prometheus multiprocess mode: directory for per-worker mmap metric files.
+      # Wiped at container start (tmpfs auto-cleans on restart).
+      PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus
     logging:
       driver: json-file
       options:
@@ -33,6 +36,8 @@ services:
         max-file: "3"
     volumes:
       - app_data:/data
+    tmpfs:
+      - /tmp/prometheus
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
       interval: 30s
