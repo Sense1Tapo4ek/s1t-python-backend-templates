@@ -6,52 +6,30 @@ the access log middleware, and the admin log dashboard.
 
 ## Logs
 
-`structlog` configured in `src/shared/logging.py::configure_structlog`.
-JSON output via `orjson`, fan-in via a bounded local buffer drained by a
-background task that ships batches to a Valkey Stream. The standalone
-`log-sink` process consumes the stream, writes to SQLite, and republishes
-on Valkey pub/sub so any web worker's SSE subscribers see the live tail.
-See [contexts/admin-log.md](../contexts/admin-log.md).
+`structlog` configured in `src/shared/logging.py::configure_structlog`. It
+renders each record to a single JSON line, then a stdlib `logging` formatter
+feeds two handlers:
 
-Pipeline (in order):
-1. `merge_contextvars` — pulls `trace_id` / `span_id` from contextvars.
-2. `add_log_level`, `add_logger_name`.
-3. `TimeStamper(fmt="iso", utc=True)`.
-4. `CallsiteParameterAdder` — `pathname`, `lineno`, `func_name`.
-5. `dict_tracebacks` — exception → structured dict, never a string.
-6. snitchbot processor — forwards selected events to Telegram.
-7. `JSONRenderer(serializer=_orjson_serializer)`.
-8. `QueueLoggerFactory` — puts each rendered line into the producer's
-   bounded local buffer.
+- `StreamHandler` -> stdout (12-factor capture, container log driver).
+- `WatchedFileHandler(LOG_FILE_PATH)` -> the JSONL file the admin UI reads.
 
-End-to-end flow:
+Both handlers receive the identical line. There is no queue, no second
+process, no message bus on the log path. See
+[contexts/admin-log.md](../contexts/admin-log.md).
 
 ```
-   structlog factory ──> local asyncio.Queue (10k cap)
-                                │
-                                ▼
-                  RedisStreamPublisher background task
-                                │ XADD (pipeline, MAXLEN ~)
-                                ▼
-                       Valkey Stream "logs"
-                                │ XREADGROUP "logsink"
-                                ▼
-              log-sink: LogSinkWorker
-                  ├─> SQLite executemany ──> admin_logs.db
-                  └─> XACK + PUBLISH "events:logs"
-                                              │
-                                              ▼
-                          Litestar Channels (Redis backend)
-                                              │
-                                              ▼
-                                  SSE clients in any web worker
+   structlog factory --JSON line--+--> StreamHandler      -> stdout
+                                   +--> WatchedFileHandler -> app.jsonl
+                                                                  |
+                                              external rotation (logrotate)
+                                                                  v
+                                       FileLogReader -> facade -> UI / SSE
 ```
 
-The local buffer is bounded (10k entries); on overflow, `_QueueLogger`
-drops messages and emits a throttled stderr warning (1 line/sec).
-Producers are never back-pressured. On the Valkey side, `MAXLEN ~ N`
-(default 100k) caps the stream length so a wedged sink can't blow
-Valkey memory.
+A write-side processor truncates each rendered line to `LOG_MAX_LINE_BYTES`
+so one record is one `write` (relies on `O_APPEND` atomicity; single host,
+POSIX). The reader skips malformed or oversized lines rather than failing the
+request.
 
 ### Layer rules
 
@@ -72,13 +50,8 @@ log.info("user paid", user_id=user_id, amount=amount, currency=currency)
 
 ## Trace correlation
 
-`TraceIdMiddleware` (in `shared/adapters/middleware/`) generates a
-16-char hex `trace_id` per request, plus an 8-char `span_id`. Both bind
-into `structlog.contextvars` via `merge_contextvars`, so every log line
-emitted during the request carries them.
-
-The admin log dashboard exposes `trace_id:` as a DSL filter — see
-[contexts/admin-log.md](../contexts/admin-log.md).
+Every log line emitted during a request carries `trace_id` / `span_id`; the
+admin log viewer shows them in the row drilldown (no server-side DSL filter).
 
 Headers:
 - Reads incoming `traceparent` (W3C Trace Context) when present; otherwise
@@ -104,8 +77,9 @@ field would be noise (per S-DDD `domain.md` §3.1).
 ## Health & readiness
 
 - `/health` — liveness. Always 200 while the process is alive.
-- `/health/ready` — runs `SELECT 1` against the SQLite reader pool.
-  503 on failure; logs `error_type` for diagnosis.
+- `/health/ready` — liveness-plus-config check. 503 on failure; logs
+  `error_type` for diagnosis. (The log path is a plain file, so there is no
+  DB pool to probe.)
 - `/ping` — sync heartbeat, no I/O.
 
 Failing `/health/ready` removes the replica from the load balancer
