@@ -1,0 +1,59 @@
+{% extends "shared/_base.html" %}
+{% block title %}Admin · {{ app_name }}{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="/static/admin/log/style.css" />
+{% endblock %}
+{% block body %}
+<div class="app app--page">
+  <header class="topbar">
+    <div class="brand">
+      <span class="title">{{ app_name }}</span>
+      <span class="path">/<em>admin</em></span>
+    </div>
+    <div class="topbar-right">
+      <span>env · {{ app_env }}</span>
+      <span>uptime · {{ uptime }}</span>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <section class="panel">
+      <h2>Overview</h2>
+      <div class="metric"><span class="label">app</span><span class="value">{{ app_name }}</span></div>
+      <div class="metric"><span class="label">env</span><span class="value">{{ app_env }}</span></div>
+      <div class="metric"><span class="label">started</span><span class="value">{{ started_at }}</span></div>
+      <div class="metric"><span class="label">uptime</span><span class="value">{{ uptime }}</span></div>
+      <div class="metric"><span class="label">now</span><span class="value">{{ now }}</span></div>
+    </section>
+
+    <section class="panel">
+      <h2>Build</h2>
+      <div class="metric"><span class="label">commit</span><span class="value">{{ commit_short }}</span></div>
+      <div class="metric"><span class="label">branch</span><span class="value">{{ branch }}</span></div>
+      <div class="metric"><span class="label">dirty</span><span class="value">{{ dirty }}</span></div>
+    </section>
+
+    <section class="panel">
+      <h2>Tools</h2>
+      <p style="color:var(--ink-muted); font-size:12px; margin:0 0 16px 0;">
+        Operational surfaces.
+      </p>
+      <div class="actions">
+        <a class="btn-link primary" href="/admin/logs">logs <span class="arrow">&rarr;</span></a>
+        <a class="btn-link" href="/health">/health <span class="arrow">&rarr;</span></a>
+        <a class="btn-link" href="/ping">/ping <span class="arrow">&rarr;</span></a>
+        <form method="post" action="/admin/logout" style="display:contents;">
+          <button type="submit" class="btn-link">
+            logout <span class="arrow">&rarr;</span>
+          </button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span class="grow"></span>
+    <span>{{ app_name }} · admin</span>
+  </footer>
+</div>
+{% endblock %}
