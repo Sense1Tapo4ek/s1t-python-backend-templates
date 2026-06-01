@@ -18,9 +18,9 @@ agent needs that a contributor wouldn't.
 
 Litestar 2.21 starter template, strict-DDD per bounded context, Dishka DI,
 a file-tail admin log viewer (reads the rotating JSONL file the app
-writes), role-based auth, and a multi-worker-safe Prometheus metrics
-subsystem over Valkey. Python 3.12+, managed with `uv`. Logs go to stdout
-and to `LOG_FILE_PATH`; the admin UI tails that file.
+writes), role-based auth, and a Prometheus metrics endpoint via
+`prometheus_client` multiprocess mode. Python 3.12+, managed with `uv`.
+Logs go to stdout and to `LOG_FILE_PATH`; the admin UI tails that file.
 
 ## Quick verifications
 
@@ -56,12 +56,8 @@ Test layout mirrors `src/`. Don't mix layers in one file.
 
 ## Gotchas the agent will trip on
 
-- **Single process.** No `log-sink`, no second writer. structlog writes
-  stdout + `LOG_FILE_PATH`; the admin log UI reads that file. `APP_WORKERS`
-  is a free knob.
-- **Valkey is required by metrics only.** Cross-worker snapshots flow
-  through Valkey hashes (`VALKEY_URL`). Logs never touch it. If Valkey is
-  down, per-worker counters still serve; only cross-worker merge degrades.
+- **Single process writer.** structlog writes stdout + `LOG_FILE_PATH`; the
+  admin log UI reads that file. `APP_WORKERS` is a free knob.
 - **Log filters are client-side.** Level + substring filtering happen in
   the browser over loaded rows; "load more" pulls deeper into the file.
 - **APP-scope DI is lazy.** The first HTTP request resolves the graph.
@@ -71,13 +67,13 @@ Test layout mirrors `src/`. Don't mix layers in one file.
 - **Test env isolation.** `tests/conftest.py::_isolate_environment` is
   autouse and deletes APP_NAME et al. before every test. Module-scoped
   fixtures must set env BEFORE that and warm DI.
-- **Metrics are multi-worker safe.** Per-process counters live in
-  `prometheus_client.REGISTRY`. Cross-worker snapshots (RSS, loop lag,
-  queue depth) flow through Valkey hashes and are merged on every scrape.
-  `APP_WORKERS` can be tuned freely. `/metrics` always-on when the context
-  is composed; admin UI gated by `METRICS_ENABLED`. e2e modules that build
-  their own app must snapshot/restore `REGISTRY` to avoid collector
-  collisions — see `tests/e2e/admin/metrics/conftest.py`. Details:
+- **Metrics are multi-worker safe via multiprocess mode.** The master sets
+  `PROMETHEUS_MULTIPROC_DIR` and wipes stale shards before `uvicorn.run`.
+  Each worker writes mmap shards; `MultiProcessCollector` merges on scrape.
+  `APP_WORKERS` scales freely. `/metrics` always-on when the context is
+  composed; no admin metrics UI. e2e modules that build their own app must
+  snapshot/restore `REGISTRY` to avoid collector collisions — see
+  `tests/e2e/admin/metrics/conftest.py`. Details:
   [docs/subsystems/metrics.md](docs/subsystems/metrics.md).
 
 ## Editing rules
@@ -98,7 +94,6 @@ Test layout mirrors `src/`. Don't mix layers in one file.
 uv sync
 cp .env.example .env
 openssl rand -hex 32              # paste into AUTH_ADMIN_TOKEN
-docker run -d -p 6379:6379 valkey/valkey:8-alpine  # metrics store, or `docker compose up valkey -d`
 
 uv run start_litestar             # API workers
 ```
@@ -106,7 +101,7 @@ uv run start_litestar             # API workers
 ### Docker
 
 ```bash
-docker compose up --build         # valkey + app:8000, all on /data volume
+docker compose up --build         # app:8000, all on /data volume
 ```
 
 ### Adding a bounded context

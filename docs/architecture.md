@@ -19,7 +19,7 @@ API.
 | `auth` | `src/auth/` | Bearer/cookie auth: token resolution, `AuthMiddleware`, `require_role` guards. See [contexts/auth.md](contexts/auth.md). |
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
 | `admin/log` | `src/admin/log/` | Sub-context: file-tail log viewer over the rotating JSONL file the app writes; SSE live tail, NDJSON/CSV export. See [contexts/admin-log.md](contexts/admin-log.md). |
-| `admin/metrics` | `src/admin/metrics/` | Sub-context: Prometheus `/metrics` endpoint, admin UI at `/admin/metrics`, plugin contract for cross-context modules. See [contexts/admin-metrics.md](contexts/admin-metrics.md). |
+| `admin/metrics` | `src/admin/metrics/` | Sub-context: Prometheus `/metrics` endpoint via multiprocess mode. See [contexts/admin-metrics.md](contexts/admin-metrics.md). |
 
 Adding a context: see §8 below.
 
@@ -117,14 +117,13 @@ process startup and shutdown.
 Order of operations on startup:
 1. `RootConfig()` — fail fast on misconfig (PROD without admin token).
 2. `snitchbot.init(...)` — crash reporter armed.
-3. `build_container()` — providers wired (no `channels_plugin` argument).
+3. `build_container()` — providers wired.
 4. `configure_structlog()` — JSON logger with two stdlib handlers: a
    `StreamHandler` (stdout) and a `WatchedFileHandler(LOG_FILE_PATH)`. No
    queue, no async sink.
 5. `app.state.auth_facade = await container.get(AuthFacade)` — middleware-
    bound singletons resolved once.
-6. `MetricsLifespanManager.start()` — registers the cross-worker collector
-   on `prometheus_client.REGISTRY` and spawns the sampler / publisher loop.
+6. `MetricsLifespanManager.start()` — ensures `multiproc_dir` exists.
 
 Shutdown unwinds in reverse with each `try/finally` so a single component's
 failure never blocks the rest from stopping.
@@ -141,7 +140,7 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 | `root/config.py::RootConfig` | `APP_` (extends Base) | server bind/port/workers, security CSP/HSTS, prod invariants. |
 | `auth/config.py::AuthConfig` | `AUTH_` | `admin_token` (`SecretStr`). |
 | `admin/log/config.py::AdminLogConfig` | `LOG_` | `file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
-| `admin/metrics/config.py::MetricsConfig` | `METRICS_` | UI gate, Prometheus endpoint path + public flag, Valkey key prefix + TTL, publish interval. |
+| `admin/metrics/config.py::MetricsConfig` | `METRICS_` | Prometheus endpoint path + public flag, HTTP buckets, multiproc dir. |
 
 Rules:
 - Business logic never reads `os.environ`. Config flows through providers.
@@ -164,8 +163,7 @@ static/
 ├── admin/dashboard.html
 ├── admin/login.html
 ├── admin/forbidden.html
-├── admin/log/{index.html, style.css, tail.js}
-└── admin/metrics/{overview.html, detail.html, style.css, overview.js}
+└── admin/log/{index.html, style.css, tail.js}
 ```
 
 The folder mirrors the bounded-context tree. One Litestar mount
@@ -190,8 +188,8 @@ production.
   process. `APP_WORKERS` is a free knob.
 - **Log filters are client-side.** Level + substring filtering happen in the
   browser over loaded rows; "load more" pulls deeper into the file.
-- **Cross-worker metrics need Valkey.** It is the only remaining shared-store
-  dependency; logs no longer touch it.
+- **Cross-worker metrics use multiprocess mode.** `prometheus_client` writes
+  mmap shards to `PROMETHEUS_MULTIPROC_DIR`; no external store required.
 - **APP-scope DI is lazy.** The graph resolves on the first HTTP request.
   Tests must warm DI before any global env-isolation fixture runs (see
   `tests/e2e/conftest.py::e2e_client`).

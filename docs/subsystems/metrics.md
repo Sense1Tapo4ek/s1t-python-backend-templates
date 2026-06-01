@@ -1,124 +1,93 @@
 # Metrics
 
-> Audience: contributor working in any context that wants to expose
-> operational data, and operator deploying the system.
+> Audience: contributor working in any context that exposes operational data,
+> and operator deploying the system.
 
 ## Purpose
 
-Two surfaces over the same underlying data:
+`GET /metrics` — Prometheus-formatted scrape endpoint. Aggregates per-worker
+counters / gauges / histograms via `prometheus_client` native multiprocess
+mode. Always on when the metrics context is composed; gated by an admin guard
+unless `METRICS_PROM_ENDPOINT_PUBLIC=true`.
 
-1. **`GET /metrics`** — Prometheus-formatted scrape endpoint. Aggregates
-   per-worker counters / gauges / histograms (provided by
-   `litestar.plugins.prometheus`) with cross-worker snapshots that workers
-   publish to Valkey (RSS, loop lag, queue depth, etc.). Always on when the
-   metrics context is composed; gated by an admin guard unless
-   `METRICS_PROM_ENDPOINT_PUBLIC=true`.
-2. **`/admin/metrics`** — Japandi admin UI: overview cards (one per module) +
-   per-module detail pages. Pure presentation over the same Valkey snapshots,
-   polled every `METRICS_PUBLISH_INTERVAL_S` seconds. Gated by
-   `METRICS_ENABLED`.
+There is no admin metrics UI. No external store.
 
-The `/metrics` endpoint and the UI are independent: turning the UI off does
-not stop publication or scraping.
-
-## Mental model
+## Mental model — multiprocess mode
 
 ```
-+-----------+   asyncio.gather   +---------------+   HSET <ns>:worker:<id>
-| samplers  | -----------------> | publisher_uc  | -------------------+
-| (loop,    |   every 5 s        | (app layer)   |                    v
-|  rss,     |                    +---------------+              +-------------+
-|  qsize,   |                                                   |   Valkey    |
-|  http)    |   per worker                                      |  (hashes)   |
-+-----------+                                                   +-------------+
-                                                                      |
-                                                                      | HGETALL / SCAN
-                                                                      v
-+-----------+   text/plain    +---------------+        +------------------+
-|  scraper  | <-------------- | Prometheus    | <----- | aggregated       |
-| (k8s,     |                 | controller    |        | collector        |
-|  grafana) |                 +---------------+        +------------------+
-+-----------+                        ^
-                                     | HTML / JSON
-                                     v
-                              +---------------+
-                              | admin UI      |
-                              | (overview +   |
-                              |  per-module)  |
-                              +---------------+
+master process
+  os.environ["PROMETHEUS_MULTIPROC_DIR"] = <multiproc_dir>
+  wipe <multiproc_dir>/*.db            -- stale shards from last run
+  uvicorn.run(app, workers=N)
+        |
+        +-- worker 1
+        |     prometheus_client mmap --> <multiproc_dir>/counter_0.db
+        |
+        +-- worker 2
+        |     prometheus_client mmap --> <multiproc_dir>/counter_1.db
+        |
+        +-- worker N ...
 ```
 
-- Each worker publishes a snapshot of *its own* per-process metrics under
-  `metrics:worker:<host>:<pid>` (TTL `2 × publish_interval_s`). Worker death
-  evicts the row automatically.
-- HTTP middleware, request counters and latencies live in
-  `prometheus_client.REGISTRY` per process and are exposed through Litestar's
-  built-in `PrometheusController`.
-- The aggregated collector is a custom `prometheus_client.Collector` that
-  runs on every scrape: scans `metrics:worker:*`, parses each hash, yields
-  gauges with a `worker_id` label.
+On every `GET /metrics` scrape, `PrometheusController` (backed by
+`MultiProcessCollector`) reads all `*.db` shards in `<multiproc_dir>` and
+merges them into a single exposition. Workers that have stopped are removed
+from the directory when `mark_process_dead(pid)` is called during shutdown.
+
+HTTP request-count, latency histograms, and in-progress counters are
+registered by Litestar's `PrometheusPlugin` and are multiprocess-compatible
+without extra configuration.
 
 ## Public surface
 
 | Item | Where | Notes |
 |:---|:---|:---|
 | `MetricsConfig` | `admin/metrics/config.py` | env prefix `METRICS_` |
-| `IMetricsModulePlugin` | `admin/metrics/app/interfaces/i_module_plugin.py` | implement to add a module |
-| `IModulePluginRegistry` | `admin/metrics/app/interfaces/i_module_registry.py` | resolved from container |
-| `GET /metrics` | Litestar `PrometheusController` | path configurable |
-| `GET /admin/metrics/` | overview HTML | gated by `enabled` + admin guard |
-| `GET /admin/metrics/{slug}` | detail HTML | one per plugin |
-| `GET /admin/metrics/api?module=…` | JSON for polling | same gating |
-
-Reserved slugs: `overview`, `api`, `static` (rejected by the registry).
+| `GET /metrics` | `ConfiguredPromController` | path configurable |
+| `multiproc_dir` | `METRICS_MULTIPROC_DIR` | master sets + wipes at start |
 
 ## Invariants & gotchas
 
-- **APP_WORKERS is unconstrained.** Multi-worker Prometheus aggregation works
-  through the Valkey-as-shared-registry pattern; never set worker counters
-  globally without a `worker_id` label.
-- **`enabled=false` gates UI only.** `/metrics` stays up (assuming the
-  context is registered). Losing the scrape endpoint hurts more than losing
-  the dashboard.
-- **Sampler scope.** Loop-lag and RSS samplers are spawned by each request-
-  handling worker via lifespan; each worker publishes its own row.
-- **Severity is rendered, not stored.** Plugins decide OK / WARN / BAD from
-  raw values on every render. Do not bake thresholds into the publisher.
-- **Stale data is shown, not hidden.** If a worker stops publishing its row
-  drops out after TTL; the UI shows fewer rows but no "missing" placeholder.
-  The Prometheus collector mirrors this — no synthetic zeros.
+- **`PROMETHEUS_MULTIPROC_DIR` set before import.** The master process sets
+  this env var from `MetricsConfig.multiproc_dir` and wipes the directory
+  before workers start. Workers inherit the env var; `prometheus_client`
+  auto-detects multiprocess mode on import.
+- **Shard wipe at master start.** Stale `.db` files from a prior run would
+  double-count metrics. The master wipes `<multiproc_dir>` before
+  `uvicorn.run`. Workers must not pre-import `prometheus_client` before that.
+- **`mark_process_dead` on worker stop.** Each worker calls this in its
+  lifespan shutdown. Failure is non-fatal; stale shards otherwise persist
+  until the next master restart.
+- **No Valkey, no external store.** All aggregation is via filesystem shards
+  in `<multiproc_dir>`. If the directory is on a tmpfs that survives process
+  restart, old shards accumulate; wipe logic in the master guards this.
+- **`APP_WORKERS` is unconstrained.** Multiprocess mode scales to any worker
+  count without configuration changes.
 
-## How to recipes
+## How to: expose a custom metric
 
-### Add a new metrics module
+Register a `prometheus_client` collector in the context that owns the signal.
+Do it in a lifespan manager or at module import — not in the DI provider
+(providers are lazy and the collector must be registered before the first
+scrape).
 
-1. In the owning context, create
-   `<context>/ports/driven/plugins/<name>_metrics_plugin.py` implementing
-   `IMetricsModulePlugin` (slug, name, order, `summary()`, `detail()`,
-   `render_detail_html()`).
-2. In `<context>/provider.py`, multi-provide it:
+```python
+from prometheus_client import Counter
 
-   ```python
-   @provide(scope=Scope.APP, provides=IMetricsModulePlugin)
-   def metrics_plugin(self, deps...) -> IMetricsModulePlugin:
-       return MyMetricsPlugin(...)
-   ```
+MY_COUNTER = Counter("my_events_total", "Count of my events", ["label"])
+```
 
-3. Run `pytest tests/flow/admin/metrics/` — the contract test
-   (`assert_plugin_contract`) catches missing methods, reserved slugs, and
-   summary/detail divergence.
-4. Done — overview picks the new card up automatically on next render.
+The `MultiProcessCollector` picks it up automatically on the next scrape.
 
-### Make the Prometheus endpoint public
+## How to: make the endpoint public
 
-Set `METRICS_PROM_ENDPOINT_PUBLIC=true`. Use only inside trusted networks
-(VPN, k8s mesh). The guard is bypassed; cardinality limits still apply.
+Set `METRICS_PROM_ENDPOINT_PUBLIC=true`. Use only inside a trusted network
+(VPN, k8s mesh). The admin guard is bypassed; the endpoint is still served
+over plain HTTP unless you add TLS termination upstream.
 
 ## Pointers
 
-- ADR: [docs/adr/0007-metrics-module-plugin.md](../adr/0007-metrics-module-plugin.md)
 - Context reference: [docs/contexts/admin-metrics.md](../contexts/admin-metrics.md)
-- Observability page (logs + traces): [docs/subsystems/observability.md](observability.md)
-- Infra: [docs/infra/valkey.md](../infra/valkey.md)
-- Litestar Prometheus: upstream
-  `litestar.plugins.prometheus.PrometheusConfig` docs.
+- ADR: [docs/adr/0010-prometheus-multiprocess.md](../adr/0010-prometheus-multiprocess.md)
+- Litestar Prometheus plugin: upstream `litestar.plugins.prometheus` docs
+- `prometheus_client` multiprocess guide: upstream docs

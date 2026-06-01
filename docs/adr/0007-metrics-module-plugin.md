@@ -1,5 +1,5 @@
 # 0007 — Metrics use a module plugin contract, not direct controllers
-Status: accepted
+Status: superseded by 0010
 Date: 2026-05-12
 
 ## Context

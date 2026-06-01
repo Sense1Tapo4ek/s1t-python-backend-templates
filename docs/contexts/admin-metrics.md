@@ -4,74 +4,84 @@
 
 ## Purpose
 
-Owns the Prometheus endpoint, the metrics admin UI, and the plugin registry
-that lets other contexts surface their own modules on `/admin/metrics`. Does
-**not** own any business signals — those are produced by the contexts that
-care about them (HTTP middleware in `shared/`, log subsystem in `admin/log/`,
-process metrics in `admin/metrics/` itself).
+Exposes the Prometheus `/metrics` endpoint, wired through Litestar's built-in
+`PrometheusController`. Multi-worker safe via `prometheus_client` native
+multiprocess mode — no external store required. Does **not** own any business
+signals; those are produced by the contexts that care about them (HTTP
+middleware in `shared/`, log subsystem in `admin/log/`).
+
+There is no admin metrics UI.
 
 ## Mental model
 
 ```
-admin/metrics/
-├── domain/        # severity, VOs, errors (pure)
-├── app/
-│   ├── interfaces/  # IMetricsModulePlugin, IModulePluginRegistry,
-│   │                # IMetricsPublisher, ILoopLagSampler,
-│   │                # IRssSampler, IQueueDepthProvider
-│   └── use_cases/   # publish_worker_snapshot, render_overview,
-│                    # render_module_detail
-├── ports/
-│   ├── driving/   # msgspec response schemas (JSON polling)
-│   └── driven/    # InMemoryModulePluginRegistry, RedisMetricsPublisher,
-│                  # ValkeyAggregatedCollector, samplers, plugins/workers
-├── adapters/
-│   ├── driving/   # PrometheusController subclass, overview + module
-│   │              # renderer controller, static assets
-│   └── lifespan/  # MetricsLifespanManager (registers collector, runs workers)
-├── config.py
-└── provider.py
+master process
+  set PROMETHEUS_MULTIPROC_DIR
+  wipe stale shards
+  uvicorn.run(...)
+     |
+     +-- worker N
+     |     MetricsLifespanManager.start()   -- mkdir multiproc_dir
+     |     prometheus_client writes mmap shard under multiproc_dir
+     |     GET /metrics -> PrometheusController
+     |                       -> MultiProcessCollector reads all shards
+     |                       -> merged text/plain
+     |     MetricsLifespanManager.stop()    -- mark_process_dead(pid)
+     |
+     +-- worker N+1 (same)
 ```
 
-The plugin registry is the **only** public surface for cross-context wiring.
-A context that wants to appear on the dashboard provides an
-`IMetricsModulePlugin` and Dishka collects all of them via the
-`list[IMetricsModulePlugin]` multi-provide.
+The HTTP request-count / latency / in-progress metrics are provided by
+Litestar's `PrometheusPlugin` and are multiprocess-compatible out of the box.
 
 ## Public surface
 
-- **Env (`METRICS_…`):**
-  - `METRICS_ENABLED` — gates UI only (default `true`)
-  - `METRICS_PROM_ENDPOINT_PATH` — Prometheus endpoint path (default `/metrics`)
+- **Env (`METRICS_`):**
+  - `METRICS_PROM_ENDPOINT_PATH` — path for the scrape endpoint (default `/metrics`)
   - `METRICS_PROM_ENDPOINT_PUBLIC` — bypass admin guard (default `false`)
-  - `METRICS_KEY_PREFIX` — Valkey key prefix (default `metrics:`)
-  - `METRICS_KEY_TTL_S` — Valkey hash TTL in seconds (default `30`)
-  - `METRICS_PUBLISH_INTERVAL_S` — sampler + publisher cadence + UI poll
-    (default `5`)
-- **Interfaces (in `app/interfaces/`):** consumers import only these.
+  - `METRICS_HTTP_BUCKETS` — latency histogram bucket boundaries
+  - `METRICS_MULTIPROC_DIR` — directory for mmap shards; defaults to
+    `<VOLUME_PATH>/prometheus`. Set as `PROMETHEUS_MULTIPROC_DIR` in the OS
+    environment by the master before workers start.
+
 - **HTTP routes:**
-  - `GET /admin/metrics/` (HTML overview)
-  - `GET /admin/metrics/{slug}` (HTML detail)
-  - `GET /admin/metrics/api?module=…` (JSON snapshot)
-  - `GET /metrics` (Prometheus text)
-  - `GET /admin/metrics/static/…` (CSS / JS)
+  - `GET /metrics` (or the configured path) — Prometheus text exposition,
+    always on when the context is composed. Gated by the admin guard unless
+    `METRICS_PROM_ENDPOINT_PUBLIC=true`.
+
+- **No plugin interfaces.** Cross-context plugin registry removed; each
+  context registers its own `prometheus_client` collectors directly.
+
+## File tree
+
+```
+admin/metrics/
+├── adapters/
+│   ├── driving/api/prom_controller.py   # ConfiguredPromController factory
+│   └── lifespan/metrics_lifespan_manager.py
+├── config.py      # MetricsConfig
+└── provider.py    # AdminMetricsProvider
+```
 
 ## Invariants & gotchas
 
-- **Reserved slugs:** `overview`, `api`, `static`. Registry raises
-  `DuplicateSlugError` when violated.
-- **Module ordering:** plugins set `order: int`; lowest wins. Tie-breaker is
-  slug alphabetical.
-- **HTTP middleware lives in `shared/`, not here.** The metrics context owns
-  the *exposure*, not the *production*, of HTTP signals.
-- **Tests for cross-context plugins go in the consuming context.** The
-  `admin/metrics` test suite covers the registry, samplers, collector, and
-  rendering. Each context's plugin gets a flow test in its own `tests/flow/`.
-- **Schema versioning:** the Valkey snapshot uses string-typed fields. If you
-  add fields, plugins must default-safely. Don't break old workers.
+- **`PROMETHEUS_MULTIPROC_DIR` must be set before `import prometheus_client`
+  in any worker.** The master sets it from `MetricsConfig.multiproc_dir` and
+  wipes existing shards before calling `uvicorn.run`. Workers must not touch
+  the directory before the master does.
+- **`mark_process_dead` on stop.** `MetricsLifespanManager.stop()` calls
+  `multiprocess.mark_process_dead(os.getpid())` so a terminating worker's
+  shard is removed from future scrapes. Failure is non-fatal (logged at
+  DEBUG).
+- **`multiproc_dir` is always resolved.** `MetricsConfig.resolve_multiproc_dir`
+  runs on model construction; `multiproc_dir` is always an absolute `Path`
+  after that.
+- **Endpoint is always on when composed.** There is no `METRICS_ENABLED` flag;
+  if `AdminMetricsProvider` is registered, `/metrics` is served. Remove the
+  provider to disable.
 
 ## Pointers
 
-- Subsystem doc (rationale + recipes): [docs/subsystems/metrics.md](../subsystems/metrics.md)
-- ADR: [docs/adr/0007-metrics-module-plugin.md](../adr/0007-metrics-module-plugin.md)
-- Architecture overview: [docs/architecture.md](../architecture.md)
+- Subsystem doc: [docs/subsystems/metrics.md](../subsystems/metrics.md)
+- ADR: [docs/adr/0010-prometheus-multiprocess.md](../adr/0010-prometheus-multiprocess.md)
+- Architecture: [docs/architecture.md](../architecture.md)

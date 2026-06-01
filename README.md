@@ -14,8 +14,7 @@ don't need.
 - Python ≥ 3.12
 - [`uv`](https://docs.astral.sh/uv/) for dependency / virtualenv management
 
-Valkey (Redis-compatible) is required for the metrics subsystem. Optional
-Telegram credentials for crash reporting via snitchbot.
+Optional Telegram credentials for crash reporting via snitchbot.
 
 ---
 
@@ -39,8 +38,6 @@ App listens on `http://127.0.0.1:8000` (override via `APP_HOST` /
 `APP_PORT`). Logs are written to `${VOLUME_PATH}/logs/app.jsonl` and to
 stdout; the admin UI tails that file.
 
-Metrics need Valkey: `docker run -d -p 6379:6379 valkey/valkey:8-alpine`
-(or `docker compose up valkey -d`).
 
 ### First login
 
@@ -75,7 +72,7 @@ src/
 ├── auth/            Bounded context: token validation, role guard, middleware
 └── admin/           Bounded context: dashboard + observability
     ├── log/         Sub-context: file-tail log viewer (JSONL), SSE, export
-    └── metrics/     Sub-context: Prometheus endpoint, admin dashboard, plugin registry
+    └── metrics/     Sub-context: Prometheus `/metrics` endpoint (multiprocess mode)
 ```
 
 Each context has its own `domain/`, `app/`, `ports/{driving,driven}/`,
@@ -112,7 +109,7 @@ decisions, layers, invariants, and how-to recipes.
 | [docs/architecture.md](docs/architecture.md) | Project overview: contexts, layers, error hierarchy, DI, lifespan, invariants. |
 | [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, admin/metrics). |
 | [docs/subsystems/](docs/subsystems/) | Cross-cutting: error hierarchy, observability, metrics. |
-| [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, valkey, jinja). |
+| [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, jinja). |
 | [docs/adr/](docs/adr/) | Architecture Decision Records (MADR format). |
 
 ---
@@ -136,10 +133,9 @@ vars (see `.env.example`).
 - **Dishka** — DI container, APP scope.
 - **structlog** — JSON logging to stdout + a rotating JSONL file.
 - **msgspec** — wire-format encode/decode for events.
-- **Valkey** — shared store for cross-worker metrics snapshots. See [docs/infra/valkey.md](docs/infra/valkey.md).
-- **prometheus_client + Litestar `/metrics`** — per-worker counters,
-  cross-worker snapshots aggregated via Valkey, admin dashboard at
-  `/admin/metrics` with a per-module plugin contract. See
+- **prometheus_client + Litestar `/metrics`** — per-worker counters aggregated
+  via `prometheus_client` multiprocess mode (mmap shards, no external store).
+  `/metrics` always on when the context is composed. See
   [docs/subsystems/metrics.md](docs/subsystems/metrics.md).
 - **snitchbot** — optional Telegram crash reporter (disabled by default).
 
