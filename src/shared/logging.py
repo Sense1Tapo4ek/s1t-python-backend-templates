@@ -46,7 +46,7 @@ class _QueueLogger:
     returns a `LogPayload` tuple; structlog passes it as the last positional
     argument to this logger's level methods, which all dispatch to `msg`.
 
-    `put_nowait` can raise `QueueFull` when Valkey is unreachable or slow
+    `put_nowait` can raise `QueueFull` when the sink reader is slow
     and the buffer fills. We can't push to the same queue to report the
     drop — that would amplify the back-pressure. Stderr is the fallback
     channel, throttled so a sustained overload doesn't flood it.
