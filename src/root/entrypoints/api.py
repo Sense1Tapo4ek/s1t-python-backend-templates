@@ -40,7 +40,6 @@ from admin.log.adapters.driving.api import (
     LogsApiController,
     LogsPageController,
 )
-from admin.log.adapters.lifespan import LogLifespanManager
 from admin.log.config import AdminLogConfig
 from admin.log.ports.driven.gateways import RedisStreamPublisher
 from admin.metrics.adapters.driving.api import MetricsOverviewController, build_prom_controller
@@ -127,13 +126,8 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     # is cheaper and clearer than walking the container each time.
     app.state.auth_facade = await container.get(AuthFacade)
 
-    manager: LogLifespanManager | None = None
     metrics_manager: MetricsLifespanManager | None = None
     try:
-        manager = await container.get(LogLifespanManager)
-        log.info("log subsystem starting")
-        await manager.start()
-
         metrics_manager = await container.get(MetricsLifespanManager)
         log.info("metrics subsystem starting")
         await metrics_manager.start()
@@ -157,12 +151,6 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
                 log.info("metrics subsystem stopped")
         except Exception:
             log.exception("metrics_lifespan_stop_failed")
-        try:
-            if manager is not None:
-                await manager.stop()
-                log.info("log subsystem stopped")
-        except Exception:
-            log.exception("lifespan_stop_failed")
         try:
             await event_bus.stop()
         except Exception:
