@@ -11,8 +11,6 @@ import snitchbot
 import structlog
 from dishka.integrations.litestar import setup_dishka
 from litestar import Litestar, Response
-from litestar.channels import ChannelsPlugin
-from litestar.channels.backends.redis import RedisChannelsPubSubBackend
 from litestar.connection import Request
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.datastructures import CacheControlHeader
@@ -27,7 +25,6 @@ from litestar.openapi import OpenAPIConfig
 from litestar.plugins.prometheus import PrometheusConfig
 from litestar.static_files import create_static_files_router
 from litestar.template.config import TemplateConfig
-from redis.asyncio import Redis
 from snitchbot.integrations.litestar import install as install_snitchbot
 
 from admin.adapters.driving.api import AdminController, HealthController, LoginController
@@ -41,7 +38,6 @@ from admin.log.adapters.driving.api import (
     LogsPageController,
 )
 from admin.log.config import AdminLogConfig
-from admin.log.ports.driven.gateways import RedisStreamPublisher
 from admin.metrics.adapters.driving.api import MetricsOverviewController, build_prom_controller
 from admin.metrics.adapters.lifespan import MetricsLifespanManager
 from admin.metrics.config import MetricsConfig
@@ -62,36 +58,12 @@ from shared.adapters.middleware import (
     SecurityHeadersMiddleware,
     TraceIdMiddleware,
 )
-from shared.app import IEventBus
 from shared.config import AppEnv, BaseAppConfig
 from shared.generics.config import PROJECT_ROOT
 from shared.generics.errors import AdapterError, AppError, DomainError, PortError
 from shared.logging import configure_structlog
 
 _STATIC_DIR = PROJECT_ROOT / "static"
-
-
-def _build_channels_plugin(
-    log_config: AdminLogConfig,
-    base_config: BaseAppConfig,
-) -> tuple[ChannelsPlugin, Redis]:
-    """Single ChannelsPlugin shared by Litestar transport and DI subscribers.
-
-    `dropleft`: oldest frames are silently dropped when a slow SSE
-    consumer's queue fills — a stuck client must never back-pressure
-    the sink writer. `arbitrary_channels_allowed=True`: domain events
-    use dynamic channel names per event-class FQN. The caller owns the
-    Redis client and must `aclose()` it on lifespan stop; the backend
-    does not.
-    """
-    redis = Redis.from_url(base_config.valkey_url, decode_responses=False)
-    plugin = ChannelsPlugin(
-        backend=RedisChannelsPubSubBackend(redis=redis),
-        arbitrary_channels_allowed=True,
-        subscriber_max_backlog=log_config.log_sse_queue_size,
-        subscriber_backlog_strategy="dropleft",
-    )
-    return plugin, redis
 
 
 @asynccontextmanager
@@ -101,25 +73,21 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     config = RootConfig()
     snitchbot.init(service=config.app_name)
 
-    container = build_container(channels_plugin=app.state.channels_plugin)
+    container = build_container()
     app.state.container = container
     setup_dishka(container=container, app=app)
 
-    publisher = await container.get(RedisStreamPublisher)
-    configure_structlog(publisher.buffer, app_name=config.app_name)
+    log_config = AdminLogConfig()
+    assert log_config.log_file_path is not None  # set by resolve_log_file_path
+    configure_structlog(
+        app_name=config.app_name,
+        log_file_path=log_config.log_file_path,
+        max_line_bytes=log_config.log_max_line_bytes,
+    )
 
     log = structlog.get_logger("root.lifespan")
-    log.info(
-        "lifespan starting",
-        service=config.app_name,
-        buffer_maxsize=publisher.buffer.maxsize,
-    )
+    log.info("lifespan starting", service=config.app_name)
     log.info("container ready")
-
-    event_bus = await container.get(IEventBus)
-    # Register domain event handlers here before bus.start();
-    # see docs/subsystems/event_bus.md for the pattern.
-    await event_bus.start()
 
     # Resolve middleware-bound facades once at startup. ASGI middleware runs
     # outside the Dishka request scope, so reading from app.state per request
@@ -151,15 +119,7 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
                 log.info("metrics subsystem stopped")
         except Exception:
             log.exception("metrics_lifespan_stop_failed")
-        try:
-            await event_bus.stop()
-        except Exception:
-            log.exception("event_bus_stop_failed")
         await container.close()
-        try:
-            await app.state.channels_redis.aclose()
-        except Exception:
-            log.exception("channels_redis_close_failed")
         log.info(
             "lifespan stopped",
             duration_ms=round((time.perf_counter() - stop_started) * 1000, 2),
@@ -188,7 +148,6 @@ def _resolve_app_version() -> str:
 
 def create_app() -> Litestar:
     base_config = BaseAppConfig()
-    log_config = AdminLogConfig()
     metrics_cfg = MetricsConfig()
     # Single asset mount at the project's `static/` root. URL path mirrors
     # the on-disk path (`/static/admin/log/style.css` -> `static/admin/log/
@@ -199,7 +158,6 @@ def create_app() -> Litestar:
         cache_control=CacheControlHeader(max_age=3600),
     )
 
-    channels_plugin, channels_redis = _build_channels_plugin(log_config, base_config)
     config = RootConfig()
     is_dev = config.app_env == AppEnv.DEV
 
@@ -258,7 +216,6 @@ def create_app() -> Litestar:
             DefineMiddleware(AccessLogMiddleware),
             prom_config.middleware,
         ],
-        plugins=[channels_plugin],
         openapi_config=OpenAPIConfig(
             title=config.app_name,
             version=_resolve_app_version(),
@@ -275,9 +232,5 @@ def create_app() -> Litestar:
         debug=is_dev,
         exception_handlers=exception_handlers,
     )
-    app.state.channels_plugin = channels_plugin
-    # Stored so lifespan stop can `aclose()` it — the Channels backend
-    # doesn't own its Redis client.
-    app.state.channels_redis = channels_redis
     install_snitchbot(app)
     return app

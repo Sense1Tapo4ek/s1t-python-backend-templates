@@ -1,5 +1,4 @@
 from dishka import AsyncContainer, make_async_container
-from litestar.channels import ChannelsPlugin
 
 from admin.log.provider import AdminLogWebProvider
 from admin.metrics.provider import AdminMetricsProvider
@@ -8,12 +7,9 @@ from auth.provider import AuthPortBindings, AuthProvider
 from shared.provider import SharedProvider
 
 
-def build_container(*, channels_plugin: ChannelsPlugin) -> AsyncContainer:
-    """`channels_plugin` must be the same instance passed to
-    `Litestar(plugins=[...])` — publishers and subscribers share one backend.
-    """
+def build_container() -> AsyncContainer:
     return make_async_container(
-        SharedProvider(channels_plugin=channels_plugin),
+        SharedProvider(),
         AdminProvider(),
         AdminLogWebProvider(),
         AdminMetricsProvider(),
