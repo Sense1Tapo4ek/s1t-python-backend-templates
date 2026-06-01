@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
+from shared.app import IClock
 from shared.config import BaseAppConfig
 
-from ...app.interfaces import IClock
 from ...domain import BuildInfoVo, DashboardViewVo
 
 
