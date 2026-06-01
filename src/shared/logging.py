@@ -20,7 +20,6 @@ _DROP_WARNING_THROTTLE_S = 1.0
 
 # Columns extracted on the producer side and shipped as XADD fields. Mirrors
 # the `logs` table schema so the sink can INSERT without re-parsing JSON.
-# Keep in sync with `LogSinkWorker._INSERT_SQL` columns.
 _COLUMN_KEYS: tuple[str, ...] = (
     "timestamp",
     "level",
