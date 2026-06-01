@@ -16,11 +16,18 @@ agent needs that a contributor wouldn't.
 
 ## What this is
 
-Litestar 2.21 starter template, strict-DDD per bounded context, Dishka DI,
+Litestar 2.23+ starter template, strict-DDD per bounded context, Dishka DI,
 a file-tail admin log viewer (reads the rotating JSONL file the app
 writes), role-based auth, and a Prometheus metrics endpoint via
 `prometheus_client` multiprocess mode. Python 3.12+, managed with `uv`.
 Logs go to stdout and to `LOG_FILE_PATH`; the admin UI tails that file.
+
+Two always-on example contexts ship in the template:
+- `db_example/` — raw aiosqlite, pool vs per-request variants, yoyo migrations,
+  `MsgspecDTO`. See [docs/contexts/db_example.md](docs/contexts/db_example.md).
+- `db_example_alchemy/` — SQLAlchemy 2.0 + advanced-alchemy 1.11, hybrid
+  layering, `SQLAlchemyDTO`, `create_all`. The **only** SQLAlchemy user in the
+  template. See [docs/contexts/db_example_alchemy.md](docs/contexts/db_example_alchemy.md).
 
 ## Quick verifications
 
@@ -53,6 +60,14 @@ Test layout mirrors `src/`. Don't mix layers in one file.
   single `TemplateConfig(directory="static", engine=JinjaTemplateEngine)`.
   Rule §1.3 in `~/.claude/rules/s-ddd_python/structure.md`; see
   [docs/infra/jinja.md](docs/infra/jinja.md).
+- **Migrations live in `migrations/<context>/`.** The project-root
+  `migrations/` folder mirrors `src/`, `static/`, `docs/`, `tests/`. Each
+  context that uses yoyo gets its own subfolder (e.g.
+  `migrations/db_example/`). `db_example_alchemy` uses `create_all` and
+  has no migration files.
+- **SQLAlchemy is used only in `db_example_alchemy/`.** Do not import
+  SQLAlchemy into other contexts. Litestar >= 2.23.0 is required because
+  advanced-alchemy 1.11 needs `litestar.di.NamedDependency`.
 
 ## Gotchas the agent will trip on
 

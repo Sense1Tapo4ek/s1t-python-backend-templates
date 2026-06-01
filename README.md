@@ -66,13 +66,15 @@ Strict-DDD per-context. Top level:
 
 ```
 src/
-├── shared/          Cross-cutting: domain kernel, DI provider, middleware,
-│                    base config
-├── root/            Entrypoints (api, cli) + container assembly
-├── auth/            Bounded context: token validation, role guard, middleware
-└── admin/           Bounded context: dashboard + observability
-    ├── log/         Sub-context: file-tail log viewer (JSONL), SSE, export
-    └── metrics/     Sub-context: Prometheus `/metrics` endpoint (multiprocess mode)
+├── shared/               Cross-cutting: domain kernel, DI provider, middleware,
+│                         base config
+├── root/                 Entrypoints (api, cli) + container assembly
+├── auth/                 Bounded context: token validation, role guard, middleware
+├── admin/                Bounded context: dashboard + observability
+│   ├── log/              Sub-context: file-tail log viewer (JSONL), SSE, export
+│   └── metrics/          Sub-context: Prometheus `/metrics` endpoint
+├── db_example/           Example context: raw aiosqlite, pool vs per-request DI
+└── db_example_alchemy/   Example context: SQLAlchemy + advanced-alchemy (only SQLAlchemy user)
 ```
 
 Each context has its own `domain/`, `app/`, `ports/{driving,driven}/`,
@@ -107,7 +109,7 @@ decisions, layers, invariants, and how-to recipes.
 | Section | Contents |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Project overview: contexts, layers, error hierarchy, DI, lifespan, invariants. |
-| [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, admin/metrics). |
+| [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, admin/metrics, db_example, db_example_alchemy). |
 | [docs/subsystems/](docs/subsystems/) | Cross-cutting: error hierarchy, observability, metrics. |
 | [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, jinja). |
 | [docs/adr/](docs/adr/) | Architecture Decision Records (MADR format). |
@@ -129,7 +131,7 @@ vars (see `.env.example`).
 
 ## What's wired in
 
-- **Litestar 2.21.x** — ASGI app, exception handlers, lifespan.
+- **Litestar 2.23.x** — ASGI app, exception handlers, lifespan. Minimum 2.23.0 (advanced-alchemy 1.11 dependency).
 - **Dishka** — DI container, APP scope.
 - **structlog** — JSON logging to stdout + a rotating JSONL file.
 - **msgspec** — wire-format encode/decode for events.
@@ -150,6 +152,8 @@ All vars in `.env.example`. Highlights:
 - `VOLUME_PATH` — persistent data root (log file, future state).
 - `LOG_*` — see [contexts/admin-log.md](docs/contexts/admin-log.md#configuration).
 - `METRICS_*` — see [contexts/admin-metrics.md](docs/contexts/admin-metrics.md#public-surface).
+- `DB_EXAMPLE_*` — see [contexts/db_example.md](docs/contexts/db_example.md#config).
+- `DB_EXAMPLE_ALCHEMY_*` — see [contexts/db_example_alchemy.md](docs/contexts/db_example_alchemy.md#config).
 
 ---
 
