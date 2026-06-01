@@ -1,6 +1,3 @@
-"""Auth error handlers: HTML for browser requests under /admin/, JSON for
-API callers — negotiated via `Accept` header."""
-
 from urllib.parse import quote
 
 from litestar import Response
@@ -31,7 +28,7 @@ def not_authorized_handler(request: Request, exc: NotAuthorizedException) -> Res
 
 
 def permission_denied_handler(request: Request, exc: PermissionDeniedException) -> Response:
-    """403 means authenticated but wrong role — redirecting to /admin/login
+    """403 means authenticated but wrong role -- redirecting to /admin/login
     would loop (the cookie is still valid). Render an HTML page for
     browsers, JSON detail for API callers.
     """

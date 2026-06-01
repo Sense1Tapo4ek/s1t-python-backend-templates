@@ -1,10 +1,3 @@
-"""Lifespan manager for the admin/metrics subsystem.
-
-Responsibilities:
-    start: ensure multiproc dir exists (idempotent)
-    stop: mark this process dead in the multiproc registry (best-effort)
-"""
-
 import os
 from dataclasses import dataclass
 

@@ -1,10 +1,3 @@
-"""S-DDD layer-error to HTTP mappers (Domain 409, App 422, Port 503, Adapter 500).
-
-`str(exc)` is logged for diagnosis but never sent over the wire —
-messages may carry internal details. Context-specific handlers
-registered against concrete subtypes run first and bypass these.
-"""
-
 import structlog
 from litestar import Response
 from litestar.connection import Request
@@ -43,6 +36,11 @@ def app_error_handler(_req: Request, exc: AppError) -> Response:
 
 
 def port_error_handler(_req: Request, exc: PortError) -> Response:
+    """str(exc) is logged for diagnosis but never sent over the wire.
+
+    Messages may carry internal infrastructure details. The response body
+    is always a generic string to prevent leaking those details to callers.
+    """
     _log.exception("port error", error_type=type(exc).__name__)
     return Response(
         status_code=HTTP_503_SERVICE_UNAVAILABLE,

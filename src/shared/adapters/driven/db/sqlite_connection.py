@@ -58,7 +58,7 @@ class SQLiteConnection:
 
     @property
     def conn(self) -> aiosqlite.Connection:
-        """Deprecated — use `transaction()` for writes, `read()` for reads.
+        """Deprecated -- use `transaction()` for writes, `read()` for reads.
         Retained for diagnostic tests only."""
         if self._writer is None:
             raise RuntimeError("SQLiteConnection is not open")

@@ -200,7 +200,7 @@ def create_app() -> Litestar:
             *extra_handlers,
         ],
         middleware=[
-            # Outermost — covers responses from inner middleware that short-circuit.
+            # Outermost -- covers responses from inner middleware that short-circuit.
             DefineMiddleware(
                 SecurityHeadersMiddleware,
                 csp=config.security_csp,
@@ -223,7 +223,7 @@ def create_app() -> Litestar:
             engine=JinjaTemplateEngine,
         ),
         lifespan=[lifespan],
-        # Bound to APP_ENV — a stray LITESTAR_DEBUG=1 in prod is ignored.
+        # Bound to APP_ENV -- a stray LITESTAR_DEBUG=1 in prod is ignored.
         debug=is_dev,
         exception_handlers=exception_handlers,
     )

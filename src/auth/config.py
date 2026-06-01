@@ -5,7 +5,7 @@ from shared.config import BaseAppConfig
 
 ADMIN_COOKIE_NAME = "admin_token"
 
-# Tokens are 64 hex chars (256 bits) by convention. 4 KiB is ~64x that — way
+# Tokens are 64 hex chars (256 bits) by convention. 4 KiB is ~64x that -- way
 # more headroom than any legitimate token needs, while keeping `compare_digest`
 # input from being weaponised into a memory/CPU sink.
 MAX_TOKEN_LEN = 4096

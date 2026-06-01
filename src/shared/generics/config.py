@@ -11,7 +11,7 @@ def _resolve_env_file() -> Path | None:
     """Locate `.env` at instance creation, not class definition.
 
     Why: child configs (`AuthConfig`, `AdminLogConfig`) snapshot
-    `model_config` from the base when they declare their own — so a test-time
+    `model_config` from the base when they declare their own -- so a test-time
     `monkeypatch.setitem(BaseAppConfig.model_config, ...)` can't reach them.
     Resolving via a function keeps a single point that tests override with
     `monkeypatch.setattr`.

@@ -14,8 +14,6 @@ class AppEnv(StrEnum):
 
 
 class BaseAppConfig(GenericConfig):
-    """Base configuration shared across every entrypoint of the application."""
-
     app_name: str = Field(
         default="litestar-base",
         description="Human-readable application name",

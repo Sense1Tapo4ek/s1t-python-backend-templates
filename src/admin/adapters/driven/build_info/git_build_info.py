@@ -1,14 +1,3 @@
-"""Resolve git commit/branch/dirty for the running process.
-
-Source priority:
-1. Env vars (`GIT_COMMIT_SHA`, `GIT_BRANCH`, `GIT_DIRTY`) — set by CI / Docker build
-2. `git` subprocess in current working directory — works in dev checkout
-3. Fallback: `commit_sha="unknown"`, `branch=None`, `dirty=False`
-
-Called ONCE at process startup (provider scope=APP). Result is immutable for
-the lifetime of the process — that's the whole point of build info.
-"""
-
 import os
 import subprocess
 from datetime import UTC, datetime

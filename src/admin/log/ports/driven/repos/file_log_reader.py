@@ -6,8 +6,6 @@ from ....domain import Cursor, LogEntryEnt, MalformedLogLine
 
 
 class ILogFileSource(Protocol):
-    """Local Protocol for the raw file source, injected via DI."""
-
     async def read_last_lines(self, limit: int) -> tuple[list[str], int, int]: ...
     async def read_lines_before(
         self, offset: int, limit: int
@@ -23,7 +21,7 @@ class FileLogReader:
 
     Maps raw lines to LogEntryEnt and owns Cursor semantics. Malformed
     lines are skipped and counted (the count is discarded here; the
-    optional warning is the adapter's job — ports do not log). read_before
+    optional warning is the adapter's job -- ports do not log). read_before
     returns the unchanged cursor with an empty page when the cursor inode
     no longer matches the live file (rotation-truncation sentinel).
     """

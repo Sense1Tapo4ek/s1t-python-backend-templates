@@ -1,10 +1,3 @@
-"""Attach a baseline set of security headers to every HTTP response.
-
-The middleware is config-driven (CSP string, HSTS toggle) so deployments
-can tighten or loosen the defaults without touching code. ASGI-level so
-it covers JSON APIs, HTML pages, SSE, and static files uniformly.
-"""
-
 from dataclasses import dataclass, field
 
 from litestar.types import ASGIApp, Message, Receive, Scope, Send
@@ -20,12 +13,6 @@ _HSTS_VALUE = b"max-age=63072000; includeSubDomains"
 
 @dataclass(slots=True)
 class SecurityHeadersMiddleware:
-    """ASGI middleware that injects security headers on http.response.start.
-
-    The header list is built once per instance and appended verbatim — no
-    per-request allocation beyond the small `extend()` call.
-    """
-
     app: ASGIApp
     csp: str
     hsts_enabled: bool = False
@@ -51,7 +38,7 @@ class SecurityHeadersMiddleware:
             if message["type"] == "http.response.start":
                 # ASGI typing has `headers: Iterable[tuple[bytes, bytes]]`,
                 # but every real server hands us a list. Build a fresh list
-                # so we stay sound under both — cheap (~headers count items).
+                # so we stay sound under both -- cheap (~headers count items).
                 existing = message.get("headers") or ()
                 message["headers"] = [*existing, *injected]
             await send(message)

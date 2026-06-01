@@ -59,7 +59,7 @@ class LoginController(Controller):
                 status_code=400,
             )
 
-        # Same cap as the bearer middleware — refuse to feed an oversize
+        # Same cap as the bearer middleware -- refuse to feed an oversize
         # value into `secrets.compare_digest`. Treated as invalid (no
         # length leak) rather than a separate error to keep responses
         # uniform.
@@ -141,7 +141,7 @@ def _render(
 
 def _safe_next(value: str) -> str:
     """Returns value only if it resolves to an /admin path with no host or
-    scheme — prevents open redirect via percent-encoded netloc or
+    scheme -- prevents open redirect via percent-encoded netloc or
     dot-segment smuggling."""
     if not value:
         return DASHBOARD_PATH
@@ -154,14 +154,14 @@ def _safe_next(value: str) -> str:
     # Reject backslashes (Windows-style) and dot-segments.
     if "\\" in path or "/.." in path or path.endswith("/.."):
         return DASHBOARD_PATH
-    # Drop attacker-controlled query/fragment — only the path is whitelisted.
+    # Drop attacker-controlled query/fragment -- only the path is whitelisted.
     return path
 
 
 def _is_https(request: Request) -> bool:
     """Trusts `X-Forwarded-Proto` from a reverse proxy. Without a
     TLS-terminating proxy that sets this header, the deployment must serve
-    HTTPS directly — otherwise `admin_token` ships without `Secure`."""
+    HTTPS directly -- otherwise `admin_token` ships without `Secure`."""
     forwarded = request.headers.get("x-forwarded-proto")
     if forwarded:
         return forwarded.lower() == "https"

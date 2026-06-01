@@ -33,7 +33,7 @@ _COLUMN_KEYS: tuple[str, ...] = (
 )
 
 # Type alias for the payload carried through the local buffer: the
-# pre-extracted column map (str → str for predictability) and the full
+# pre-extracted column map (str -> str for predictability) and the full
 # event_dict serialised as bytes for the `raw_json` column and pub/sub
 # fan-out.
 LogPayload = tuple[dict[str, str], bytes]
@@ -48,7 +48,7 @@ class _QueueLogger:
 
     `put_nowait` can raise `QueueFull` when the sink reader is slow
     and the buffer fills. We can't push to the same queue to report the
-    drop — that would amplify the back-pressure. Stderr is the fallback
+    drop -- that would amplify the back-pressure. Stderr is the fallback
     channel, throttled so a sustained overload doesn't flood it.
     """
 
@@ -123,7 +123,7 @@ class _ColumnExtractor:
     whole payload as a single positional argument to `_QueueLogger.msg`.
 
     Why orjson and not msgspec: structlog hands us an arbitrary `dict`, not
-    a typed Struct — orjson is the faster path for that shape and is
+    a typed Struct -- orjson is the faster path for that shape and is
     already configured here.
     """
 
@@ -158,7 +158,7 @@ class _TruncatingProcessorFormatter(structlog.stdlib.ProcessorFormatter):
             return rendered
         # Truncate on a byte budget, then repair UTF-8 by ignoring a torn
         # trailing multibyte sequence. The result is no longer valid JSON
-        # but is one line and bounded — the reader skips it as malformed.
+        # but is one line and bounded -- the reader skips it as malformed.
         return encoded[: self._max].decode("utf-8", "ignore")
 
 
@@ -169,7 +169,7 @@ def configure_structlog(
     max_line_bytes: int,
 ) -> None:
     # structlog's processor protocol is wide enough that mypy can't infer
-    # it from a literal list — annotate as Any-typed list so the spread
+    # it from a literal list -- annotate as Any-typed list so the spread
     # below stays single-source.
     shared_processors: list[Any] = [
         structlog.contextvars.merge_contextvars,

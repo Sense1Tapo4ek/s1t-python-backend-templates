@@ -69,7 +69,7 @@ class RootConfig(BaseAppConfig):
     def _validate_prod_invariants(self) -> Self:
         if self.app_env == AppEnv.PROD:
             # Reuse AuthConfig so the same parsing rules apply (env_ignore_empty,
-            # whitespace stripping, SecretStr resolution) — checking os.environ
+            # whitespace stripping, SecretStr resolution) -- checking os.environ
             # directly would diverge from how the runtime actually loads it.
             token = AuthConfig().admin_token
             if token is None or not token.get_secret_value().strip():

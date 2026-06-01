@@ -18,8 +18,8 @@ class AuthMiddleware(AbstractAuthenticationMiddleware):
     """Reads bearer token from `Authorization` header or `admin_token` cookie.
 
     Never raises. Every connection ends up with a `Principal`:
-    - Valid token → resolved Principal (e.g., Role.ADMIN)
-    - Missing/invalid/empty token → `Principal(role=UNKNOWN, ...)`
+    - Valid token -> resolved Principal (e.g., Role.ADMIN)
+    - Missing/invalid/empty token -> `Principal(role=UNKNOWN, ...)`
 
     Authorization decisions live in `require_role` guards on protected
     controllers. Public endpoints (/health, /ping, /admin/login) just
@@ -32,7 +32,7 @@ class AuthMiddleware(AbstractAuthenticationMiddleware):
             return AuthenticationResult(user=_ANON, auth=_ANON.token_id)
 
         # The facade is resolved once at lifespan startup and stashed on
-        # app.state — middleware reads the prepared instance instead of
+        # app.state -- middleware reads the prepared instance instead of
         # walking the DI container per request.
         facade: AuthFacade = connection.app.state.auth_facade
         principal = await facade.authenticate(token)
@@ -45,7 +45,7 @@ class AuthMiddleware(AbstractAuthenticationMiddleware):
 
 
 def _extract_token(connection: ASGIConnection) -> str | None:
-    # Reject oversize inputs before touching them — `secrets.compare_digest`
+    # Reject oversize inputs before touching them -- `secrets.compare_digest`
     # encodes the candidate to bytes, so an attacker-controlled multi-MB
     # value would burn memory/CPU on every request.
     auth_header = connection.headers.get("authorization")
