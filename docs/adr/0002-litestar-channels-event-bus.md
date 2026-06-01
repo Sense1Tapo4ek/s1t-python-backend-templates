@@ -1,6 +1,10 @@
 # 0002 — Litestar Channels as the in-process event bus
-Status: accepted
+Status: deprecated
 Date: 2026-05-06
+
+> Deprecated 2026-06-01: the Channels bus existed only for the log SSE
+> fan-out, removed in ADR 0009. A typed event bus may return later as its own
+> example context, decoupled from logging.
 
 ## Context
 Two needs collide: SSE broadcast for the admin log tail, and a typed

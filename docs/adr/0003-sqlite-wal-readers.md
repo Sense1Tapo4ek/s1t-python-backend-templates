@@ -1,5 +1,5 @@
 # 0003 — SQLite WAL with reader pool for the admin log store
-Status: accepted
+Status: superseded by 0009
 Date: 2026-05-06
 
 ## Context
