@@ -18,7 +18,7 @@ API.
 | `root` | `src/root/` | Entrypoints (`api.py`, `cli.py`) and DI container assembly. The only place that wires providers together. |
 | `auth` | `src/auth/` | Bearer/cookie auth: token resolution, `AuthMiddleware`, `require_role` guards. See [contexts/auth.md](contexts/auth.md). |
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
-| `admin/log` | `src/admin/log/` | Sub-context: SQLite log store, FTS5 search, SSE tail, NDJSON/CSV export, retention. See [contexts/admin-log.md](contexts/admin-log.md). |
+| `admin/log` | `src/admin/log/` | Sub-context: file-tail log viewer over the rotating JSONL file the app writes; SSE live tail, NDJSON/CSV export. See [contexts/admin-log.md](contexts/admin-log.md). |
 | `admin/metrics` | `src/admin/metrics/` | Sub-context: Prometheus `/metrics` endpoint, admin UI at `/admin/metrics`, plugin contract for cross-context modules. See [contexts/admin-metrics.md](contexts/admin-metrics.md). |
 
 Adding a context: see §8 below.
@@ -40,9 +40,9 @@ them is what kills the template's ability to grow.
 │   └── driven/          # Repos, gateways, ACLs (implement app/interfaces).
 ├── adapters/
 │   ├── driving/         # Controllers, consumers, CLI commands.
-│   ├── driven/          # DB engines, broker clients, workers.
+│   ├── driven/          # DB engines, broker clients, workers, file sources.
 │   ├── middleware/      # Context-owned ASGI middleware.
-│   └── lifespan/        # Lifespan managers (start/stop sequencing).
+│   └── lifespan/        # Optional lifespan managers (e.g. metrics sampler).
 ├── provider.py          # Dishka Provider — the only place mapping concretes to interfaces.
 └── config.py            # Pydantic Settings with a unique env_prefix.
 ```
@@ -68,10 +68,10 @@ Exception
 ```
 
 Global mapping is registered in `src/root/entrypoints/api.py::create_app`
-via the `exception_handlers` dict. Specialised handlers (`DslSyntaxError`,
-`InvalidLogFilterError`, `NotAuthorizedException`, `PermissionDeniedException`,
-`ValidationException`) sit ahead of the generic ones — registration order
-matters because Litestar resolves the most specific handler.
+via the `exception_handlers` dict. Specialised handlers
+(`NotAuthorizedException`, `PermissionDeniedException`, `ValidationException`)
+sit ahead of the generic ones — registration order matters because Litestar
+resolves the most specific handler.
 
 A 5xx response **never** carries a traceback to the client. In dev,
 `debug=True` enables Litestar's debug renderer; in prod, the catch-all
@@ -90,10 +90,10 @@ lives in `src/root/composition/container.py::build_container`.
 
 ```python
 return make_async_container(
-    SharedProvider(channels_plugin=channels_plugin),
+    SharedProvider(),
     AdminProvider(),
-    AdminLogProvider(),
-    AdminLogPortBindings(),
+    AdminLogWebProvider(),
+    AdminMetricsProvider(),
     AuthProvider(),
     AuthPortBindings(),
 )
@@ -117,19 +117,14 @@ process startup and shutdown.
 Order of operations on startup:
 1. `RootConfig()` — fail fast on misconfig (PROD without admin token).
 2. `snitchbot.init(...)` — crash reporter armed.
-3. `build_container(channels_plugin=...)` — providers wired.
-4. `configure_structlog(queue)` — JSON logger + queue sink.
-5. `event_bus.start()` — typed pub/sub goes live (subscribers register
-   their handlers BEFORE this call, never after).
-6. `app.state.auth_facade = await container.get(AuthFacade)` — middleware-
-   bound singletons resolved once. ASGI middleware runs outside the Dishka
-   request scope, so per-request `container.get()` would be wasteful.
-7. `LogLifespanManager.start()` — log subsystem (sink worker, cleanup
-   worker, broadcast pump) starts last because it depends on everything
-   above.
-8. `MetricsLifespanManager.start()` — registers the cross-worker collector
-   on `prometheus_client.REGISTRY` and spawns the sampler / publisher loop
-   that maintains `metrics:worker:<id>` hashes in Valkey.
+3. `build_container()` — providers wired (no `channels_plugin` argument).
+4. `configure_structlog()` — JSON logger with two stdlib handlers: a
+   `StreamHandler` (stdout) and a `WatchedFileHandler(LOG_FILE_PATH)`. No
+   queue, no async sink.
+5. `app.state.auth_facade = await container.get(AuthFacade)` — middleware-
+   bound singletons resolved once.
+6. `MetricsLifespanManager.start()` — registers the cross-worker collector
+   on `prometheus_client.REGISTRY` and spawns the sampler / publisher loop.
 
 Shutdown unwinds in reverse with each `try/finally` so a single component's
 failure never blocks the rest from stopping.
@@ -145,7 +140,7 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 | `shared/config.py::BaseAppConfig` | `APP_` | `app_name`, `app_env`, `volume_path`, `runtime_path`. |
 | `root/config.py::RootConfig` | `APP_` (extends Base) | server bind/port/workers, security CSP/HSTS, prod invariants. |
 | `auth/config.py::AuthConfig` | `AUTH_` | `admin_token` (`SecretStr`). |
-| `admin/log/config.py::AdminLogConfig` | `LOG_` | retention, batch sizes, max query limit, paths. |
+| `admin/log/config.py::AdminLogConfig` | `LOG_` | `log_file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
 | `admin/metrics/config.py::MetricsConfig` | `METRICS_` | UI gate, Prometheus endpoint path + public flag, Valkey key prefix + TTL, publish interval. |
 
 Rules:
@@ -189,26 +184,20 @@ the *how* is in [infra/jinja.md](infra/jinja.md).
 Things that, if you change them, will break the app silently or in
 production.
 
-- **Single SQLite writer = the sink process.** `start_log_sink`
-  (`root/entrypoints/log_sink.py`) is the only process that `INSERT`s
-  into `admin_logs.db`. Web workers read only. WAL mode handles
-  cross-process coordination. `APP_WORKERS` is a free knob.
-- **Shared bus = Valkey.** Producers write a `XADD` Stream entry per log
-  record; the sink consumes via `XREADGROUP` and re-publishes the
-  persisted batch on a pub/sub channel. Litestar Channels' Redis backend
-  delivers it to SSE subscribers in any web worker.
+- **One JSONL file, two handlers.** structlog writes each record to stdout
+  and to `WatchedFileHandler(LOG_FILE_PATH)`. The admin log UI reads that
+  file (`tail -N`, follow, reverse-scroll). No DB, no queue, no second
+  process. `APP_WORKERS` is a free knob.
+- **Log filters are client-side.** Level + substring filtering happen in the
+  browser over loaded rows; "load more" pulls deeper into the file.
+- **Cross-worker metrics need Valkey.** It is the only remaining shared-store
+  dependency; logs no longer touch it.
 - **APP-scope DI is lazy.** The graph resolves on the first HTTP request.
   Tests must warm DI before any global env-isolation fixture runs (see
   `tests/e2e/conftest.py::e2e_client`).
-- **One `ChannelsPlugin` instance.** Built in `create_app`, threaded into
-  `build_container` via `channels_plugin=`. Litestar transport (SSE) and
-  the typed event bus must share one backend.
 - **Cookie auth contract.** `ADMIN_COOKIE_NAME` is the single source of
   truth in `auth/config.py`. Cookie is `HttpOnly`, `SameSite=Strict`,
   `Secure` only when the request was HTTPS.
-- **yoyo migration table per context.** `_yoyo_admin_log` is centralized
-  in `admin/log/config.py::YOYO_MIGRATION_TABLE`. New contexts using the
-  same DB pick a unique table name.
 - **Errors propagate; adapters catch.** Domain/app code never catches
   `LayerError` to "convert" it. The global exception handler does.
 - **No emoji or filler in logs.** Event names are stable literals; dynamic
@@ -235,10 +224,8 @@ production.
 
 ### Add a migration
 
-1. Create `migrations/<context>/NNNN_<snake_name>.sql` (next sequential
-   number; never edit applied files).
-2. Migration runs at lifespan start via the context's `LifespanManager`.
-3. Rollback (optional) — document it in the same file for future reference.
+No context currently ships SQL migrations. If you add a SQL-backed context,
+introduce a migration tool then and document it in `docs/infra/`.
 
 ### Add an ADR
 
@@ -264,7 +251,7 @@ Tests mirror `src/` exactly. Pyramid:
 |:---|:---|:---|:---|:---|
 | Unit | `tests/unit/` | instant | forbidden | no |
 | Flow | `tests/flow/` | fast | AsyncMock interfaces | no |
-| Integration | `tests/integration/` | slow | no | yes (tmp SQLite) |
+| Integration | `tests/integration/` | slow | no | yes (tmp_path files) |
 | E2E | `tests/e2e/` | slowest | no | full app via `AsyncTestClient` |
 
 Conventions:
@@ -276,7 +263,7 @@ Conventions:
 ```bash
 uv run pytest                     # full suite
 uv run pytest tests/unit/         # domain only
-uv run pytest tests/integration/  # SQLite repos against tmp_path
+uv run pytest tests/integration/  # ports/adapters against tmp_path files
 ```
 
 ---
