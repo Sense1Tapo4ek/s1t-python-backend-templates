@@ -1,7 +1,8 @@
+import os
 from pathlib import Path
 
 import pytest
-from litestar.status_codes import HTTP_200_OK
+from litestar.status_codes import HTTP_200_OK, HTTP_503_SERVICE_UNAVAILABLE
 from litestar.testing import TestClient
 
 from root.entrypoints.api import create_app
@@ -46,6 +47,29 @@ def test_ready_endpoint_returns_ready(
 
     assert response.status_code == HTTP_200_OK
     assert response.json() == {"status": "ready"}
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root bypasses directory write perms")
+def test_ready_returns_503_when_log_dir_not_writable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("APP_NAME", "test-service")
+    monkeypatch.setenv("VOLUME_PATH", str(tmp_path))
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        # Lifespan has created <volume>/logs by now; strip write perms so the
+        # readiness probe's touch() fails.
+        log_dir = tmp_path / "logs"
+        log_dir.chmod(0o500)
+        try:
+            response = client.get("/health/ready")
+        finally:
+            log_dir.chmod(0o700)
+
+    assert response.status_code == HTTP_503_SERVICE_UNAVAILABLE
 
 
 def test_ping_endpoint_returns_pong(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

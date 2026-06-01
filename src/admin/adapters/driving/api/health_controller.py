@@ -14,9 +14,12 @@ _log = structlog.get_logger(__name__)
 
 class HealthController(Controller):
     """Two-tier health: /health is always-200 liveness; /health/ready is a
-    liveness-plus-config check (config resolves and the log directory exists)
-    and returns 503 on failure. The log path is a plain file, so there is no
-    DB pool to probe."""
+    liveness-plus-config check (config resolves and the log directory is
+    writable) and returns 503 on failure. The log path is a plain file, so
+    there is no DB pool to probe.
+
+    Writability is probed on log_dir; an absolute LOG_FILE_PATH pointing
+    outside it is not covered."""
 
     path = ""
 
@@ -38,11 +41,14 @@ class HealthController(Controller):
         self,
         config: FromDishka[BaseAppConfig],
     ) -> dict[str, str]:
-        # Readiness = config resolved + the log directory exists, so the
-        # structlog file handler can write. Any failure becomes 503.
+        # Readiness = config resolved + the log directory is actually
+        # writable, so the structlog file handler can append. A bare is_dir()
+        # passes on a read-only mount where every log write then fails; probe
+        # with a real create+unlink. Any failure becomes 503.
         try:
-            if not config.log_dir.is_dir():
-                raise RuntimeError(f"log directory missing: {config.log_dir}")
+            probe = config.log_dir / ".readiness_probe"
+            probe.touch()
+            probe.unlink()
         except Exception as exc:
             _log.exception("readiness check failed", error_type=type(exc).__name__)
             raise HTTPException(
