@@ -1,4 +1,7 @@
-from pydantic import Field
+from pathlib import Path
+from typing import Self
+
+from pydantic import Field, model_validator
 from pydantic_settings import SettingsConfigDict
 
 from shared.config import BaseAppConfig
@@ -7,19 +10,19 @@ from shared.config import BaseAppConfig
 class MetricsConfig(BaseAppConfig):
     model_config = SettingsConfigDict(env_prefix="METRICS_")
 
-    enabled: bool = True
     prom_endpoint_path: str = "/metrics"
     prom_endpoint_public: bool = False
-    publish_interval_s: float = Field(default=5.0, ge=1.0)
-    key_prefix: str = "metrics:"
-    key_ttl_s: int = Field(default=30, ge=5)
     http_buckets: list[float] = Field(
         default_factory=lambda: [
             0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0
         ]
     )
-    process_buckets: list[float] = Field(
-        default_factory=lambda: [
-            0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0
-        ]
-    )
+    multiproc_dir: Path | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def resolve_multiproc_dir(self) -> Self:
+        if self.multiproc_dir is None:
+            self.multiproc_dir = self.volume_path / "prometheus"
+        elif not self.multiproc_dir.is_absolute():
+            self.multiproc_dir = self.volume_path / self.multiproc_dir
+        return self
