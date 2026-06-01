@@ -118,54 +118,6 @@ button { font-family: inherit; color: inherit; }
     border-radius: var(--r);
 }
 
-.time-field {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--paper-soft);
-    border: 1px solid var(--line);
-    border-radius: var(--r);
-    padding: 3px 9px;
-    color: var(--ink-muted);
-    font: 500 11px var(--mono);
-}
-.time-field .lbl {
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 12px;
-    color: var(--ink-muted);
-}
-.time-field input {
-    background: transparent;
-    border: 0;
-    outline: 0;
-    color: var(--sumi);
-    font: 400 12px var(--mono);
-    padding: 0;
-    color-scheme: light;
-}
-.time-field input:disabled { color: var(--ink-ghost); }
-.time-field:focus-within {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-tint);
-}
-
-.live-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--paper-soft);
-    border: 1px solid var(--line);
-    border-radius: var(--r);
-    padding: 4px 10px;
-    cursor: pointer;
-    user-select: none;
-    color: var(--sumi);
-    font: 500 11.5px var(--mono);
-    letter-spacing: 0.02em;
-}
-.live-toggle input { accent-color: var(--accent); margin: 0; }
-
 .actions-bar {
     display: inline-flex;
     gap: 6px;
@@ -187,22 +139,6 @@ button { font-family: inherit; color: inherit; }
     color: var(--sumi);
     border-color: var(--ink-faded);
     background: var(--paper-warm);
-}
-.act-btn.danger { color: var(--accent-soft); }
-.act-btn.danger:hover {
-    color: #fff;
-    background: var(--accent);
-    border-color: var(--accent);
-}
-.act-btn.armed {
-    color: #fff;
-    background: var(--accent);
-    border-color: var(--accent);
-    animation: armed-pulse 1s infinite;
-}
-@keyframes armed-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 var(--accent-tint); }
-    50%      { box-shadow: 0 0 0 4px var(--accent-tint); }
 }
 .act-btn:disabled {
     opacity: .5;
@@ -245,15 +181,6 @@ button { font-family: inherit; color: inherit; }
     line-height: 14px;
     background: var(--paper-warm);
 }
-.search-error {
-    flex-basis: 100%;
-    padding: 4px 4px 0 28px;
-    color: var(--accent);
-    font: 400 11px var(--mono);
-    display: none;
-}
-.search-error.on { display: block; }
-
 /* chips */
 .chips {
     padding: 6px 22px;
@@ -271,27 +198,13 @@ button { font-family: inherit; color: inherit; }
     color: var(--ink-muted);
     margin-right: 6px;
 }
-.chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 1px 8px;
-    background: transparent;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--ink-muted);
-    font: 500 10.5px var(--mono);
-    cursor: pointer;
-    line-height: 17px;
-    letter-spacing: 0.02em;
+.chips .hint {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-faded);
+    margin-left: auto;
 }
-.chip:hover { border-color: var(--ink-faded); color: var(--sumi); background: var(--paper-soft); }
-.chip.active {
-    color: var(--accent);
-    border-color: var(--accent);
-    background: var(--accent-tint);
-}
-.chip.add { border-style: dashed; color: var(--ink-faded); }
-.chip .x { color: var(--ink-faded); margin-left: 2px; font-size: 11px; }
-.chip.active .x { color: var(--accent); }
 
 /* level multi-select */
 .level-group {
@@ -477,7 +390,7 @@ button { font-family: inherit; color: inherit; }
 
 .ctx-row {
     display: grid;
-    grid-template-columns: 220px 1fr auto;
+    grid-template-columns: 220px 1fr;
     gap: 14px;
     align-items: center;
     padding: 6px 10px;
@@ -513,38 +426,6 @@ button { font-family: inherit; color: inherit; }
     border-bottom-color: var(--accent);
     color: var(--accent);
 }
-.ctx-acts {
-    display: flex; gap: 4px;
-    opacity: 0;
-    transition: opacity .12s;
-}
-.ctx-row:hover .ctx-acts { opacity: 1; }
-.ctx-acts .btn {
-    appearance: none;
-    background: var(--paper);
-    border: 1px solid var(--line);
-    color: var(--ink-muted);
-    font: 500 10.5px var(--mono);
-    padding: 3px 9px;
-    border-radius: var(--r);
-    cursor: pointer;
-    line-height: 14px;
-    letter-spacing: 0.02em;
-}
-.ctx-acts .btn:hover {
-    color: var(--sumi);
-    border-color: var(--ink-faded);
-}
-.ctx-acts .btn.include:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-    background: var(--accent-tint);
-}
-.ctx-acts .btn.exclude:hover {
-    color: var(--accent-soft);
-    border-color: var(--accent-soft);
-}
-
 .exception-view {
     margin: 0;
     padding: 12px;
