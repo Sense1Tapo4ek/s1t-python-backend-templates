@@ -15,7 +15,8 @@ class DbExampleLifespanManager:
     pool: SqlitePool
 
     async def start(self) -> None:
-        assert self.config.db_path is not None
+        if self.config.db_path is None:
+            raise RuntimeError("DB_EXAMPLE_DB_PATH could not be resolved")
         await apply_migrations(self.config.db_path)
         await self.pool.open()
         _log.info("db_example started", db_path=str(self.config.db_path))

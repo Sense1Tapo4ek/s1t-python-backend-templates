@@ -27,3 +27,12 @@ def test_author_crud_and_features(e2e_client) -> None:
     assert r.status_code == 204
     r = e2e_client.get(f"{base}/{author_id}")
     assert r.status_code == 404
+
+
+def test_bulk_ignores_client_supplied_id(e2e_client) -> None:
+    """WriteDTO excludes id, so a client cannot choose the primary key."""
+    base = "/db-example-alchemy/authors"
+    chosen = "00000000-0000-0000-0000-000000000001"
+    r = e2e_client.post(f"{base}/bulk", json=[{"name": "Tolkien", "id": chosen}])
+    assert r.status_code == 201
+    assert chosen not in [a["id"] for a in r.json()]

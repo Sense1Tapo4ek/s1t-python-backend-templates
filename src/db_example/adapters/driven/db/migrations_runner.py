@@ -3,7 +3,10 @@ from pathlib import Path
 
 from yoyo import get_backend, read_migrations
 
-_MIGRATIONS_DIR = "migrations/db_example"
+from shared.generics.config import PROJECT_ROOT
+
+# Absolute so migrations resolve regardless of the process working directory.
+_MIGRATIONS_DIR = str(PROJECT_ROOT / "migrations" / "db_example")
 _TABLE = "_yoyo_migration"
 
 

@@ -22,7 +22,8 @@ class DbExampleInfraProvider(Provider):
 
     @provide
     def pool(self, config: DbExampleConfig) -> SqlitePool:
-        assert config.db_path is not None
+        if config.db_path is None:
+            raise RuntimeError("DB_EXAMPLE_DB_PATH could not be resolved")
         return SqlitePool(config.db_path, config.pool_size)
 
     @provide
@@ -44,7 +45,8 @@ class PooledDbExampleProvider(Provider):
 class PerRequestDbExampleProvider(Provider):
     @provide(scope=Scope.REQUEST)
     async def facade(self, config: DbExampleConfig, clock: IClock) -> AsyncIterator[PerRequestItemFacade]:
-        assert config.db_path is not None
+        if config.db_path is None:
+            raise RuntimeError("DB_EXAMPLE_DB_PATH could not be resolved")
         conn = await open_connection(config.db_path)
         try:
             repo = SqliteItemRepo(_conn=conn)

@@ -41,5 +41,11 @@ class SqlitePool:
         conn = await self._queue.get()
         try:
             yield conn
+        except Exception:
+            # Never return a connection to the pool mid-transaction: the next
+            # borrower would inherit the open transaction and could commit
+            # orphaned writes. Roll back before recycling.
+            await conn.rollback()
+            raise
         finally:
             await self._queue.put(conn)

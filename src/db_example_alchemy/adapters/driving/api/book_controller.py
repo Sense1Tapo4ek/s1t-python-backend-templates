@@ -1,9 +1,12 @@
+from typing import Annotated
+
 from advanced_alchemy.filters import LimitOffset, OrderBy
 from dishka import FromDishka
 from dishka.integrations.litestar import inject
 from litestar import Controller, get, post
 from litestar.dto import DTOData
 from litestar.pagination import OffsetPagination
+from litestar.params import Parameter
 from litestar.status_codes import HTTP_201_CREATED
 
 from ....adapters.driven.db.orm_models import BookModel
@@ -29,8 +32,8 @@ class BookController(Controller):
     async def list_books(
         self,
         svc: FromDishka[BookService],
-        limit: int = 50,
-        offset: int = 0,
+        limit: Annotated[int, Parameter(ge=1, le=200)] = 50,
+        offset: Annotated[int, Parameter(ge=0)] = 0,
     ) -> OffsetPagination[BookModel]:
         filters: list = [OrderBy("title", "asc"), LimitOffset(limit=limit, offset=offset)]
         results, total = await svc.get_many_and_count(*filters)

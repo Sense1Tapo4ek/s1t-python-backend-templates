@@ -19,7 +19,8 @@ class DbExampleAlchemyProvider(Provider):
 
     @provide
     def engine(self, config: DbExampleAlchemyConfig) -> AsyncEngine:
-        assert config.db_path is not None
+        if config.db_path is None:
+            raise RuntimeError("DB_EXAMPLE_ALCHEMY_DB_PATH could not be resolved")
         return build_engine(config.db_path)
 
     @provide
