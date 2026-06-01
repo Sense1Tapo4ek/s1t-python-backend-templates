@@ -1,5 +1,3 @@
-import os
-import socket
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -38,7 +36,7 @@ from admin.log.adapters.driving.api import (
     LogsPageController,
 )
 from admin.log.config import AdminLogConfig
-from admin.metrics.adapters.driving.api import MetricsOverviewController, build_prom_controller
+from admin.metrics.adapters.driving.api import build_prom_controller
 from admin.metrics.adapters.lifespan import MetricsLifespanManager
 from admin.metrics.config import MetricsConfig
 from auth.adapters.middleware import AuthMiddleware
@@ -167,13 +165,10 @@ def create_app() -> Litestar:
         group_path=True,
         buckets=list[str | float](metrics_cfg.http_buckets),
         exclude=[metrics_cfg.prom_endpoint_path],
-        labels={"worker_id": f"{socket.gethostname()}:{os.getpid()}"},
     )
     prom_controller = build_prom_controller(metrics_cfg)
 
     extra_handlers: list = [prom_controller]
-    if metrics_cfg.enabled:
-        extra_handlers.append(MetricsOverviewController)
 
     # In DEV we want Litestar's debug renderer to surface the full traceback
     # to the client. Registering a catch-all Exception handler would short-

@@ -1,3 +1,4 @@
+import glob
 import os
 import signal
 import subprocess
@@ -6,6 +7,7 @@ from typing import Any
 
 import uvicorn
 
+from admin.metrics.config import MetricsConfig
 from root.config import RootConfig
 from root.helpers.process import ensure_runtime_dirs, find_pid_on_port
 
@@ -15,18 +17,6 @@ def _ensure_runtime_dirs_or_exit(config: RootConfig) -> None:
         ensure_runtime_dirs(config)
     except RuntimeError as exc:
         print(exc)
-        sys.exit(1)
-
-
-def _refuse_multi_worker(config: RootConfig) -> None:
-    if config.app_workers > 1:
-        print(
-            f"Refusing to start: APP_WORKERS={config.app_workers}. "
-            "The admin/log subsystem is per-process; multi-worker mode would "
-            "silently split observability across workers. Set APP_WORKERS=1 or "
-            "implement a sidecar log collector first.",
-            file=sys.stderr,
-        )
         sys.exit(1)
 
 
@@ -40,7 +30,6 @@ def _exit_if_port_busy(config: RootConfig) -> None:
 def start_nohup(config: RootConfig) -> None:
     _exit_if_port_busy(config)
     _ensure_runtime_dirs_or_exit(config)
-    _refuse_multi_worker(config)
 
     with config.console_log.open("a") as log_file:
         proc = subprocess.Popen(
@@ -64,10 +53,21 @@ def start_nohup(config: RootConfig) -> None:
         print(f"\nLog tail stopped. Server still running, PID: {proc.pid}.")
 
 
+def _bootstrap_prometheus_multiproc() -> None:
+    metrics_cfg = MetricsConfig()
+    # multiproc_dir is always resolved to a Path by the model_validator.
+    assert metrics_cfg.multiproc_dir is not None
+    multiproc_dir = metrics_cfg.multiproc_dir
+    os.makedirs(multiproc_dir, exist_ok=True)
+    for stale in glob.glob(str(multiproc_dir / "*.db")):
+        os.remove(stale)
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = str(multiproc_dir)
+
+
 def start_foreground(config: RootConfig) -> None:
     _exit_if_port_busy(config)
     _ensure_runtime_dirs_or_exit(config)
-    _refuse_multi_worker(config)
+    _bootstrap_prometheus_multiproc()
 
     # On SIGTERM uvicorn waits up to `timeout_graceful_shutdown` for inflight
     # requests, THEN runs Litestar's lifespan stop (drains workers, flushes
