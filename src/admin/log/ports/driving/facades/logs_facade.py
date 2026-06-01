@@ -12,12 +12,6 @@ from ....app.use_cases import (
 from ....domain import Cursor, LogEntryEnt
 from ..schemas import LogEntrySchema
 
-# Fallback page size / poll interval used only when the caller omits the
-# value. The controller passes the config-driven AdminLogConfig values; these
-# mirror the AdminLogConfig field defaults so a bare facade call still works.
-_DEFAULT_PAGE_SIZE = 200
-_DEFAULT_POLL_MS = 250
-
 # Promoted to top-level columns in LogEntrySchema; stripped from context_json
 # so each value ships once.
 _PROMOTED_KEYS = frozenset(
@@ -61,7 +55,7 @@ class LogsFacade:
 
     async def render_log_page(
         self,
-        limit: int = _DEFAULT_PAGE_SIZE,
+        limit: int,
     ) -> tuple[list[LogEntrySchema], Cursor | None]:
         entries, cursor = await self._render_log_page_uc.__call__(limit)
         return [_to_entry_schema(e) for e in entries], cursor
@@ -69,14 +63,14 @@ class LogsFacade:
     async def load_older_logs(
         self,
         cursor: Cursor,
-        limit: int = _DEFAULT_PAGE_SIZE,
+        limit: int,
     ) -> tuple[list[LogEntrySchema], Cursor | None]:
         entries, next_cursor = await self._load_older_logs_uc.__call__(cursor, limit)
         return [_to_entry_schema(e) for e in entries], next_cursor
 
     async def stream_tail(
         self,
-        poll_ms: int = _DEFAULT_POLL_MS,
+        poll_ms: int,
     ) -> AsyncGenerator[LogEntrySchema, None]:
         async for entry in self._stream_log_tail_uc.__call__(poll_ms):
             yield _to_entry_schema(entry)

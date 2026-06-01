@@ -45,7 +45,7 @@ class TestRenderLogPage:
         Then the response carries the entry schema and the Cursor.
         """
         # Act
-        entries, cursor = await facade.render_log_page()
+        entries, cursor = await facade.render_log_page(limit=200)
 
         # Assert
         assert entries[0].event == "hi"
