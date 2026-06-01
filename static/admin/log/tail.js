@@ -10,8 +10,8 @@
 (function () {
     const RESERVED_KEYS = new Set(['stack_info', 'exception']);
     // Drilldown field carrying the structured kwargs. Backend LogEntrySchema
-    // names it `context`; if the backend renames to `raw`, change only this.
-    const CONTEXT_FIELD = 'context';
+    // names it `context_json`; if the backend renames, change only this.
+    const CONTEXT_FIELD = 'context_json';
     const MAX_BACKOFF_MS = 10000;
 
     const $ = (sel) => document.querySelector(sel);
