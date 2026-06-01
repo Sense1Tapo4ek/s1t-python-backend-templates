@@ -1,44 +1,36 @@
 """Lifespan manager for the admin/metrics subsystem.
 
-Order of operations:
-    start: loop-lag sampler  ->  publisher worker  ->  REGISTRY.register(collector)
-    stop:  REGISTRY.unregister  ->  publisher worker  ->  loop-lag sampler
+Responsibilities:
+    start: ensure multiproc dir exists (idempotent)
+    stop: mark this process dead in the multiproc registry (best-effort)
 """
 
-import contextlib
+import os
 from dataclasses import dataclass
 
 import structlog
-from prometheus_client import REGISTRY
 
-from ...app.interfaces import ILoopLagSampler
-from ...ports.driven.collectors import ValkeyAggregatedCollector
-from ..driven.workers import MetricsPublisherWorker
+from ...config import MetricsConfig
 
 _log = structlog.get_logger(__name__)
 
 
 @dataclass(slots=True, kw_only=True)
 class MetricsLifespanManager:
-    _loop_lag_sampler: ILoopLagSampler
-    _publisher_worker: MetricsPublisherWorker
-    _aggregated_collector: ValkeyAggregatedCollector
+    config: MetricsConfig
 
     async def start(self) -> None:
-        _log.info("metrics lifespan starting")
-        await self._loop_lag_sampler.start()
-        await self._publisher_worker.start()
-        with contextlib.suppress(ValueError):
-            # ValueError if already registered — idempotent in tests
-            REGISTRY.register(self._aggregated_collector)
+        _log.info("metrics lifespan starting", multiproc_dir=str(self.config.multiproc_dir))
+        # multiproc_dir is always a Path post-validation (resolved in MetricsConfig)
+        assert self.config.multiproc_dir is not None, "multiproc_dir must be resolved by validator"
+        os.makedirs(self.config.multiproc_dir, exist_ok=True)
         _log.info("metrics lifespan started")
 
     async def stop(self) -> None:
         _log.info("metrics lifespan stopping")
-        with contextlib.suppress(Exception):
-            REGISTRY.unregister(self._aggregated_collector)
-        with contextlib.suppress(Exception):
-            await self._publisher_worker.stop()
-        with contextlib.suppress(Exception):
-            await self._loop_lag_sampler.stop()
+        try:
+            from prometheus_client import multiprocess
+            multiprocess.mark_process_dead(os.getpid())
+        except Exception as e:
+            _log.debug("mark_process_dead failed (no-op if multiproc inactive)", error=str(e))
         _log.info("metrics lifespan stopped")
