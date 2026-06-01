@@ -5,7 +5,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
-from pathlib import Path
 from typing import Any
 
 import snitchbot
@@ -15,6 +14,7 @@ from litestar import Litestar, Response
 from litestar.channels import ChannelsPlugin
 from litestar.channels.backends.redis import RedisChannelsPubSubBackend
 from litestar.connection import Request
+from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.datastructures import CacheControlHeader
 from litestar.exceptions import (
     HTTPException,
@@ -26,6 +26,7 @@ from litestar.middleware import DefineMiddleware
 from litestar.openapi import OpenAPIConfig
 from litestar.plugins.prometheus import PrometheusConfig
 from litestar.static_files import create_static_files_router
+from litestar.template.config import TemplateConfig
 from redis.asyncio import Redis
 from snitchbot.integrations.litestar import install as install_snitchbot
 
@@ -39,13 +40,8 @@ from admin.log.adapters.driving.api import (
     LogsApiController,
     LogsPageController,
 )
-from admin.log.adapters.driving.error_handlers import (
-    dsl_syntax_handler,
-    invalid_log_filter_handler,
-)
 from admin.log.adapters.lifespan import LogLifespanManager
 from admin.log.config import AdminLogConfig
-from admin.log.domain import DslSyntaxError, InvalidLogFilterError
 from admin.log.ports.driven.gateways import RedisStreamPublisher
 from admin.metrics.adapters.driving.api import MetricsOverviewController, build_prom_controller
 from admin.metrics.adapters.lifespan import MetricsLifespanManager
@@ -69,13 +65,11 @@ from shared.adapters.middleware import (
 )
 from shared.app import IEventBus
 from shared.config import AppEnv, BaseAppConfig
+from shared.generics.config import PROJECT_ROOT
 from shared.generics.errors import AdapterError, AppError, DomainError, PortError
 from shared.logging import configure_structlog
 
-_METRICS_STATIC_DIR = (
-    Path(__file__).resolve().parents[2]
-    / "admin" / "metrics" / "adapters" / "driving" / "static"
-)
+_STATIC_DIR = PROJECT_ROOT / "static"
 
 
 def _build_channels_plugin(
@@ -208,12 +202,12 @@ def create_app() -> Litestar:
     base_config = BaseAppConfig()
     log_config = AdminLogConfig()
     metrics_cfg = MetricsConfig()
+    # Single asset mount at the project's `static/` root. URL path mirrors
+    # the on-disk path (`/static/admin/log/style.css` -> `static/admin/log/
+    # style.css`). 1h browser cache; raise/lower per environment.
     static_router = create_static_files_router(
-        path="/admin/logs/static",
-        directories=[log_config.log_static_path],
-        # 1 hour browser cache. The dashboard assets are versioned by
-        # deployment cadence; raise/lower per environment if you ship
-        # frontend updates more aggressively.
+        path="/static",
+        directories=[_STATIC_DIR],
         cache_control=CacheControlHeader(max_age=3600),
     )
 
@@ -234,19 +228,11 @@ def create_app() -> Litestar:
     extra_handlers: list = [prom_controller]
     if metrics_cfg.enabled:
         extra_handlers.append(MetricsOverviewController)
-        metrics_static_router = create_static_files_router(
-            path="/admin/metrics/static",
-            directories=[_METRICS_STATIC_DIR],
-            cache_control=CacheControlHeader(max_age=3600),
-        )
-        extra_handlers.append(metrics_static_router)
 
     # In DEV we want Litestar's debug renderer to surface the full traceback
     # to the client. Registering a catch-all Exception handler would short-
     # circuit that, so we only install it in PROD.
     exception_handlers: dict[Any, Any] = {
-        DslSyntaxError: dsl_syntax_handler,
-        InvalidLogFilterError: invalid_log_filter_handler,
         NotAuthorizedException: not_authorized_handler,
         PermissionDeniedException: permission_denied_handler,
         # ValidationException must be registered ahead of HTTPException so
@@ -288,6 +274,13 @@ def create_app() -> Litestar:
         openapi_config=OpenAPIConfig(
             title=config.app_name,
             version=_resolve_app_version(),
+        ),
+        # Single Jinja engine bound to the project's static/ root. Templates
+        # are referenced by their path under static/ (e.g. "shared/_base.html",
+        # "admin/dashboard.html"). Same directory the static router serves.
+        template_config=TemplateConfig(
+            directory=_STATIC_DIR,
+            engine=JinjaTemplateEngine,
         ),
         lifespan=[lifespan],
         # Bound to APP_ENV — a stray LITESTAR_DEBUG=1 in prod is ignored.
