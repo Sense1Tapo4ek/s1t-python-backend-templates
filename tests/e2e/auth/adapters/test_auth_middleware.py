@@ -104,11 +104,10 @@ def test_login_form_accessible_to_anonymous() -> None:
     assert "text/html" in response.headers["content-type"]
 
 
-# Auth probes target a still-existing admin JSON API route. The old log
-# DELETE/clear endpoint was removed in the file-tail simplification; the
-# metrics overview JSON endpoint is guarded by require_role(Role.ADMIN)
-# and needs no seeded data, so it exercises the same auth path.
-_ADMIN_API_ROUTE = "/admin/metrics/api"
+# Auth probes target a still-existing admin JSON API route. The logs JSON
+# API is guarded by require_role(Role.ADMIN) and returns an empty page when
+# no log file exists, so it exercises the auth path without seeded data.
+_ADMIN_API_ROUTE = "/api/v1/admin/logs/"
 
 
 def test_admin_api_without_token_returns_401() -> None:
@@ -126,7 +125,6 @@ def test_admin_api_with_token_succeeds(headers: dict[str, str]) -> None:
     with TestClient(app=app) as client:
         response = client.get(
             _ADMIN_API_ROUTE,
-            params={"module": "overview"},
             headers=headers,
         )
     assert response.status_code == HTTP_200_OK
