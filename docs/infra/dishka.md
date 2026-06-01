@@ -13,10 +13,10 @@ companion). The root container assembles them in
 
 ```python
 return make_async_container(
-    SharedProvider(channels_plugin=channels_plugin),
+    SharedProvider(),
     AdminProvider(),
-    AdminLogProvider(),
-    AdminLogPortBindings(),
+    AdminLogWebProvider(),
+    AdminMetricsProvider(),
     AuthProvider(),
     AuthPortBindings(),
 )
@@ -42,13 +42,14 @@ reuse.
 
 ```python
 # admin/log/provider.py
-class AdminLogProvider(Provider):
+class AdminLogWebProvider(Provider):
     scope = Scope.APP
 
     config = provide(AdminLogConfig)
-    engine = provide(build_engine)
-    repo   = provide(SqliteLogRepo, provides=ILogReader)
-    sink   = provide(LogSinkWorker)
+    source = provide(LogFileSource)
+    reader = provide(FileLogReader, provides=ILogReader)
+    follower = provide(FileLogReader, provides=ILogFollower)
+    facade = provide(LogsFacade)
 ```
 
 Rules:
@@ -80,10 +81,9 @@ request.
   resolution. Tests that use env-isolation autouse fixtures must warm
   DI eagerly before the fixture wipes env vars. See
   `tests/e2e/conftest.py::e2e_client`.
-- **`channels_plugin` is threaded in, not constructed inside.** The
-  same instance must reach `Litestar(plugins=[...])` and
-  `SharedProvider(channels_plugin=...)`. Constructed in `create_app`
-  and passed both ways. See [subsystems/event_bus.md](../subsystems/event_bus.md).
+- **`SharedProvider` takes no arguments.** It provides only
+  `BaseAppConfig`. `build_container()` is called with no plugin
+  threaded through.
 - **Container close is idempotent in lifespan.** The shutdown path
   always reaches `await container.close()` regardless of partial
   start failures.

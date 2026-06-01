@@ -70,7 +70,7 @@ Strict-DDD per-context. Top level:
 ```
 src/
 ├── shared/          Cross-cutting: domain kernel, DI provider, middleware,
-│                    event bus, db connection, base config
+│                    base config
 ├── root/            Entrypoints (api, cli) + container assembly
 ├── auth/            Bounded context: token validation, role guard, middleware
 └── admin/           Bounded context: dashboard + observability
@@ -111,7 +111,7 @@ decisions, layers, invariants, and how-to recipes.
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Project overview: contexts, layers, error hierarchy, DI, lifespan, invariants. |
 | [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, admin/metrics). |
-| [docs/subsystems/](docs/subsystems/) | Cross-cutting: event bus, error hierarchy, observability. |
+| [docs/subsystems/](docs/subsystems/) | Cross-cutting: error hierarchy, observability, metrics. |
 | [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, valkey, jinja). |
 | [docs/adr/](docs/adr/) | Architecture Decision Records (MADR format). |
 

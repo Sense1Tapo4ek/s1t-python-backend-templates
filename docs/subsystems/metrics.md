@@ -80,9 +80,8 @@ Reserved slugs: `overview`, `api`, `static` (rejected by the registry).
 - **`enabled=false` gates UI only.** `/metrics` stays up (assuming the
   context is registered). Losing the scrape endpoint hurts more than losing
   the dashboard.
-- **Sampler scope.** Loop-lag and RSS samplers are spawned by the request-
-  handling process via lifespan. The `log-sink` process publishes its own row
-  by spawning the same lifespan from `start_log_sink`.
+- **Sampler scope.** Loop-lag and RSS samplers are spawned by each request-
+  handling worker via lifespan; each worker publishes its own row.
 - **Severity is rendered, not stored.** Plugins decide OK / WARN / BAD from
   raw values on every render. Do not bake thresholds into the publisher.
 - **Stale data is shown, not hidden.** If a worker stops publishing its row

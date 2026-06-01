@@ -14,7 +14,7 @@ API.
 
 | Context | Path | Responsibility |
 |:---|:---|:---|
-| `shared` | `src/shared/` | Cross-cutting kernel: domain types (`Role`, `Principal`), base config, error hierarchy, event bus, db connection, middleware, structlog setup. Imported by every other context; imports nothing from them. |
+| `shared` | `src/shared/` | Cross-cutting kernel: domain types (`Role`, `Principal`), base config, error hierarchy, db connection, middleware, structlog setup. Imported by every other context; imports nothing from them. |
 | `root` | `src/root/` | Entrypoints (`api.py`, `cli.py`) and DI container assembly. The only place that wires providers together. |
 | `auth` | `src/auth/` | Bearer/cookie auth: token resolution, `AuthMiddleware`, `require_role` guards. See [contexts/auth.md](contexts/auth.md). |
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
@@ -140,7 +140,7 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 | `shared/config.py::BaseAppConfig` | `APP_` | `app_name`, `app_env`, `volume_path`, `runtime_path`. |
 | `root/config.py::RootConfig` | `APP_` (extends Base) | server bind/port/workers, security CSP/HSTS, prod invariants. |
 | `auth/config.py::AuthConfig` | `AUTH_` | `admin_token` (`SecretStr`). |
-| `admin/log/config.py::AdminLogConfig` | `LOG_` | `log_file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
+| `admin/log/config.py::AdminLogConfig` | `LOG_` | `file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
 | `admin/metrics/config.py::MetricsConfig` | `METRICS_` | UI gate, Prometheus endpoint path + public flag, Valkey key prefix + TTL, publish interval. |
 
 Rules:
