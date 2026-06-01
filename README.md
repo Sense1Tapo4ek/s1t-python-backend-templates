@@ -1,8 +1,8 @@
 # litestar-base
 
 Production-shaped Litestar starter with strict-DDD layout, Dishka DI,
-SQLite-backed admin logs, role-based auth, structured logging, and
-typed event bus over Litestar Channels.
+a file-tail admin log viewer, role-based auth, structured logging, and a
+Prometheus metrics subsystem.
 
 Use it as a template, not a library — fork, rename, delete what you
 don't need.
@@ -14,8 +14,8 @@ don't need.
 - Python ≥ 3.12
 - [`uv`](https://docs.astral.sh/uv/) for dependency / virtualenv management
 
-No system services required. SQLite-only. Optional Telegram credentials
-for crash reporting via snitchbot.
+Valkey (Redis-compatible) is required for the metrics subsystem. Optional
+Telegram credentials for crash reporting via snitchbot.
 
 ---
 
@@ -36,8 +36,11 @@ uv run start_litestar
 ```
 
 App listens on `http://127.0.0.1:8000` (override via `APP_HOST` /
-`APP_PORT`). Migrations run automatically on first start; the SQLite
-file is created under `./storage/logs/`.
+`APP_PORT`). Logs are written to `${VOLUME_PATH}/logs/app.jsonl` and to
+stdout; the admin UI tails that file.
+
+Metrics need Valkey: `docker run -d -p 6379:6379 valkey/valkey:8-alpine`
+(or `docker compose up valkey -d`).
 
 ### First login
 
@@ -71,7 +74,7 @@ src/
 ├── root/            Entrypoints (api, cli) + container assembly
 ├── auth/            Bounded context: token validation, role guard, middleware
 └── admin/           Bounded context: dashboard + observability
-    ├── log/         Sub-context: SQLite log store, SSE stream, exports
+    ├── log/         Sub-context: file-tail log viewer (JSONL), SSE, export
     └── metrics/     Sub-context: Prometheus endpoint, admin dashboard, plugin registry
 ```
 
@@ -94,7 +97,7 @@ Layered the same way as `src/`:
 
 - `tests/unit/` — domain, no I/O, no mocks
 - `tests/flow/` — app-level use cases with AsyncMock interfaces
-- `tests/integration/` — real DB / channels / file system
+- `tests/integration/` — real file system (tmp_path JSONL)
 - `tests/e2e/` — full app via `AsyncTestClient`
 
 ---
@@ -109,7 +112,7 @@ decisions, layers, invariants, and how-to recipes.
 | [docs/architecture.md](docs/architecture.md) | Project overview: contexts, layers, error hierarchy, DI, lifespan, invariants. |
 | [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, admin/metrics). |
 | [docs/subsystems/](docs/subsystems/) | Cross-cutting: event bus, error hierarchy, observability. |
-| [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, valkey). |
+| [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, valkey, jinja). |
 | [docs/adr/](docs/adr/) | Architecture Decision Records (MADR format). |
 
 ---
@@ -131,7 +134,7 @@ vars (see `.env.example`).
 
 - **Litestar 2.21.x** — ASGI app, exception handlers, lifespan.
 - **Dishka** — DI container, APP scope.
-- **structlog** — JSON-friendly key/value logging, async-safe via per-process queue.
+- **structlog** — JSON logging to stdout + a rotating JSONL file.
 - **msgspec** — wire-format encode/decode for events.
 - **Valkey** — shared store for cross-worker metrics snapshots. See [docs/infra/valkey.md](docs/infra/valkey.md).
 - **prometheus_client + Litestar `/metrics`** — per-worker counters,
@@ -147,8 +150,8 @@ vars (see `.env.example`).
 All vars in `.env.example`. Highlights:
 
 - `APP_ENV` — `dev` or `PROD`. PROD enforces non-empty `AUTH_ADMIN_TOKEN`.
-- `APP_WORKERS` — number of async workers (default `1`; no constraint after log sink became out-of-process).
-- `VOLUME_PATH` — persistent data root (logs db, future state).
+- `APP_WORKERS` — number of async workers (default `1`; a free knob, single-process logging).
+- `VOLUME_PATH` — persistent data root (log file, future state).
 - `LOG_*` — see [contexts/admin-log.md](docs/contexts/admin-log.md#configuration).
 - `METRICS_*` — see [contexts/admin-metrics.md](docs/contexts/admin-metrics.md#public-surface).
 

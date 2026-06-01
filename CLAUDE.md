@@ -17,10 +17,10 @@ agent needs that a contributor wouldn't.
 ## What this is
 
 Litestar 2.21 starter template, strict-DDD per bounded context, Dishka DI,
-SQLite admin log subsystem with FTS5 search and SSE tail, role-based
-auth, Litestar Channels event bus over Valkey. Python 3.12+, managed
-with `uv`. Logs flow through a Valkey Stream consumed by a separate
-`log-sink` process (single SQLite writer).
+a file-tail admin log viewer (reads the rotating JSONL file the app
+writes), role-based auth, and a multi-worker-safe Prometheus metrics
+subsystem over Valkey. Python 3.12+, managed with `uv`. Logs go to stdout
+and to `LOG_FILE_PATH`; the admin UI tails that file.
 
 ## Quick verifications
 
@@ -28,7 +28,7 @@ with `uv`. Logs flow through a Valkey Stream consumed by a separate
 uv run pytest                     # full suite (~10s)
 uv run pytest tests/unit/         # domain only, instant
 uv run pytest tests/flow/         # app-level with mocked interfaces
-uv run pytest tests/integration/  # real SQLite via tmp_path
+uv run pytest tests/integration/  # FileLogReader against tmp_path JSONL
 uv run pytest tests/e2e/          # full app via AsyncTestClient
 uv run ruff check . && uv run mypy
 ```
@@ -44,8 +44,7 @@ Test layout mirrors `src/`. Don't mix layers in one file.
   Settings → Dishka providers. Each context owns a `config.py` with a
   unique `env_prefix`.
 - **Single source of truth for shared literals.** `ADMIN_COOKIE_NAME` in
-  `auth/config.py`, `YOYO_MIGRATION_TABLE` in `admin/log/config.py`.
-  Re-import; never duplicate.
+  `auth/config.py`. Re-import; never duplicate.
 - **No emoji.** Code, docs, log events. Pure signal.
 - **HTML via Jinja, assets under `static/`.** Controllers return
   `Template(template_name="<context>/<file>.html", context={...})`. All
@@ -57,23 +56,17 @@ Test layout mirrors `src/`. Don't mix layers in one file.
 
 ## Gotchas the agent will trip on
 
-- **Two processes per deployment.** `app` (Litestar workers, read-only
-  to `admin_logs.db`) + `log-sink` (single writer, drains Valkey Stream
-  into SQLite). `APP_WORKERS` is now a free knob — the sink is the only
-  writer. Docker Compose wires both; bare `start_litestar` needs
-  `start_log_sink` running alongside in another shell.
-- **Valkey is required.** Both processes need it (`VALKEY_URL`). Producers
-  use Streams (`LOG_STREAM_KEY`); SSE fan-out uses pub/sub
-  (`LOG_EVENTS_CHANNEL`). If Valkey is down, logs buffer in-process and
-  drop with throttled stderr warnings — no crash.
+- **Single process.** No `log-sink`, no second writer. structlog writes
+  stdout + `LOG_FILE_PATH`; the admin log UI reads that file. `APP_WORKERS`
+  is a free knob.
+- **Valkey is required by metrics only.** Cross-worker snapshots flow
+  through Valkey hashes (`VALKEY_URL`). Logs never touch it. If Valkey is
+  down, per-worker counters still serve; only cross-worker merge degrades.
+- **Log filters are client-side.** Level + substring filtering happen in
+  the browser over loaded rows; "load more" pulls deeper into the file.
 - **APP-scope DI is lazy.** The first HTTP request resolves the graph.
   Tests using env-isolation autouse fixtures must warm DI eagerly first
   — see `tests/e2e/conftest.py::e2e_client`.
-- **Channels plugin is shared.** Built in `create_app()` with a
-  `RedisChannelsPubSubBackend`, threaded through `app.state.channels_plugin`
-  into `build_container()`. Litestar transport (SSE) and the typed event
-  bus must hit the same backend. The backend's Redis client is closed
-  manually in lifespan stop (it doesn't own it).
 - **`.env` is gitignored.** `.env.example` is the contract.
 - **Test env isolation.** `tests/conftest.py::_isolate_environment` is
   autouse and deletes APP_NAME et al. before every test. Module-scoped
@@ -94,8 +87,6 @@ Test layout mirrors `src/`. Don't mix layers in one file.
 - **Docstrings only when the contract isn't visible from name+types.**
   Inline comments only when the WHY is non-obvious. See
   `~/.claude/rules/common/documentation.md` §6.
-- **Never edit applied migrations.** Add a new file under
-  `migrations/<context>/` with the next sequential number.
 - **One ADR per decision, ≤40 lines, never renumber.** Supersede with a
   new ADR; keep the old one in the tree.
 
@@ -107,16 +98,15 @@ Test layout mirrors `src/`. Don't mix layers in one file.
 uv sync
 cp .env.example .env
 openssl rand -hex 32              # paste into AUTH_ADMIN_TOKEN
-docker run -d -p 6379:6379 valkey/valkey:8-alpine  # bus, or `docker compose up valkey -d`
+docker run -d -p 6379:6379 valkey/valkey:8-alpine  # metrics store, or `docker compose up valkey -d`
 
 uv run start_litestar             # API workers
-uv run start_log_sink             # in a separate shell — drains Valkey -> SQLite
 ```
 
 ### Docker
 
 ```bash
-docker compose up --build         # valkey + app:8000 + log-sink, all on /data volume
+docker compose up --build         # valkey + app:8000, all on /data volume
 ```
 
 ### Adding a bounded context
