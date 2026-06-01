@@ -32,6 +32,22 @@ def test_health_endpoint_returns_build_info(
     assert "started_at" in body
 
 
+def test_ready_endpoint_returns_ready(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("APP_NAME", "test-service")
+    monkeypatch.setenv("VOLUME_PATH", str(tmp_path))
+
+    app = create_app()
+
+    with TestClient(app=app) as client:
+        response = client.get("/health/ready")
+
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"status": "ready"}
+
+
 def test_ping_endpoint_returns_pong(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_NAME", "test-service")
     monkeypatch.setenv("VOLUME_PATH", str(tmp_path))

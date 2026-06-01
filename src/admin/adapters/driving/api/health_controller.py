@@ -5,7 +5,7 @@ from litestar import Controller, get
 from litestar.exceptions import HTTPException
 from litestar.status_codes import HTTP_503_SERVICE_UNAVAILABLE
 
-from shared.adapters.driven.db import SQLiteConnection
+from shared.config import BaseAppConfig
 
 from ....domain import BuildInfoVo
 
@@ -13,8 +13,10 @@ _log = structlog.get_logger(__name__)
 
 
 class HealthController(Controller):
-    """Two-tier health: /health is always-200 liveness; /health/ready probes
-    the SQLite reader pool and returns 503 on failure."""
+    """Two-tier health: /health is always-200 liveness; /health/ready is a
+    liveness-plus-config check (config resolves and the log directory exists)
+    and returns 503 on failure. The log path is a plain file, so there is no
+    DB pool to probe."""
 
     path = ""
 
@@ -34,13 +36,13 @@ class HealthController(Controller):
     @inject
     async def ready(
         self,
-        connection: FromDishka[SQLiteConnection],
+        config: FromDishka[BaseAppConfig],
     ) -> dict[str, str]:
-        # Exercises connection acquisition without touching app tables;
-        # any exception becomes 503 to signal readiness failure.
+        # Readiness = config resolved + the log directory exists, so the
+        # structlog file handler can write. Any failure becomes 503.
         try:
-            async with connection.read() as db, db.execute("SELECT 1") as cur:
-                await cur.fetchone()
+            if not config.log_dir.is_dir():
+                raise RuntimeError(f"log directory missing: {config.log_dir}")
         except Exception as exc:
             _log.exception("readiness check failed", error_type=type(exc).__name__)
             raise HTTPException(
