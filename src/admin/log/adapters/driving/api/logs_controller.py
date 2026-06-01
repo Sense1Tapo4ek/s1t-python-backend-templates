@@ -47,7 +47,7 @@ class LogsApiController(Controller):
         facade: FromDishka[LogsFacade],
         config: FromDishka[AdminLogConfig],
     ) -> LogPageResponseSchema:
-        entries, cursor = await facade.render_log_page(config.log_tail_lines)
+        entries, cursor = await facade.render_log_page(config.tail_lines)
         _log.info("logs page served", entry_count=len(entries))
         return LogPageResponseSchema(
             entries=entries,
@@ -68,7 +68,7 @@ class LogsApiController(Controller):
             raise ValidationException(str(exc)) from exc
         entries, next_cursor = await facade.load_older_logs(
             decoded,
-            config.log_load_more_lines,
+            config.load_more_lines,
         )
         _log.info("logs older served", entry_count=len(entries))
         return LogPageResponseSchema(
@@ -86,7 +86,7 @@ class LogsApiController(Controller):
         # Synchronous validation BEFORE building the response: headers are
         # already flushed once the generator starts, so any error raised
         # inside it cannot become a 4xx/5xx (spec 10.5 G).
-        poll_ms = config.log_follow_poll_ms
+        poll_ms = config.follow_poll_ms
         if poll_ms <= 0:
             raise ValidationException("LOG_FOLLOW_POLL_MS must be positive")
         _log.info("logs stream opened")

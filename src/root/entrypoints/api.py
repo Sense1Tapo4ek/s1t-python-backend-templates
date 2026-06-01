@@ -78,11 +78,11 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     setup_dishka(container=container, app=app)
 
     log_config = AdminLogConfig()
-    assert log_config.log_file_path is not None  # set by resolve_log_file_path
+    assert log_config.file_path is not None  # set by resolve_log_file_path
     configure_structlog(
         app_name=config.app_name,
-        log_file_path=log_config.log_file_path,
-        max_line_bytes=log_config.log_max_line_bytes,
+        log_file_path=log_config.file_path,
+        max_line_bytes=log_config.max_line_bytes,
     )
 
     log = structlog.get_logger("root.lifespan")

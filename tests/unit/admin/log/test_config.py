@@ -16,11 +16,11 @@ class TestAdminLogConfig:
 
         cfg = AdminLogConfig()
 
-        assert cfg.log_tail_lines == 200
-        assert cfg.log_load_more_lines == 200
-        assert cfg.log_follow_poll_ms == 250
-        assert cfg.log_max_line_bytes > 0
-        assert isinstance(cfg.log_file_path, Path)
+        assert cfg.tail_lines == 200
+        assert cfg.load_more_lines == 200
+        assert cfg.follow_poll_ms == 250
+        assert cfg.max_line_bytes > 0
+        assert isinstance(cfg.file_path, Path)
 
         # removed fields must not exist
         for gone in ("log_retention_days", "log_batch_size", "log_db_reader_count",
@@ -31,9 +31,9 @@ class TestAdminLogConfig:
     def test_file_path_defaults_under_log_dir(self) -> None:
         """
         Given default config,
-        When reading log_file_path,
+        When reading file_path,
         Then it sits under the shared log_dir.
         """
         cfg = AdminLogConfig()
-        assert cfg.log_file_path is not None
-        assert cfg.log_file_path.parent == cfg.log_dir
+        assert cfg.file_path is not None
+        assert cfg.file_path.parent == cfg.log_dir

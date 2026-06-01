@@ -32,11 +32,11 @@ def _make_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Litestar:
     log_file = _seed(tmp_path)
     monkeypatch.setenv("APP_NAME", "litestar-base")
     monkeypatch.setenv("VOLUME_PATH", str(tmp_path))
-    # AdminLogConfig uses env_prefix="LOG_", so the field `log_file_path`
-    # binds to LOG_LOG_FILE_PATH (prefix + field name), not LOG_FILE_PATH.
-    monkeypatch.setenv("LOG_LOG_FILE_PATH", str(log_file))
-    monkeypatch.setenv("LOG_LOG_TAIL_LINES", "2")
-    monkeypatch.setenv("LOG_LOG_LOAD_MORE_LINES", "2")
+    # AdminLogConfig uses env_prefix="LOG_", so field `file_path` binds to
+    # LOG_FILE_PATH (prefix + field name).
+    monkeypatch.setenv("LOG_FILE_PATH", str(log_file))
+    monkeypatch.setenv("LOG_TAIL_LINES", "2")
+    monkeypatch.setenv("LOG_LOAD_MORE_LINES", "2")
     # The app's own structlog handler writes to LOG_FILE_PATH (writer == reader
     # file). Left enabled, lifespan startup lines append to the seeded file and
     # displace the tail window. These tests exercise the read path, not the
@@ -209,8 +209,8 @@ class TestLogStream:
         log_file = _seed(tmp_path)
         monkeypatch.setenv("APP_NAME", "litestar-base")
         monkeypatch.setenv("VOLUME_PATH", str(tmp_path))
-        monkeypatch.setenv("LOG_LOG_FILE_PATH", str(log_file))
-        monkeypatch.setenv("LOG_LOG_FOLLOW_POLL_MS", "50")
+        monkeypatch.setenv("LOG_FILE_PATH", str(log_file))
+        monkeypatch.setenv("LOG_FOLLOW_POLL_MS", "50")
         monkeypatch.setattr(
             "root.entrypoints.api.configure_structlog", lambda **_: None
         )
