@@ -45,5 +45,24 @@ services:
       start_period: 20s
       retries: 3
 
+  # Test/CI runner — full green gate (ruff + mypy + pytest) in the same uv
+  # toolchain as the app, with the `dev` dependency group + tests/ layered on.
+  # Profile-gated so `docker compose up` never starts it.
+  #   docker compose run --rm test                      # full gate
+  #   docker compose run --rm test pytest tests/unit -q # subset
+  test:
+    profiles: ["test"]
+    build:
+      context: .
+      target: tester
+    image: litestar-base:test
+    environment:
+      VOLUME_PATH: /tmp/data
+      # No .env in the test image; disable the Telegram reporter so e2e tests
+      # that boot the app via lifespan don't demand a token.
+      SNITCHBOT_DISABLED: "1"
+    tmpfs:
+      - /tmp/data
+
 volumes:
   app_data:

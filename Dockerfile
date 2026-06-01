@@ -25,6 +25,28 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 
+# ─── Stage 1b: tester (dev deps + tests; never shipped) ──────────────────────
+# Same source/venv as the builder, plus the `dev` dependency group (pytest,
+# mypy, ruff, ...) and the test tree. Built only by the compose `test` service.
+FROM builder AS tester
+
+ENV PATH="/app/.venv/bin:${PATH}" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VOLUME_PATH=/tmp/data
+
+# Layer the dev group onto the runtime venv (no --no-dev this time).
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
+
+COPY static/ ./static/
+COPY tests/ ./tests/
+
+# Default: the full local green gate. Override per-invocation, e.g.
+#   docker compose run --rm test pytest tests/unit -q
+CMD ["sh", "-c", "ruff check . && mypy && pytest -q"]
+
+
 # ─── Stage 2: runtime ────────────────────────────────────────────────────────
 FROM python:3.12-slim AS runtime
 
@@ -52,6 +74,9 @@ RUN groupadd --system --gid 1000 app \
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 COPY --chown=app:app src/         /app/src/
 COPY --chown=app:app migrations/  /app/migrations/
+# Jinja templates + browser assets. PROJECT_ROOT resolves to /app, so the app
+# expects them at /app/static (TemplateConfig + the /static mount).
+COPY --chown=app:app static/      /app/static/
 
 # Build-time git metadata (pass via --build-arg in CI).
 ARG GIT_COMMIT_SHA=unknown

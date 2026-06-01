@@ -73,8 +73,8 @@ src/
 ├── admin/                Bounded context: dashboard + observability
 │   ├── log/              Sub-context: file-tail log viewer (JSONL), SSE, export
 │   └── metrics/          Sub-context: Prometheus `/metrics` endpoint
-├── db_example/           Example context: raw aiosqlite, pool vs per-request DI
-└── db_example_alchemy/   Example context: SQLAlchemy + advanced-alchemy (only SQLAlchemy user)
+├── db_example_sddd/           Example context: raw aiosqlite, pool vs per-request DI
+└── db_example_litestar/   Example context: SQLAlchemy + advanced-alchemy (only SQLAlchemy user)
 ```
 
 Each context has its own `domain/`, `app/`, `ports/{driving,driven}/`,
@@ -85,6 +85,16 @@ error hierarchy, DI wiring, and invariants.
 ---
 
 ## Tests
+
+Canonical path is Docker Compose — same toolchain as the app image, no local
+setup:
+
+```bash
+docker compose run --rm test                       # full gate: ruff + mypy + pytest
+docker compose run --rm test pytest tests/unit -q  # any pytest subset
+```
+
+Local `uv` works too for the inner loop:
 
 ```bash
 uv run pytest                    # full suite (~10s)
@@ -109,7 +119,7 @@ decisions, layers, invariants, and how-to recipes.
 | Section | Contents |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Project overview: contexts, layers, error hierarchy, DI, lifespan, invariants. |
-| [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, admin/metrics, db_example, db_example_alchemy). |
+| [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, admin/metrics, db_example_sddd, db_example_litestar). |
 | [docs/subsystems/](docs/subsystems/) | Cross-cutting: error hierarchy, observability, metrics. |
 | [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, jinja). |
 | [docs/adr/](docs/adr/) | Architecture Decision Records (MADR format). |
@@ -152,8 +162,8 @@ All vars in `.env.example`. Highlights:
 - `VOLUME_PATH` — persistent data root (log file, future state).
 - `LOG_*` — see [contexts/admin-log.md](docs/contexts/admin-log.md#configuration).
 - `METRICS_*` — see [contexts/admin-metrics.md](docs/contexts/admin-metrics.md#public-surface).
-- `DB_EXAMPLE_*` — see [contexts/db_example.md](docs/contexts/db_example.md#config).
-- `DB_EXAMPLE_ALCHEMY_*` — see [contexts/db_example_alchemy.md](docs/contexts/db_example_alchemy.md#config).
+- `DB_EXAMPLE_SDDD_*` — see [contexts/db_example_sddd.md](docs/contexts/db_example_sddd.md#config).
+- `DB_EXAMPLE_LITESTAR_*` — see [contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md#config).
 
 ---
 

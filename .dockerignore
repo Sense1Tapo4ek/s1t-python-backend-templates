@@ -12,7 +12,7 @@ __pycache__/
 .ruff_cache/
 storage/
 docs/
-tests/
+# tests/ is intentionally NOT ignored — the `tester` build stage copies it.
 TODO
 README.md
 *.md

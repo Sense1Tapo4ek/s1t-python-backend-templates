@@ -23,13 +23,23 @@ writes), role-based auth, and a Prometheus metrics endpoint via
 Logs go to stdout and to `LOG_FILE_PATH`; the admin UI tails that file.
 
 Two always-on example contexts ship in the template:
-- `db_example/` — raw aiosqlite, pool vs per-request variants, yoyo migrations,
-  `MsgspecDTO`. See [docs/contexts/db_example.md](docs/contexts/db_example.md).
-- `db_example_alchemy/` — SQLAlchemy 2.0 + advanced-alchemy 1.11, hybrid
+- `db_example_sddd/` — raw aiosqlite, pool vs per-request variants, yoyo migrations,
+  `MsgspecDTO`. See [docs/contexts/db_example_sddd.md](docs/contexts/db_example_sddd.md).
+- `db_example_litestar/` — SQLAlchemy 2.0 + advanced-alchemy 1.11, hybrid
   layering, `SQLAlchemyDTO`, `create_all`. The **only** SQLAlchemy user in the
-  template. See [docs/contexts/db_example_alchemy.md](docs/contexts/db_example_alchemy.md).
+  template. See [docs/contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md).
 
 ## Quick verifications
+
+Canonical (Docker Compose — `tester` stage layers the `dev` group + `tests/`
+onto the app's uv venv; full gate = `ruff check . && mypy && pytest -q`):
+
+```bash
+docker compose run --rm test                       # full gate
+docker compose run --rm test pytest tests/unit -q  # any subset
+```
+
+Local `uv` for the fast inner loop:
 
 ```bash
 uv run pytest                     # full suite (~10s)
@@ -40,7 +50,10 @@ uv run pytest tests/e2e/          # full app via AsyncTestClient
 uv run ruff check . && uv run mypy
 ```
 
-Test layout mirrors `src/`. Don't mix layers in one file.
+Test layout mirrors `src/`. Don't mix layers in one file. The `test` service
+is profile-gated (`profiles: ["test"]`) so `docker compose up` never starts it.
+The `tester`/runtime images both copy `static/` (Jinja templates + assets);
+without it the app 500s on every rendered page.
 
 ## Conventions worth remembering
 
@@ -63,9 +76,9 @@ Test layout mirrors `src/`. Don't mix layers in one file.
 - **Migrations live in `migrations/<context>/`.** The project-root
   `migrations/` folder mirrors `src/`, `static/`, `docs/`, `tests/`. Each
   context that uses yoyo gets its own subfolder (e.g.
-  `migrations/db_example/`). `db_example_alchemy` uses `create_all` and
+  `migrations/db_example_sddd/`). `db_example_litestar` uses `create_all` and
   has no migration files.
-- **SQLAlchemy is used only in `db_example_alchemy/`.** Do not import
+- **SQLAlchemy is used only in `db_example_litestar/`.** Do not import
   SQLAlchemy into other contexts. Litestar >= 2.23.0 is required because
   advanced-alchemy 1.11 needs `litestar.di.NamedDependency`.
 
