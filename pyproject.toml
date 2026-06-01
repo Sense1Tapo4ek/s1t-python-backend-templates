@@ -10,7 +10,6 @@ dependencies = [
     "litestar[jinja,prometheus]>=2.21.1",
     "orjson>=3.10",
     "pydantic-settings>=2.12.0",
-    "redis[hiredis]>=5.2",
     "snitchbot>=1.2.0",
     "structlog>=25.5.0",
     "uvicorn>=0.40.0",
@@ -22,12 +21,11 @@ start_litestar = "root.entrypoints.cli:main"
 
 [dependency-groups]
 dev = [
-    "fakeredis>=2.26",
     "mypy>=1.13",
     "pytest>=9.0.2",
     "pytest-asyncio>=0.24",
     "ruff>=0.8",
-    "testcontainers[redis]>=4.9",
+    "testcontainers>=4.9",
 ]
 
 [tool.pytest_asyncio]
@@ -96,5 +94,5 @@ disallow_untyped_defs = false
 check_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = ["snitchbot.*", "yoyo.*", "aiosqlite.*", "fakeredis.*", "testcontainers.*"]
+module = ["snitchbot.*", "yoyo.*", "aiosqlite.*"]
 ignore_missing_imports = true
