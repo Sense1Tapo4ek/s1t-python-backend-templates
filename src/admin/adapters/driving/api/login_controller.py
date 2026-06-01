@@ -1,16 +1,15 @@
-from html import escape as html_escape
 from typing import Annotated
 from urllib.parse import urlsplit
 
 import structlog
 from dishka import FromDishka
 from dishka.integrations.litestar import inject
-from litestar import Controller, get, post
+from litestar import Controller, Response, get, post
 from litestar.connection import Request
 from litestar.datastructures import Cookie
 from litestar.enums import RequestEncodingType
 from litestar.params import Body
-from litestar.response import Redirect, Response
+from litestar.response import Redirect, Template
 from litestar.status_codes import HTTP_303_SEE_OTHER
 
 from auth.config import ADMIN_COOKIE_NAME, MAX_TOKEN_LEN
@@ -24,68 +23,6 @@ _log = structlog.get_logger(__name__)
 LOGIN_PATH = "/admin/login"
 DASHBOARD_PATH = "/admin/"
 
-_LOGIN_TEMPLATE = """<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Login · {app_name}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/admin/logs/static/style.css" />
-</head>
-<body>
-<div class="app app--page">
-  <header class="topbar">
-    <div class="brand">
-      <span class="title">{app_name}</span>
-      <span class="path">/<em>admin/login</em></span>
-    </div>
-  </header>
-
-  <main class="login-main">
-    <section class="panel">
-      <h2>Sign in</h2>
-      <p style="color:var(--ink-muted); font-size:12px; margin:0 0 20px 0;">
-        Paste the admin bearer token to continue.
-      </p>
-      {error_block}
-      <form method="post" action="{login_path}" autocomplete="off">
-        <input type="hidden" name="next" value="{next_path}" />
-        <div style="display:flex;flex-direction:column;gap:12px;">
-          <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ink-muted);">
-            <span>token</span>
-            <input
-              type="password"
-              name="token"
-              required
-              autofocus
-              style="font-family:'JetBrains Mono',monospace;padding:10px 12px;border:1px solid var(--line);background:transparent;color:var(--sumi);font-size:14px;"
-            />
-          </label>
-          <button
-            type="submit"
-            class="btn-link"
-            style="justify-content:center;cursor:pointer;border:1px solid var(--line);"
-          >enter <span class="arrow">→</span></button>
-        </div>
-      </form>
-    </section>
-  </main>
-
-  <footer class="statusbar">
-    <span class="grow"></span>
-    <span>{app_name} · admin</span>
-  </footer>
-</div>
-</body>
-</html>"""
-
-_ERROR_BLOCK = """<div style="border:1px solid var(--accent);padding:10px 12px;margin-bottom:16px;color:var(--accent-soft);background:var(--accent-tint);font-size:12px;">
-  {message}
-</div>"""
-
 
 class LoginController(Controller):
     path = "/admin"
@@ -96,7 +33,7 @@ class LoginController(Controller):
         self,
         build: FromDishka[BuildInfoVo],
         next: str = DASHBOARD_PATH,
-    ) -> Response[str]:
+    ) -> Template:
         return _render(app_name=build.app_name, next_path=_safe_next(next))
 
     @post("/login", status_code=HTTP_303_SEE_OTHER)
@@ -189,20 +126,17 @@ def _render(
     next_path: str,
     error: str | None = None,
     status_code: int = 200,
-) -> Response[str]:
-    # All values flow into HTML attributes / text via str.format(); escape so
-    # `next_path="><script>...`, malicious `app_name`, or operator-supplied
-    # error strings can never break out of the attribute / inject script.
-    error_block = (
-        _ERROR_BLOCK.format(message=html_escape(error)) if error else ""
+) -> Template:
+    return Template(
+        template_name="admin/login.html",
+        context={
+            "app_name": app_name,
+            "login_path": LOGIN_PATH,
+            "next_path": next_path,
+            "error": error,
+        },
+        status_code=status_code,
     )
-    html = _LOGIN_TEMPLATE.format(
-        app_name=html_escape(app_name),
-        login_path=LOGIN_PATH,
-        next_path=html_escape(next_path, quote=True),
-        error_block=error_block,
-    )
-    return Response(content=html, media_type="text/html", status_code=status_code)
 
 
 def _safe_next(value: str) -> str:

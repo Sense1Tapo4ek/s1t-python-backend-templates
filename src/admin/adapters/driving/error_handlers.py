@@ -6,7 +6,7 @@ from urllib.parse import quote
 from litestar import Response
 from litestar.connection import Request
 from litestar.exceptions import NotAuthorizedException, PermissionDeniedException
-from litestar.response import Redirect
+from litestar.response import Redirect, Template
 from litestar.status_codes import (
     HTTP_303_SEE_OTHER,
     HTTP_401_UNAUTHORIZED,
@@ -14,18 +14,6 @@ from litestar.status_codes import (
 )
 
 from .api.login_controller import LOGIN_PATH
-
-_FORBIDDEN_HTML = """<!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><title>403 Forbidden</title>
-<link rel="stylesheet" href="/admin/logs/static/style.css"/></head>
-<body><div class="app app--page"><main class="login-main">
-<section class="panel" style="text-align:center;max-width:480px;">
-<h2>403 Forbidden</h2>
-<p style="color:var(--ink-muted);font-size:13px;margin:14px 0 22px;">
-You are signed in but your role does not grant access to this page.
-</p>
-<a class="btn-link primary" href="/admin/" style="justify-content:center;">return to dashboard <span class="arrow">→</span></a>
-</section></main></div></body></html>"""
 
 
 def not_authorized_handler(request: Request, exc: NotAuthorizedException) -> Response:
@@ -48,9 +36,8 @@ def permission_denied_handler(request: Request, exc: PermissionDeniedException) 
     browsers, JSON detail for API callers.
     """
     if request.url.path.startswith("/admin") and _wants_html(request):
-        return Response(
-            content=_FORBIDDEN_HTML,
-            media_type="text/html",
+        return Template(
+            template_name="admin/forbidden.html",
             status_code=HTTP_403_FORBIDDEN,
         )
     return Response(
