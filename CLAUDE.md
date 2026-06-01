@@ -47,6 +47,13 @@ Test layout mirrors `src/`. Don't mix layers in one file.
   `auth/config.py`, `YOYO_MIGRATION_TABLE` in `admin/log/config.py`.
   Re-import; never duplicate.
 - **No emoji.** Code, docs, log events. Pure signal.
+- **HTML via Jinja, assets under `static/`.** Controllers return
+  `Template(template_name="<context>/<file>.html", context={...})`. All
+  templates and browser assets live in the project-root `static/` folder
+  that mirrors the context tree. Single Litestar mount `/static/...`;
+  single `TemplateConfig(directory="static", engine=JinjaTemplateEngine)`.
+  Rule §1.3 in `~/.claude/rules/s-ddd_python/structure.md`; see
+  [docs/infra/jinja.md](docs/infra/jinja.md).
 
 ## Gotchas the agent will trip on
 
@@ -88,7 +95,7 @@ Test layout mirrors `src/`. Don't mix layers in one file.
   Inline comments only when the WHY is non-obvious. See
   `~/.claude/rules/common/documentation.md` §6.
 - **Never edit applied migrations.** Add a new file under
-  `migrations/<context>/`. See [docs/infra/yoyo.md](docs/infra/yoyo.md).
+  `migrations/<context>/` with the next sequential number.
 - **One ADR per decision, ≤40 lines, never renumber.** Supersede with a
   new ADR; keep the old one in the tree.
 

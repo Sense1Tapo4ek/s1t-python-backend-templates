@@ -70,8 +70,9 @@ src/
 │                    event bus, db connection, base config
 ├── root/            Entrypoints (api, cli) + container assembly
 ├── auth/            Bounded context: token validation, role guard, middleware
-└── admin/           Bounded context: dashboard + log subsystem
-    └── log/         Sub-context: SQLite log store, SSE stream, exports
+└── admin/           Bounded context: dashboard + observability
+    ├── log/         Sub-context: SQLite log store, SSE stream, exports
+    └── metrics/     Sub-context: Prometheus endpoint, admin dashboard, plugin registry
 ```
 
 Each context has its own `domain/`, `app/`, `ports/{driving,driven}/`,
@@ -106,9 +107,9 @@ decisions, layers, invariants, and how-to recipes.
 | Section | Contents |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Project overview: contexts, layers, error hierarchy, DI, lifespan, invariants. |
-| [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log). |
+| [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, admin/metrics). |
 | [docs/subsystems/](docs/subsystems/) | Cross-cutting: event bus, error hierarchy, observability. |
-| [docs/infra/](docs/infra/) | Per-technology references (sqlite, dishka, structlog, yoyo). |
+| [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, valkey). |
 | [docs/adr/](docs/adr/) | Architecture Decision Records (MADR format). |
 
 ---
@@ -131,11 +132,10 @@ vars (see `.env.example`).
 - **Litestar 2.21.x** — ASGI app, exception handlers, lifespan.
 - **Dishka** — DI container, APP scope.
 - **structlog** — JSON-friendly key/value logging, async-safe via per-process queue.
-- **Litestar Channels** — pub/sub for SSE log fan-out and the typed event bus. Memory backend default; swap to Redis with one provider line.
 - **msgspec** — wire-format encode/decode for events.
-- **yoyo-migrations** — SQLite schema versioning.
+- **Valkey** — shared store for cross-worker metrics snapshots. See [docs/infra/valkey.md](docs/infra/valkey.md).
 - **prometheus_client + Litestar `/metrics`** — per-worker counters,
-  cross-worker snapshots merged via Valkey hashes, admin dashboard at
+  cross-worker snapshots aggregated via Valkey, admin dashboard at
   `/admin/metrics` with a per-module plugin contract. See
   [docs/subsystems/metrics.md](docs/subsystems/metrics.md).
 - **snitchbot** — optional Telegram crash reporter (disabled by default).
@@ -147,7 +147,7 @@ vars (see `.env.example`).
 All vars in `.env.example`. Highlights:
 
 - `APP_ENV` — `dev` or `PROD`. PROD enforces non-empty `AUTH_ADMIN_TOKEN`.
-- `APP_WORKERS` — must be `1` (admin/log SQLite writer is single-process).
+- `APP_WORKERS` — number of async workers (default `1`; no constraint after log sink became out-of-process).
 - `VOLUME_PATH` — persistent data root (logs db, future state).
 - `LOG_*` — see [contexts/admin-log.md](docs/contexts/admin-log.md#configuration).
 - `METRICS_*` — see [contexts/admin-metrics.md](docs/contexts/admin-metrics.md#public-surface).

@@ -159,6 +159,31 @@ The contract for environment variables is `.env.example`. Don't commit
 
 ---
 
+## 6a. Browser-served assets
+
+Templates (Jinja2), CSS, and JS live in **one** project-root folder:
+
+```
+static/
+├── shared/_base.html          # layout — every page extends this
+├── admin/dashboard.html
+├── admin/login.html
+├── admin/forbidden.html
+├── admin/log/{index.html, style.css, tail.js}
+└── admin/metrics/{overview.html, detail.html, style.css, overview.js}
+```
+
+The folder mirrors the bounded-context tree. One Litestar mount
+`/static/...` serves the directory; one `TemplateConfig(directory="static",
+engine=JinjaTemplateEngine)` resolves templates. Controllers return
+`Template(template_name="<context>/<file>.html", context={...})`. The
+convention is captured as rule §1.3 in
+`~/.claude/rules/s-ddd_python/structure.md`; the *why* is in
+[adr/0008-jinja-server-side-rendering.md](adr/0008-jinja-server-side-rendering.md);
+the *how* is in [infra/jinja.md](infra/jinja.md).
+
+---
+
 ## 7. Invariants
 
 Things that, if you change them, will break the app silently or in
@@ -213,9 +238,7 @@ production.
 1. Create `migrations/<context>/NNNN_<snake_name>.sql` (next sequential
    number; never edit applied files).
 2. Migration runs at lifespan start via the context's `LifespanManager`.
-3. Rollback (optional) via yoyo `-- !rollback:` block in the same file.
-
-See [infra/yoyo.md](infra/yoyo.md).
+3. Rollback (optional) — document it in the same file for future reference.
 
 ### Add an ADR
 
