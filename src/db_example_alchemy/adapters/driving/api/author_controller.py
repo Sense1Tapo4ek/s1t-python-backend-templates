@@ -31,10 +31,12 @@ class AuthorController(Controller):
     @inject
     async def bulk_create(
         self,
-        data: DTOData[list[AuthorModel]],
+        data: list[AuthorModel],
         svc: FromDishka[AuthorService],
     ) -> Sequence[AuthorModel]:
-        return await svc.create_many(data.create_instance(), auto_commit=True)
+        # For a collection, let the DTO decode the JSON array straight into
+        # model instances (DTOData.create_instance() is single-only).
+        return await svc.create_many(data, auto_commit=True)
 
     @get("/")
     @inject
