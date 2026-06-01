@@ -19,8 +19,18 @@ services:
       # Container-only overrides; .env still feeds APP_NAME / AUTH_ADMIN_TOKEN / etc.
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
+      # Free knob now the single-writer sink is gone. Each worker appends to
+      # the same JSONL file via O_APPEND (atomic single-write per record).
       APP_WORKERS: 1
       VOLUME_PATH: /data
+      # UI history + live tail source of truth. Rotated by logrotate (create
+      # mode) so an open export fd reads a consistent inode (spec 10.5 F).
+      LOG_FILE_PATH: /data/logs/app.jsonl
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     volumes:
       - app_data:/data
     healthcheck:
