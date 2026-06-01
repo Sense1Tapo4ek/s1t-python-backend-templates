@@ -2,10 +2,10 @@
 
 Version: per `pyproject.toml`. Documentation: <https://www.structlog.org/>.
 
-Configured once at lifespan start in
-`src/shared/logging.py::configure_structlog`. JSON output via `orjson`,
-async-safe via a per-process `asyncio.Queue[str]` drained by the admin/log
-sink worker.
+Configured once at startup in `src/shared/logging.py::configure_structlog`.
+structlog renders JSON; two stdlib `logging` handlers emit it — a
+`StreamHandler` to stdout and a `WatchedFileHandler(LOG_FILE_PATH)` to the
+JSONL file the admin log UI reads.
 
 For the consumer side, see [contexts/admin-log.md](../contexts/admin-log.md).
 For the broader signal model, see [subsystems/observability.md](../subsystems/observability.md).
@@ -26,21 +26,25 @@ In order:
    structured dict, never a string.
 8. `make_structlog_processor()` from `snitchbot` — forwards selected
    events to Telegram when configured.
-9. `structlog.processors.JSONRenderer(serializer=_orjson_serializer)`.
+9. `structlog.stdlib.ProcessorFormatter.wrap_for_formatter` — terminal
+   processor handing the event dict to the stdlib formatter.
 
-`logger_factory=QueueLoggerFactory(queue)` directs each rendered line
-into the queue; `wrapper_class=structlog.stdlib.BoundLogger` keeps the
-stdlib logging API for code that wants it.
+`logger_factory=structlog.stdlib.LoggerFactory()`; the stdlib root logger
+carries two handlers, each with
+`ProcessorFormatter(processor=JSONRenderer(serializer=_orjson_serializer))`.
+The `snitchbot` `make_structlog_processor()` stays in the chain before the
+terminal wrapper.
 
-## Queue sink
+## File handler & rotation
 
-`_QueueLogger.put_nowait` enqueues. On `QueueFull`:
-- Drops the message.
-- Increments `_dropped_total`.
-- Emits one stderr line per second max:
-  `[litestar-base] log queue full, dropped (total=N)`.
-
-Stderr is the only fallback that can't loop back through the sink.
+- `WatchedFileHandler` re-`stat()`s the file before every emit and reopens it
+  if the inode changed — so external rotation (logrotate / docker) is picked
+  up without restarting the app. POSIX-only; on non-POSIX fall back to plain
+  `FileHandler` (no rotation detection).
+- The app never rotates or deletes its own file. Rotation is operational.
+  Example: `deploy/logrotate/app.conf` with `create`-mode (not
+  `copytruncate`) so an open export fd reads a consistent inode.
+- A write-side processor caps each rendered line at `LOG_MAX_LINE_BYTES`.
 
 ## Logging conventions
 
@@ -73,8 +77,11 @@ log.info("user paid", user_id=user_id, amount=amount, currency=currency)
 
 ## Invariants & gotchas
 
-- **Queue size is finite.** The structlog sink does not back-pressure
-  producers; it drops on overflow.
+- **One line per record (JSONL).** A truncation processor keeps each line
+  under `LOG_MAX_LINE_BYTES`; relies on `O_APPEND` single-write atomicity
+  (single host, POSIX). Best-effort.
+- **`WatchedFileHandler` cost.** It re-stats on every emit; acceptable for a
+  template, measurable at very high volume.
 - **mypy + processor protocol.** structlog's processor protocol is wide
   enough that mypy can't infer types from a literal list. The
   `shared_processors` list is annotated `list[Any]` to keep the spread
