@@ -1,39 +1,39 @@
 # admin/log
 
-SQLite-backed log subsystem: capture, search, tail, export. Sub-context of
-[admin](admin.md), kept separate so it can grow without bloating the
-parent.
+File-tail log viewer: read the rotating JSONL file the app writes, show it
+live and historically in the admin UI. Sub-context of [admin](admin.md).
 
-For the *why*, see [adr/0003-sqlite-wal-readers.md](../adr/0003-sqlite-wal-readers.md).
+For the *why*, see [adr/0009-file-tail-log-viewer.md](../adr/0009-file-tail-log-viewer.md).
 
 ## Mental model
 
-structlog → asyncio.Queue → sink worker → SQLite (WAL).
-Reader pool (N=4) serves UI tail, SSE stream, FTS search, and exports.
-A cleanup worker prunes rows older than retention.
+structlog renders every record as one JSON object on one line and writes it
+to two handlers: `stdout` (12-factor capture) and a `WatchedFileHandler` at
+`LOG_FILE_PATH` (the source of truth for the UI). There is no database, no
+queue, no second process, no Valkey on this path.
 
 ```
 log.info("user paid", ...)
-       │
-       ▼
-QueueLogger.put_nowait(json) ──── shared/logging.py
-       │
-       ▼
-LogSinkWorker.drain() ─────────── single writer, batched insert
-       │
-       ▼
-SQLite WAL ──── logs (table)
-              │
-              └── logs_fts (FTS5 trigram, content='logs', auto-synced)
+       |
+       v
+structlog -> JSON line --+--> StreamHandler  -> stdout
+                         +--> WatchedFileHandler -> app.jsonl
+                                                       |
+                                  external rotation (logrotate / docker)
+                                                       v
+                              FileLogReader (ports/driven/repos)
+                              read_tail / read_before / stream_all / follow
+                                                       |
+                              facade -> use cases -> controller
+                                  |                          |
+        GET /api/v1/admin/logs/ (tail N)        GET .../stream (SSE, follow)
+                                  |
+                          static/admin/log (UI)
+          level filter . substring . load more . drilldown  (client-side)
 ```
 
-Read paths:
-
-```
-HTTP  ─── LogsApiController ─── LogsFacade ─── ILogReader ─── SQLiteLogRepo (reader pool)
-SSE   ─── /api/v1/admin/logs/stream ─── stream_after() + ChannelsLogBroadcaster
-Export ─── /api/v1/admin/logs/export?format=csv|ndjson ─── stream_query()
-```
+History (`read_tail`, `read_before`) and live tail (`follow`) both read the
+same file. Rotation is external; the reader follows `tail -F` semantics.
 
 ## Public surface
 
@@ -41,117 +41,115 @@ Export ─── /api/v1/admin/logs/export?format=csv|ndjson ─── stream_qu
 
 | Path | Method | Purpose |
 |:---|:---|:---|
-| `/admin/logs/` | GET | HTML dashboard (LogsPageController). |
-| `/api/v1/admin/logs/` | GET | JSON tail page; query string `q=` for DSL. |
-| `/api/v1/admin/logs/older` | GET | Cursor-based pagination; pass `before=<id>`. |
-| `/api/v1/admin/logs/stream` | GET | Server-Sent Events live tail. |
-| `/api/v1/admin/logs/` | DELETE | Wipe all entries (admin only). |
-| `/api/v1/admin/logs/export` | GET | Download all matches; `format=ndjson|csv`. |
-| `/admin/logs/static/*` | GET | Bundled HTML/CSS/JS. 1h browser cache. |
+| `/admin/logs/` | GET | HTML viewer (`Template`). |
+| `/api/v1/admin/logs/` | GET | Tail page: `{entries, cursor}` (last `LOG_TAIL_LINES`). |
+| `/api/v1/admin/logs/older` | GET | Older page; `cursor=<base64>` from a previous page. |
+| `/api/v1/admin/logs/stream` | GET | Server-Sent Events live tail (`ServerSentEvent`). |
+| `/api/v1/admin/logs/export/` | GET | Stream the file as a download; `format=ndjson\|csv`. |
 
-All non-static endpoints require `Role.ADMIN`.
+All require `Role.ADMIN`.
 
 ### Types
 
 | Symbol | Where | Role |
 |:---|:---|:---|
-| `LogsFacade` | `ports/driving/facades/` | Read-side: page / older / stream / export / search. |
-| `LogsAdminFacade` | `ports/driving/facades/` | Mutations: clear logs. |
-| `ILogReader` | `app/interfaces/` | Driven contract. `tail`, `read_before`, `stream_after`, `stream_query`. |
-| `LogFilterVo` | `domain/` | Immutable filter spec. Self-validates against `VALID_LEVELS`. |
-| `LogEntryEnt` | `domain/` | One row, with `id: LogId`, raw JSON, parsed kwargs. |
-| `LogPageResponseSchema` | `ports/driving/schemas/` | Wire shape: `entries`, `cursor`, `has_more`. |
+| `LogsFacade` | `ports/driving/facades/` | render / older / stream / export. Thin. |
+| `ILogReader` | `app/interfaces/` | `read_tail`, `read_before`, `stream_all`. |
+| `ILogFollower` | `app/interfaces/` | `follow(poll_ms)` — yields appended entries. |
+| `FileLogReader` | `ports/driven/repos/` | implements both; maps lines, owns cursor. |
+| `LogFileSource` | `adapters/driven/files/` | raw I/O: open, stat, reverse-read, rotation. |
+| `LogEntryEnt` | `domain/` | parsed line: `timestamp, level, logger, event, raw`. |
+| `Cursor` | `domain/types.py` | `(inode, offset)`; base64 on the wire. |
+| `LogEntrySchema`, `LogPageResponseSchema` | `ports/driving/schemas/` | wire: `entries`, `cursor`. |
 
-## Search DSL
+## Cursor semantics
 
-A small query language compiled to SQL by `domain/dsl_parser.py` →
-`LogFilterVo`. The query string `q=` on `/api/v1/admin/logs/`, capped at 2048
-chars.
+A `Cursor` is `(inode, offset)`: the inode of the live file and the byte
+offset of the first line in the page. On the wire it is base64 of
+`"inode:offset"`, opaque to the client. `read_before` reads `limit` lines
+ending just before `offset`. If the inode no longer matches the live file
+(rotation happened), back-scroll stops: the page returns `cursor=null`
+("history truncated by rotation"), and the UI disables "load more". A null
+cursor also means the start of the file is reached.
 
-| Token | Effect |
-|:---|:---|
-| `level:WARN+` | min level WARN; matches WARN/WARNING/ERROR/CRIT/CRITICAL via rank. |
-| `level:INFO,ERROR` | exact match; OR-combined. |
-| `logger:auth` | exact logger match. |
-| `logger:auth.*` | descendants only (`auth.x`, `auth.x.y`, never `auth`). |
-| `trace_id:abc123…` | full 16-char trace id. |
-| `user_id=u1` | kv match against the raw_json kwarg. Key must match `[a-zA-Z0-9_.]+`. |
-| `from:2026-05-01T00:00 to:2026-05-02T00:00` | ISO time range. |
-| free text | passes through as FTS5 phrase. |
+## UI features
 
-Failures: `DslSyntaxError` → 400 with parse position; `InvalidLogFilterError`
-→ 400 with field/reason. Both have specialised handlers in
-`admin/log/adapters/driving/error_handlers.py`.
+All client-side except "load more":
+
+- **Level chips** — filter the loaded rows by level.
+- **Substring search** — case-insensitive match over event, logger, level,
+  and serialised context of the loaded rows.
+- **Load more** — calls `/older?cursor=` to pull `LOG_LOAD_MORE_LINES` more
+  lines from the file; they then become filterable.
+- **Drilldown** — expand a row to see Context / JSON / Exception.
+
+Live frames arrive via SSE and prepend to the top. Entries are de-duplicated
+client-side by `(timestamp, logger, event)` — file-tail lines have no id.
 
 ## Configuration
 
-```
-LOG_RETENTION_DAYS=7
-LOG_BATCH_SIZE=100              # rows per insert batch
-LOG_BATCH_TIMEOUT_MS=100        # max wait before flushing partial batch
-LOG_SSE_QUEUE_SIZE=100          # per-subscriber backlog
-LOG_CLEANUP_INTERVAL_HOURS=24
-LOG_TAIL_SIZE=200
-LOG_HISTORY_CHUNK=200
-LOG_DB_READER_COUNT=4
-LOG_MAX_LIMIT=5000              # hard cap on any single SQL LIMIT
-LOG_STREAM_POLL_INTERVAL_S=3.0  # SSE catch-up polling cadence
-```
+`admin/log/config.py`, prefix `LOG_`:
 
-## Storage
-
-One file at `${VOLUME_PATH}/logs/admin_logs.db`. Schema in
-`migrations/admin_log/` — see [infra/yoyo.md](../infra/yoyo.md).
-
-Two indexes carry the load:
-- `idx_logs_level_timestamp(level, timestamp)` — covers level filter +
-  time range, the dominant query shape.
-- `logs_fts` — FTS5 trigram over `raw_json`, auto-synced via triggers.
+| Var | Default | Meaning |
+|:---|:---|:---|
+| `LOG_FILE_PATH` | `${VOLUME_PATH}/logs/app.jsonl` | File both handlers and the reader use. |
+| `LOG_TAIL_LINES` | `200` | Lines in the initial tail page. |
+| `LOG_LOAD_MORE_LINES` | `200` | Lines per "load more" page. |
+| `LOG_FOLLOW_POLL_MS` | `250` | Poll interval for `follow` (live tail). |
+| `LOG_MAX_LINE_BYTES` | `65536` | Write-side line cap; reader skips longer lines. |
 
 ## Invariants & gotchas
 
-- **Single writer per process.** `LogSinkWorker` owns the connection.
-  `APP_WORKERS=1` is enforced by the CLI.
-- **Cursor semantics.** `cursor` returned by `tail`/`read_before` is the
-  id of the **oldest** entry in the page. Pass it back as `before=` to
-  fetch the previous page. `has_more=False` means no more rows behind.
-- **`limit + 1` trick.** Repos request one extra row to compute
-  `has_more` cheaply.
-- **SSE catch-up gap.** Subscribers join the broadcast channel BEFORE
-  draining the catch-up tail to avoid losing events that arrive between
-  the two reads.
-- **Drop-on-overflow on the structlog queue.** When the sink can't
-  drain, `_QueueLogger` drops messages and emits a throttled stderr
-  warning (1 line/sec) — never back-pressures the producer.
-- **DELETE wipes everything.** No filter on the admin clear endpoint
-  by design — partial wipes invite mistakes.
+- **One JSON object per line (JSONL).** A structlog processor truncates each
+  rendered line to `LOG_MAX_LINE_BYTES` before the handler, so each record is
+  one `write`. Relies on `O_APPEND` single-write atomicity (Linux, single
+  host). Best-effort; documented platform assumption.
+- **Trailing partial line is not a line.** Bytes after the last `\n` are
+  discarded by the reader; `follow` advances only past a confirmed `\n`.
+  Prevents torn JSON and corrupt cursors during a concurrent append.
+- **Malformed lines are skipped.** `LogEntryEnt.parse` raises
+  `MalformedLogLine` (a `DomainError`); the port catches it per line, skips,
+  and counts. The optional warning is logged in the adapter only — ports
+  never log.
+- **Missing/unreadable file -> `LogReadError`** (a `PortError`, 503).
+- **Live tail is best-effort across rotation.** On size-shrink
+  (`copytruncate`) or inode change (`create`), `follow` drains the old fd to
+  EOF, then reopens. Entries written in the gap may be missed (at-most-once).
+- **Export is a point-in-time snapshot.** `ExportLogsUc` opens the file once
+  and streams the held fd to EOF; it does not re-stat or reopen. Use
+  `create`-mode rotation (not `copytruncate`) so the held fd reads a
+  consistent inode.
+- **Filters are client-side.** Level chips and substring search apply only to
+  rows already loaded in the browser. "Load more" widens the loaded set.
+- **`WatchedFileHandler` re-stats every emit** (cost at high volume) and is
+  POSIX-only; on non-POSIX fall back to plain `FileHandler` (no rotation
+  detection).
 
 ## Recipes
 
-### Tighten retention
+### Point the UI at a different file
 
 ```
-LOG_RETENTION_DAYS=3
+LOG_FILE_PATH=/var/log/myapp/app.jsonl
 ```
 
-`LogCleanupWorker` runs every `LOG_CLEANUP_INTERVAL_HOURS` and after
-each batch of deletes runs `PRAGMA wal_checkpoint` + `PRAGMA optimize`.
+The writer (structlog handler) and the reader share this one path.
 
-### Add a level
+### Rotate the file
 
-Edit `LEVEL_RANK` in `admin/log/domain/dsl_constants.py`. `VALID_LEVELS`
-and the SQL CASE in `log_query_builder.py` are derived.
+External only. Example logrotate config ships in `deploy/logrotate/app.conf`
+using `create`-mode (see [infra/structlog.md](../infra/structlog.md)). The
+app never deletes the file it writes.
 
 ### Replace the front-end
 
-Static files live at `src/admin/log/adapters/driving/static/` and are
-served by Litestar's `create_static_files_router` from
-`/admin/logs/static/`. Override `LOG_STATIC_PATH` to point elsewhere.
+Assets live at `static/admin/log/{index.html,style.css,tail.js}` and are
+served from the single `/static/` mount. The controller returns
+`Template("admin/log/index.html")`.
 
 ## Pointers
 
-- ADR: [0003-sqlite-wal-readers.md](../adr/0003-sqlite-wal-readers.md)
+- ADR: [adr/0009-file-tail-log-viewer.md](../adr/0009-file-tail-log-viewer.md)
 - Code: `src/admin/log/`
-- Schema: `migrations/admin_log/0001_init.sql`
-- Infra: [infra/sqlite.md](../infra/sqlite.md), [infra/yoyo.md](../infra/yoyo.md)
+- structlog pipeline: [infra/structlog.md](../infra/structlog.md)
 - Cross-cutting: [subsystems/observability.md](../subsystems/observability.md)
