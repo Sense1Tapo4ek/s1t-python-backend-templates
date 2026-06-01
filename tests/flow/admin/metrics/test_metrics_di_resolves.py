@@ -1,39 +1,54 @@
 import pytest
-from dishka import Provider, Scope, make_async_container, provide
+from dishka import make_async_container
 
-from admin.metrics.app.use_cases import PublishWorkerSnapshotUc
+from admin.metrics.adapters.lifespan import MetricsLifespanManager
+from admin.metrics.config import MetricsConfig
 from admin.metrics.provider import AdminMetricsProvider
-from shared.config import BaseAppConfig
+from shared.provider import SharedProvider
 
 
-class _BaseConfigProvider(Provider):
-    scope = Scope.APP
-
-    @provide
-    def base_config(self) -> BaseAppConfig:
-        return BaseAppConfig()
-
-
-class TestMetricsDi:
+class TestMetricsDiResolves:
     @pytest.mark.asyncio
-    async def test_publish_uc_resolves_without_queue_provider(
-        self, monkeypatch
-    ) -> None:
+    async def test_config_resolves(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """
-        Given the decoupled metrics provider,
-        When resolving PublishWorkerSnapshotUc from the container,
-        Then it builds without any log-supplied IQueueDepthProvider.
+        Given AdminMetricsProvider with SharedProvider,
+        When resolving MetricsConfig,
+        Then it resolves successfully.
         """
-        # Arrange
         monkeypatch.setenv("APP_NAME", "litestar-base")
-        monkeypatch.setenv("VALKEY_URL", "redis://localhost:6379/0")
-        container = make_async_container(
-            _BaseConfigProvider(), AdminMetricsProvider()
-        )
+        container = make_async_container(SharedProvider(), AdminMetricsProvider())
+        try:
+            cfg = await container.get(MetricsConfig)
+            assert isinstance(cfg, MetricsConfig)
+        finally:
+            await container.close()
 
-        # Act
-        uc = await container.get(PublishWorkerSnapshotUc)
+    @pytest.mark.asyncio
+    async def test_lifespan_resolves(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """
+        Given AdminMetricsProvider with SharedProvider,
+        When resolving MetricsLifespanManager,
+        Then it resolves successfully and holds a MetricsConfig.
+        """
+        monkeypatch.setenv("APP_NAME", "litestar-base")
+        container = make_async_container(SharedProvider(), AdminMetricsProvider())
+        try:
+            mgr = await container.get(MetricsLifespanManager)
+            assert isinstance(mgr, MetricsLifespanManager)
+            assert isinstance(mgr.config, MetricsConfig)
+        finally:
+            await container.close()
 
-        # Assert
-        assert isinstance(uc, PublishWorkerSnapshotUc)
-        await container.close()
+    @pytest.mark.asyncio
+    async def test_no_redis_in_provider(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """
+        Given the collapsed AdminMetricsProvider,
+        When inspecting its provides,
+        Then no Redis/Valkey dependency is registered.
+        """
+        monkeypatch.setenv("APP_NAME", "litestar-base")
+        import inspect
+
+        src = inspect.getsource(AdminMetricsProvider)
+        assert "redis" not in src.lower()
+        assert "valkey" not in src.lower()
