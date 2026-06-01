@@ -17,7 +17,7 @@ from .app.interfaces import (
     IModulePluginRegistry,
     IRssSampler,
 )
-from .app.use_cases import PublishWorkerSnapshotUc
+from .app.use_cases import PublishWorkerSnapshotUc, RenderModuleDetailUc, RenderOverviewUc
 from .config import MetricsConfig
 from .domain import WorkerIdVo
 from .ports.driven.collectors import ValkeyAggregatedCollector
@@ -55,9 +55,13 @@ class AdminMetricsProvider(Provider):
         )
 
     @provide(provides=IMetricsModulePlugin)
-    def http_plugin(self, config: MetricsConfig) -> HttpMetricsPlugin:
+    def http_plugin(self, base: BaseAppConfig) -> HttpMetricsPlugin:
+        # Mirrors PrometheusConfig.prefix in root/entrypoints/api.py:
+        # `app_name.replace("-", "_")`. Plugin scans REGISTRY for the
+        # counters Litestar middleware writes under that prefix — the
+        # strings must match exactly.
         return HttpMetricsPlugin(
-            _prefix=f"{config.key_prefix.rstrip(':')}_http",
+            _litestar_prefix=base.app_name.replace("-", "_"),
         )
 
     @provide(provides=IModulePluginRegistry)
@@ -66,6 +70,18 @@ class AdminMetricsProvider(Provider):
         plugins: list[IMetricsModulePlugin],
     ) -> InMemoryModulePluginRegistry:
         return InMemoryModulePluginRegistry(_plugins=tuple(plugins))
+
+    @provide
+    def render_overview_uc(
+        self, registry: IModulePluginRegistry
+    ) -> RenderOverviewUc:
+        return RenderOverviewUc(_registry=registry)
+
+    @provide
+    def render_module_detail_uc(
+        self, registry: IModulePluginRegistry
+    ) -> RenderModuleDetailUc:
+        return RenderModuleDetailUc(_registry=registry)
 
     @provide
     def worker_id(self) -> WorkerIdVo:
@@ -124,7 +140,6 @@ class AdminMetricsProvider(Provider):
             _publisher=publisher,
             _loop_lag_sampler=loop_lag,
             _rss_sampler=rss,
-            _queue_depth_provider=None,
             _worker_id=worker_id,
             _role=role,
             _started_at=started_at,
