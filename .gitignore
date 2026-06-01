@@ -219,3 +219,10 @@ __marimo__/
 
 # Superpowers brainstorming companion (session mockups + state)
 .superpowers/
+
+# Claude Code local session state
+.claude/
+
+# Runtime data volume (VOLUME_PATH default). SQLite DBs, JSONL logs, mmap
+# metric shards — written at runtime, never tracked.
+/storage/
