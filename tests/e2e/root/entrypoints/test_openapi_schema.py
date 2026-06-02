@@ -65,3 +65,19 @@ def test_error_envelope_documented_on_item_lookup(e2e_client) -> None:
     key = next(p for p in spec["paths"] if p.startswith("/db-example-sddd/pooled/items/")
                and "{" in p and "get" in spec["paths"][p])
     assert "404" in spec["paths"][key]["get"]["responses"]
+
+
+def test_item_schema_has_field_examples_and_descriptions(e2e_client) -> None:
+    """Given the spec, When reading the ItemModel schema, Then name carries a description and an example."""
+    spec = _spec(e2e_client)
+    schemas = spec["components"]["schemas"]
+    # MsgspecDTO derives per-operation schemas (e.g. "GetOneItemModelResponseBody"),
+    # not a bare "ItemModel"; the exact key is auto-suffixed on collision. Scan
+    # for any DTO-derived ItemModel schema exposing the `name` property.
+    name = next(
+        props["name"]
+        for k, v in schemas.items()
+        if "ItemModel" in k and "name" in (props := v.get("properties", {}))
+    )
+    assert name.get("description")
+    assert name.get("examples") or name.get("example")

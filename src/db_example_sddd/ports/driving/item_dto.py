@@ -9,10 +9,36 @@ from ...domain import Item
 
 
 class ItemModel(msgspec.Struct):
-    id: UUID
-    name: Annotated[str, msgspec.Meta(min_length=1, max_length=200)]
-    description: str | None
-    created_at: datetime
+    id: Annotated[
+        UUID,
+        msgspec.Meta(
+            description="Server-assigned identifier.",
+            examples=["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
+        ),
+    ]
+    name: Annotated[
+        str,
+        msgspec.Meta(
+            min_length=1,
+            max_length=200,
+            description="Human-readable item name.",
+            examples=["widget"],
+        ),
+    ]
+    description: Annotated[
+        str | None,
+        msgspec.Meta(
+            description="Optional free-text description.",
+            examples=["a small widget"],
+        ),
+    ]
+    created_at: Annotated[
+        datetime,
+        msgspec.Meta(
+            description="UTC creation timestamp (server clock).",
+            examples=["2026-06-02T13:00:00+00:00"],
+        ),
+    ]
 
 
 ItemReadDTO = MsgspecDTO[ItemModel]
