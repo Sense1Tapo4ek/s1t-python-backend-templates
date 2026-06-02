@@ -46,7 +46,7 @@ stdout; the admin UI tails that file.
 3. Cookie is set (HttpOnly, SameSite=Strict). You land on `/admin`.
 
 In dev with `AUTH_ADMIN_TOKEN=` empty, auth is disabled and a warning
-is logged at startup. `APP_ENV=PROD` rejects an empty token at boot.
+is logged at startup. `APP_ENV=prod` rejects an empty token at boot.
 
 ### Background mode
 
@@ -157,7 +157,7 @@ vars (see `.env.example`).
 
 All vars in `.env.example`. Highlights:
 
-- `APP_ENV` — `dev` or `PROD`. PROD enforces non-empty `AUTH_ADMIN_TOKEN`.
+- `APP_ENV` — `dev` or `prod` (lowercase). `prod` enforces non-empty `AUTH_ADMIN_TOKEN`.
 - `APP_WORKERS` — number of async workers (default `1`; a free knob, single-process logging).
 - `VOLUME_PATH` — persistent data root (log file, future state).
 - `LOG_*` — see [contexts/admin-log.md](docs/contexts/admin-log.md#configuration).

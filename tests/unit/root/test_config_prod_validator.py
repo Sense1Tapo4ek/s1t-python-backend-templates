@@ -8,7 +8,7 @@ from root.config import RootConfig
 def test_prod_without_admin_token_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_ENV", "prod")
     monkeypatch.delenv("AUTH_ADMIN_TOKEN", raising=False)
-    with pytest.raises(ValueError, match="AUTH_ADMIN_TOKEN must be set when APP_ENV=PROD"):
+    with pytest.raises(ValueError, match="AUTH_ADMIN_TOKEN must be set when APP_ENV=prod"):
         RootConfig()
 
 

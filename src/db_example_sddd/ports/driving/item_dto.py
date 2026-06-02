@@ -8,7 +8,9 @@ from litestar.dto import DTOConfig, MsgspecDTO
 from ...domain import Item
 
 
-class ItemModel(msgspec.Struct):
+# kw_only so `description` can default while `created_at` (no default) keeps its
+# position -- msgspec forbids a non-default field after a defaulted one otherwise.
+class ItemModel(msgspec.Struct, kw_only=True):
     id: Annotated[
         UUID,
         msgspec.Meta(
@@ -31,7 +33,7 @@ class ItemModel(msgspec.Struct):
             description="Optional free-text description.",
             examples=["a small widget"],
         ),
-    ]
+    ] = None
     created_at: Annotated[
         datetime,
         msgspec.Meta(
