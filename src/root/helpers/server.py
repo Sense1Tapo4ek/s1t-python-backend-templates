@@ -7,7 +7,7 @@ from typing import Any
 
 import uvicorn
 
-from admin.metrics.config import MetricsConfig
+from metrics.config import MetricsConfig
 from root.config import RootConfig
 from root.helpers.process import ensure_runtime_dirs, find_pid_on_port
 

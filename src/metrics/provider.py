@@ -1,10 +1,10 @@
 from dishka import Provider, Scope, provide
 
-from .adapters.lifespan import MetricsLifespanManager
+from .adapters import MetricsLifespanManager
 from .config import MetricsConfig
 
 
-class AdminMetricsProvider(Provider):
+class MetricsProvider(Provider):
     scope = Scope.APP
 
     @provide

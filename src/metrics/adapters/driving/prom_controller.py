@@ -5,7 +5,7 @@ from litestar.plugins.prometheus import PrometheusController
 from auth.ports.driving import require_role
 from shared.domain.auth import Role
 
-from ....config import MetricsConfig
+from ...config import MetricsConfig
 
 
 def build_prom_controller(config: MetricsConfig) -> type[PrometheusController]:

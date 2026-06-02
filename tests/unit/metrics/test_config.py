@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from admin.metrics.config import MetricsConfig
+from metrics.config import MetricsConfig
 
 
 class TestMetricsConfigDefaults:

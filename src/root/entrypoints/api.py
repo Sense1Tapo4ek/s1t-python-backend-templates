@@ -37,9 +37,6 @@ from admin.log.adapters.driving.api import (
     LogsPageController,
 )
 from admin.log.config import AdminLogConfig
-from admin.metrics.adapters.driving.api import build_prom_controller
-from admin.metrics.adapters.lifespan import MetricsLifespanManager
-from admin.metrics.config import MetricsConfig
 from auth.adapters.middleware import AuthMiddleware
 from auth.ports.driving import AuthFacade
 from db_example_litestar.adapters.db_example_litestar_lifespan_manager import (
@@ -51,6 +48,9 @@ from db_example_sddd.adapters.db_example_sddd_lifespan_manager import (
 )
 from db_example_sddd.adapters.driving import PerRequestItemController, PooledItemController
 from db_example_sddd.app import ItemNotFound
+from metrics.adapters import MetricsLifespanManager
+from metrics.adapters.driving import build_prom_controller
+from metrics.config import MetricsConfig
 from root.composition.container import build_container
 from root.config import RootConfig
 from shared.adapters.error_handlers import (

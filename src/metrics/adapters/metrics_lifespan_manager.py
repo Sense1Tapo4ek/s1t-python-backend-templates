@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import structlog
 
-from ...config import MetricsConfig
+from ..config import MetricsConfig
 
 _log = structlog.get_logger(__name__)
 
@@ -14,8 +14,10 @@ class MetricsLifespanManager:
 
     async def start(self) -> None:
         _log.info("metrics lifespan starting", multiproc_dir=str(self.config.multiproc_dir))
-        # multiproc_dir is always a Path post-validation (resolved in MetricsConfig)
-        assert self.config.multiproc_dir is not None, "multiproc_dir must be resolved by validator"
+        # Defensive: the MetricsConfig validator resolves multiproc_dir, but a
+        # mis-wired config could still leave it unset -- fail loud, not at -O.
+        if self.config.multiproc_dir is None:
+            raise RuntimeError("multiproc_dir must be resolved by the MetricsConfig validator")
         os.makedirs(self.config.multiproc_dir, exist_ok=True)
         _log.info("metrics lifespan started")
 
