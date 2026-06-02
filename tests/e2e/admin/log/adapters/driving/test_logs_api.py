@@ -42,7 +42,7 @@ def _make_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Litestar:
     # displace the tail window. These tests exercise the read path, not the
     # app's emission, so the file-handler reconfigure is stubbed out to keep the
     # seed pristine.
-    monkeypatch.setattr("root.entrypoints.api.configure_structlog", lambda **_: None)
+    monkeypatch.setattr("root.composition.lifespan.configure_structlog", lambda **_: None)
     # DI warms inside the TestClient lifespan; env is set above.
     return create_app()
 
@@ -212,7 +212,7 @@ class TestLogStream:
         monkeypatch.setenv("LOG_FILE_PATH", str(log_file))
         monkeypatch.setenv("LOG_FOLLOW_POLL_MS", "50")
         monkeypatch.setattr(
-            "root.entrypoints.api.configure_structlog", lambda **_: None
+            "root.composition.lifespan.configure_structlog", lambda **_: None
         )
         app = create_app()
 

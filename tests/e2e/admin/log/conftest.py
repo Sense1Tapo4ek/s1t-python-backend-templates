@@ -41,7 +41,7 @@ def e2e_app(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Litestar]:
     mp.setenv("APP_NAME", E2E_APP_NAME)
     mp.setenv("VOLUME_PATH", str(volume))
     mp.setenv("AUTH_ADMIN_TOKEN", E2E_ADMIN_TOKEN)
-    mp.setattr("root.entrypoints.api.configure_structlog", lambda **_: None)
+    mp.setattr("root.composition.lifespan.configure_structlog", lambda **_: None)
     try:
         yield create_app()
     finally:
