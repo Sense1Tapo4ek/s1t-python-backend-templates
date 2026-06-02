@@ -3,6 +3,7 @@ from dishka import make_async_container
 
 from metrics.adapters import MetricsLifespanManager
 from metrics.config import MetricsConfig
+from metrics.ports.driving import MetricsFacade
 from metrics.provider import MetricsProvider
 from shared.provider import SharedProvider
 
@@ -52,3 +53,19 @@ class TestMetricsDiResolves:
         src = inspect.getsource(MetricsProvider)
         assert "redis" not in src.lower()
         assert "valkey" not in src.lower()
+
+    @pytest.mark.asyncio
+    async def test_facade_resolves(self, monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+        """
+        Given MetricsProvider with SharedProvider,
+        When resolving MetricsFacade,
+        Then it resolves with a PrometheusSink behind it.
+        """
+        monkeypatch.setenv("APP_NAME", "litestar-base")
+        monkeypatch.setenv("VOLUME_PATH", str(tmp_path))
+        container = make_async_container(SharedProvider(), MetricsProvider())
+        try:
+            facade = await container.get(MetricsFacade)
+            assert isinstance(facade, MetricsFacade)
+        finally:
+            await container.close()
