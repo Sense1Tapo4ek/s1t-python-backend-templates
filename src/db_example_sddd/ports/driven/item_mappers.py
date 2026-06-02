@@ -2,7 +2,7 @@ from uuid import UUID
 
 import aiosqlite
 
-from ....domain import Item
+from ...domain import Item
 
 
 def to_domain(row: aiosqlite.Row) -> Item:

@@ -4,9 +4,9 @@ from uuid import uuid4
 import aiosqlite
 import pytest
 
-from db_example_sddd.adapters.driven.db.connection import open_connection
+from db_example_sddd.adapters.driven.connection import open_connection
 from db_example_sddd.domain import Item
-from db_example_sddd.ports.driven.repos import SqliteItemRepo
+from db_example_sddd.ports.driven import SqliteItemRepo
 
 _DDL = Path("migrations/db_example_sddd/001-create-items.sql").read_text()
 

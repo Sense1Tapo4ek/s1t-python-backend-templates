@@ -9,7 +9,7 @@ from litestar.pagination import OffsetPagination
 from litestar.params import Parameter
 from litestar.status_codes import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
-from ....ports.driving import (
+from ...ports.driving import (
     ItemModel,
     ItemPatchDTO,
     ItemReadDTO,

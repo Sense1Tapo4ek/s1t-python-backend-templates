@@ -5,8 +5,8 @@ import aiosqlite
 
 from shared.generics.errors import PortError
 
-from ....app import IItemRepo
-from ....domain import Item
+from ...app import IItemRepo
+from ...domain import Item
 from .item_mappers import to_domain
 
 

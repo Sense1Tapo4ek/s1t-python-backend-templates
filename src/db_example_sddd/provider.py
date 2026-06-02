@@ -5,11 +5,11 @@ from dishka import Provider, Scope, provide
 from shared.app import IClock
 
 from .adapters.db_example_sddd_lifespan_manager import DbExampleSdddLifespanManager
-from .adapters.driven.db.connection import open_connection
-from .adapters.driven.db.sqlite_pool import SqlitePool
+from .adapters.driven.connection import open_connection
+from .adapters.driven.sqlite_pool import SqlitePool
 from .app import ItemManagement, ItemQueries
 from .config import DbExampleSdddConfig
-from .ports.driven.repos import SqliteItemRepo
+from .ports.driven import SqliteItemRepo
 from .ports.driving import PerRequestItemFacade, PooledItemFacade
 
 
