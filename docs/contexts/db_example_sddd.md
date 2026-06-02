@@ -3,6 +3,10 @@
 For contributors learning how to wire aiosqlite in an S-DDD context and
 how Litestar `MsgspecDTO` works with partial PATCH.
 
+This is an **example context** shipped in the template, alongside
+`db_example_litestar` and the `metrics` context. Delete them once you have
+real contexts.
+
 ## Mental model
 
 ```
@@ -113,6 +117,16 @@ Currently: `001-create-items.sql` creates the `item` table.
   workers because yoyo acquires a file lock.
 - `description` is intentionally nullable (no domain invariant). Setting it
   to `None` in a PATCH does nothing; send `""` if you want to clear it.
+
+## Metrics via ACL (cross-context example)
+
+`ItemManagement.create` emits a counter (`db_example_items_created_total`) and a
+histogram (`db_example_item_create_seconds`) to the `metrics` context — the
+template's **first ACL example**. The app layer depends on its own
+`app/i_metrics.py` (`IMetrics` protocol, duplicated per the S-DDD cross-context
+rule); `ports/driven/acl/metrics_acl.py` (`MetricsAcl`) adapts
+`metrics.ports.driving.MetricsFacade` to that protocol and is the only place
+importing another context. See [docs/contexts/metrics.md](metrics.md).
 
 ## Pointers
 

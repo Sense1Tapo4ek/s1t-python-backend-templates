@@ -1,5 +1,8 @@
 # db_example_litestar context
 
+This is an **example context** shipped in the template (alongside
+`db_example_sddd` and `metrics`); delete it once you have real contexts.
+
 For contributors learning how to wire SQLAlchemy 2.0 + advanced-alchemy
 under Dishka in an S-DDD context, and how `SQLAlchemyDTO` replaces the
 full ports/driving layer.

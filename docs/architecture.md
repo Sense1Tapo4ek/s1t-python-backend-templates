@@ -19,7 +19,7 @@ API.
 | `auth` | `src/auth/` | Bearer/cookie auth: token resolution, `AuthMiddleware`, `require_role` guards. See [contexts/auth.md](contexts/auth.md). |
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
 | `admin/log` | `src/admin/log/` | Sub-context: file-tail log viewer over the rotating JSONL file the app writes; SSE live tail, NDJSON/CSV export. See [contexts/admin-log.md](contexts/admin-log.md). |
-| `admin/metrics` | `src/admin/metrics/` | Sub-context: Prometheus `/metrics` endpoint via multiprocess mode. See [contexts/admin-metrics.md](contexts/admin-metrics.md). |
+| `metrics` | `src/metrics/` | Example infra context: Prometheus `/metrics` endpoint via multiprocess mode, plus a generic by-name custom-metrics facade. See [contexts/metrics.md](contexts/metrics.md). |
 
 Adding a context: see §8 below.
 
@@ -93,7 +93,7 @@ return make_async_container(
     SharedProvider(),
     AdminProvider(),
     AdminLogWebProvider(),
-    AdminMetricsProvider(),
+    MetricsProvider(),
     AuthProvider(),
     AuthPortBindings(),
 )
@@ -140,7 +140,7 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 | `root/config.py::RootConfig` | `APP_` (extends Base) | server bind/port/workers, security CSP/HSTS, prod invariants. |
 | `auth/config.py::AuthConfig` | `AUTH_` | `admin_token` (`SecretStr`). |
 | `admin/log/config.py::AdminLogConfig` | `LOG_` | `file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
-| `admin/metrics/config.py::MetricsConfig` | `METRICS_` | Prometheus endpoint path + public flag, HTTP buckets, multiproc dir. |
+| `metrics/config.py::MetricsConfig` | `METRICS_` | Prometheus endpoint path + public flag, HTTP buckets, multiproc dir. |
 
 Rules:
 - Business logic never reads `os.environ`. Config flows through providers.
@@ -190,6 +190,10 @@ production.
   browser over loaded rows; "load more" pulls deeper into the file.
 - **Cross-worker metrics use multiprocess mode.** `prometheus_client` writes
   mmap shards to `PROMETHEUS_MULTIPROC_DIR`; no external store required.
+- **Cross-context calls go through an ACL.** `db_example_sddd -> metrics` is
+  the worked example: `db_example_sddd` emits a create counter + histogram via
+  `ports/driven/acl/metrics_acl.py` (the only cross-context import), adapting
+  `metrics.ports.driving.MetricsFacade` to its own `app/i_metrics.py` protocol.
 - **APP-scope DI is lazy.** The graph resolves on the first HTTP request.
   Tests must warm DI before any global env-isolation fixture runs (see
   `tests/e2e/conftest.py::e2e_client`).

@@ -16,7 +16,7 @@ return make_async_container(
     SharedProvider(),
     AdminProvider(),
     AdminLogWebProvider(),
-    AdminMetricsProvider(),
+    MetricsProvider(),
     AuthProvider(),
     AuthPortBindings(),
 )

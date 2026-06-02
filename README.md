@@ -119,7 +119,7 @@ decisions, layers, invariants, and how-to recipes.
 | Section | Contents |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Project overview: contexts, layers, error hierarchy, DI, lifespan, invariants. |
-| [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, admin/metrics, db_example_sddd, db_example_litestar). |
+| [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, metrics, db_example_sddd, db_example_litestar). |
 | [docs/subsystems/](docs/subsystems/) | Cross-cutting: error hierarchy, observability, metrics. |
 | [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, jinja). |
 | [docs/adr/](docs/adr/) | Architecture Decision Records (MADR format). |
@@ -161,7 +161,7 @@ All vars in `.env.example`. Highlights:
 - `APP_WORKERS` — number of async workers (default `1`; a free knob, single-process logging).
 - `VOLUME_PATH` — persistent data root (log file, future state).
 - `LOG_*` — see [contexts/admin-log.md](docs/contexts/admin-log.md#configuration).
-- `METRICS_*` — see [contexts/admin-metrics.md](docs/contexts/admin-metrics.md#public-surface).
+- `METRICS_*` — see [contexts/metrics.md](docs/contexts/metrics.md#public-surface).
 - `DB_EXAMPLE_SDDD_*` — see [contexts/db_example_sddd.md](docs/contexts/db_example_sddd.md#config).
 - `DB_EXAMPLE_LITESTAR_*` — see [contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md#config).
 

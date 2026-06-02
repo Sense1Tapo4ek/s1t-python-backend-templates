@@ -10,7 +10,10 @@ counters / gauges / histograms via `prometheus_client` native multiprocess
 mode. Always on when the metrics context is composed; gated by an admin guard
 unless `METRICS_PROM_ENDPOINT_PUBLIC=true`.
 
-There is no admin metrics UI. No external store.
+A generic by-name custom-metrics facade (`MetricsFacade.{increment,set_gauge,
+observe}`) lets any context emit Counters/Gauges/Histograms without per-metric
+plumbing. An unguarded `GET /metrics-demo` endpoint exercises the three demo
+metrics. There is no metrics UI. No external store.
 
 ## Mental model — multiprocess mode
 
@@ -42,8 +45,10 @@ without extra configuration.
 
 | Item | Where | Notes |
 |:---|:---|:---|
-| `MetricsConfig` | `admin/metrics/config.py` | env prefix `METRICS_` |
-| `GET /metrics` | `ConfiguredPromController` | path configurable |
+| `MetricsConfig` | `metrics/config.py` | env prefix `METRICS_` |
+| `MetricsFacade` | `metrics/ports/driving/` | by-name `increment`/`set_gauge`/`observe` |
+| `GET /metrics` | `prom_controller.py` | path configurable |
+| `GET /metrics-demo` | `demo_controller.py` | unguarded demo of all 3 types |
 | `multiproc_dir` | `METRICS_MULTIPROC_DIR` | master sets + wipes at start |
 
 ## Invariants & gotchas
@@ -63,21 +68,26 @@ without extra configuration.
   restart, old shards accumulate; wipe logic in the master guards this.
 - **`APP_WORKERS` is unconstrained.** Multiprocess mode scales to any worker
   count without configuration changes.
+- **Gauge uses `multiprocess_mode="livesum"`.** A Gauge is otherwise undefined
+  across workers; `livesum` sums live workers' values on scrape.
+- **`PrometheusSink` caches metric objects at class level.** Repeated
+  `create_app()` (tests) reuse the same series, avoiding `prometheus_client`'s
+  duplicate-registration error.
 
 ## How to: expose a custom metric
 
-Register a `prometheus_client` collector in the context that owns the signal.
-Do it in a lifespan manager or at module import — not in the DI provider
-(providers are lazy and the collector must be registered before the first
-scrape).
+Preferred: call the by-name facade from your context. It creates the underlying
+`prometheus_client` object on first use and caches it (see metrics context).
 
 ```python
-from prometheus_client import Counter
-
-MY_COUNTER = Counter("my_events_total", "Count of my events", ["label"])
+facade.increment("my_events_total", label="x")
+facade.observe("my_op_seconds", elapsed)
 ```
 
-The `MultiProcessCollector` picks it up automatically on the next scrape.
+Cross-context, wrap the facade in an ACL — `db_example_sddd` is the worked
+example. To register a raw collector directly instead, do it at module import
+or in a lifespan manager (not in the lazy DI provider); the
+`MultiProcessCollector` picks it up on the next scrape.
 
 ## How to: make the endpoint public
 
@@ -87,7 +97,7 @@ over plain HTTP unless you add TLS termination upstream.
 
 ## Pointers
 
-- Context reference: [docs/contexts/admin-metrics.md](../contexts/admin-metrics.md)
+- Context reference: [docs/contexts/metrics.md](../contexts/metrics.md)
 - ADR: [docs/adr/0010-prometheus-multiprocess.md](../adr/0010-prometheus-multiprocess.md)
 - Litestar Prometheus plugin: upstream `litestar.plugins.prometheus` docs
 - `prometheus_client` multiprocess guide: upstream docs
