@@ -1,24 +1,19 @@
 import os
 import subprocess
-from datetime import UTC, datetime
-
-from ....domain import BuildInfoVo
 
 _GIT_TIMEOUT_S = 2.0
 
 
-def resolve_build_info(app_name: str) -> BuildInfoVo:
+def resolve_build_meta() -> tuple[str | None, str | None, bool]:
+    """Resolve (commit_sha, branch, dirty) from env, falling back to git.
+
+    Primitives only — the `BuildInfoVo` is assembled in the provider, so this
+    driven adapter stays domain-blind.
+    """
     sha, branch, dirty = _from_env()
     if sha is None:
         sha, branch, dirty = _from_git()
-
-    return BuildInfoVo(
-        app_name=app_name,
-        started_at=datetime.now(UTC),
-        commit_sha=sha or "unknown",
-        branch=branch,
-        dirty=dirty,
-    )
+    return sha, branch, dirty
 
 
 def _from_env() -> tuple[str | None, str | None, bool]:

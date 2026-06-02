@@ -7,7 +7,7 @@ from litestar.status_codes import HTTP_503_SERVICE_UNAVAILABLE
 
 from shared.config import BaseAppConfig
 
-from ....domain import BuildInfoVo
+from ....ports.driving import BuildInfoVo
 
 _log = structlog.get_logger(__name__)
 

@@ -17,7 +17,7 @@ from auth.config import ADMIN_COOKIE_NAME, MAX_TOKEN_LEN
 from auth.ports.driving import AuthFacade
 from shared.domain.auth import Role
 
-from ....domain import BuildInfoVo
+from ....ports.driving import BuildInfoVo
 
 _log = structlog.get_logger(__name__)
 
