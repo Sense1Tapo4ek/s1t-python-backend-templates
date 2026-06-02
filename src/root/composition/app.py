@@ -1,22 +1,27 @@
+from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 from typing import Any
 
 from advanced_alchemy.exceptions import NotFoundError as AlchemyNotFoundError
-from litestar import Litestar, Response
+from litestar import Litestar
 from litestar.connection import Request
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.datastructures import CacheControlHeader
 from litestar.exceptions import (
-    HTTPException,
     NotAuthorizedException,
     PermissionDeniedException,
-    ValidationException,
 )
 from litestar.middleware import DefineMiddleware
 from litestar.openapi import OpenAPIConfig
 from litestar.openapi.spec import Contact, Server, Tag
+from litestar.plugins.problem_details import (
+    ProblemDetailsConfig,
+    ProblemDetailsException,
+    ProblemDetailsPlugin,
+)
 from litestar.plugins.prometheus import PrometheusConfig
+from litestar.response import Response
 from litestar.static_files import create_static_files_router
 from litestar.template.config import TemplateConfig
 from snitchbot.integrations.litestar import install as install_snitchbot
@@ -40,19 +45,19 @@ from metrics.adapters.driving import MetricsDemoController, build_prom_controlle
 from metrics.config import MetricsConfig
 from root.composition.lifespan import lifespan
 from root.config import RootConfig
-from shared.adapters.error_handlers import (
-    adapter_error_handler,
-    app_error_handler,
-    domain_error_handler,
-    fallback_500_handler,
-    not_found_handler,
-    port_error_handler,
-    validation_exception_handler,
-)
 from shared.adapters.middleware import (
     AccessLogMiddleware,
     SecurityHeadersMiddleware,
     TraceIdMiddleware,
+)
+from shared.adapters.problem_details import (
+    adapter_to_problem,
+    app_to_problem,
+    domain_to_problem,
+    not_found_to_problem,
+    port_to_problem,
+    problem_handler,
+    unexpected_to_problem,
 )
 from shared.config import AppEnv, BaseAppConfig
 from shared.generics.config import PROJECT_ROOT
@@ -70,39 +75,51 @@ def _resolve_app_version() -> str:
         return "0.0.0+unknown"
 
 
-def _http_exception_handler(_req: Request, exc: HTTPException) -> Response:
-    """Generic 4xx fallback.
+# Litestar 2.23's ProblemDetailsPlugin maps exceptions via handlers that bypass
+# `config.exception_handler`, dropping the request-side `instance` field. So we
+# wrap these converters as app-level handlers through `problem_handler`, leaving
+# the plugin only for `enable_for_all_http_exceptions` (framework HTTPExceptions).
+EXCEPTION_TO_PROBLEM: dict[type[Exception], Callable[[Any], ProblemDetailsException]] = {
+    DomainError: domain_to_problem,
+    AppError: app_to_problem,
+    ItemNotFound: not_found_to_problem,          # MRO: wins over AppError
+    AlchemyNotFoundError: not_found_to_problem,
+    PortError: port_to_problem,
+    AdapterError: adapter_to_problem,
+}
 
-    Workaround for snitchbot's `install()`: it registers an Exception
-    handler that re-raises HTTPException, which Litestar then renders as
-    a bare 500 with no body. Without this catch-all, every
-    ValidationException/NotFoundException/etc. degrades to an empty 500.
-    """
-    return Response(status_code=exc.status_code, content={"detail": exc.detail})
+
+def _as_handler(
+    convert: Callable[[Any], ProblemDetailsException],
+) -> Callable[[Request[Any, Any, Any], Exception], Response[Any]]:
+    def handler(request: Request[Any, Any, Any], exc: Exception) -> Response[Any]:
+        return problem_handler(request, convert(exc))
+
+    return handler
 
 
 def _build_exception_handlers(*, is_dev: bool) -> dict[Any, Any]:
-    # In DEV we want Litestar's debug renderer to surface the full traceback
-    # to the client. Registering a catch-all Exception handler would short-
-    # circuit that, so we only install it in PROD.
     handlers: dict[Any, Any] = {
         NotAuthorizedException: not_authorized_handler,
         PermissionDeniedException: permission_denied_handler,
-        # ValidationException must be registered ahead of HTTPException so
-        # Litestar picks the specialised handler that retains `.extra`.
-        ValidationException: validation_exception_handler,
-        HTTPException: _http_exception_handler,
-        DomainError: domain_error_handler,
-        AppError: app_error_handler,
-        # Specific lookup-miss exceptions -> 404 (more specific than AppError 422).
-        ItemNotFound: not_found_handler,
-        AlchemyNotFoundError: not_found_handler,
-        PortError: port_error_handler,
-        AdapterError: adapter_error_handler,
     }
+    for exc_type, convert in EXCEPTION_TO_PROBLEM.items():
+        handlers[exc_type] = _as_handler(convert)
     if not is_dev:
-        handlers[Exception] = fallback_500_handler
+        # PROD catch-all. In DEV, unhandled Exception -> Litestar debug renderer.
+        handlers[Exception] = _as_handler(unexpected_to_problem)
     return handlers
+
+
+def _build_plugins() -> list[Any]:
+    return [
+        ProblemDetailsPlugin(
+            ProblemDetailsConfig(
+                enable_for_all_http_exceptions=True,
+                exception_handler=problem_handler,
+            )
+        ),
+    ]
 
 
 def _build_middleware(config: RootConfig, prom_config: PrometheusConfig) -> list[Any]:
@@ -188,6 +205,7 @@ def build_app() -> Litestar:
             prom_controller,
         ],
         middleware=_build_middleware(config, prom_config),
+        plugins=_build_plugins(),
         openapi_config=_build_openapi_config(config.app_name),
         # Single Jinja engine bound to the project's static/ root. Templates
         # are referenced by their path under static/ (e.g. "shared/_base.html",

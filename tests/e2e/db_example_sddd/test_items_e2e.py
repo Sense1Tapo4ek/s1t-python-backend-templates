@@ -36,3 +36,39 @@ def test_crud_cycle(e2e_client, base: str) -> None:
 def test_create_rejects_blank_name(e2e_client, base: str) -> None:
     r = e2e_client.post(base, json={"name": "", "description": None})
     assert r.status_code in (400, 422)
+
+
+_BASE = "/db-example-sddd/pooled/items"
+
+
+def test_domain_error_is_problem_json(e2e_client) -> None:
+    """Given a whitespace name, When POSTing, Then 409 problem+json with domain detail."""
+    # "   " passes the DTO's min_length=1 but fails Item.create's name.strip()
+    # -> EmptyItemName (DomainError) -> 409.
+    resp = e2e_client.post(_BASE, json={"name": "   ", "description": None})
+    assert resp.status_code == 409
+    assert resp.headers["content-type"].startswith("application/problem+json")
+    body = resp.json()
+    assert body["status"] == 409
+    assert body["type"].startswith("urn:litestar-base:error:")
+    assert body["detail"]
+    assert body["instance"] == _BASE
+
+
+def test_not_found_is_problem_json(e2e_client) -> None:
+    """Given a missing id, When GETting, Then a 404 problem+json."""
+    resp = e2e_client.get(f"{_BASE}/00000000-0000-0000-0000-000000000000")
+    assert resp.status_code == 404
+    assert resp.headers["content-type"].startswith("application/problem+json")
+    assert resp.json()["status"] == 404
+
+
+def test_validation_error_is_problem_json_with_field_detail(e2e_client) -> None:
+    """Given a body missing `name`, When POSTing, Then 4xx problem+json keeping field detail."""
+    resp = e2e_client.post(_BASE, json={"description": "no name field"})
+    assert resp.status_code in (400, 422)
+    assert resp.headers["content-type"].startswith("application/problem+json")
+    body = resp.json()
+    # MsgspecDTO decode failures raise SerializationException, which carries no
+    # Litestar `extra`; the field-level message lives in `title` instead.
+    assert "name" in body["title"]
