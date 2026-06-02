@@ -17,6 +17,7 @@ _log = structlog.get_logger(__name__)
 class AdminController(Controller):
     path = "/admin"
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
+    tags = ["Admin UI"]  # noqa: RUF012
 
     @get("/")
     @inject

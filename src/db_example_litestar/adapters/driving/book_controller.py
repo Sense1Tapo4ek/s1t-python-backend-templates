@@ -13,6 +13,7 @@ from ...ports.driving import BookFacade, BookModel, BookReadDTO, BookWriteDTO
 
 class BookController(Controller):
     path = "/db-example-litestar/books"
+    tags = ["db_example (Alchemy)"]  # noqa: RUF012
     return_dto = BookReadDTO
 
     @post("/", dto=BookWriteDTO, status_code=HTTP_201_CREATED)

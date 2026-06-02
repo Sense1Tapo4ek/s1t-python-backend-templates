@@ -10,6 +10,7 @@ from ...ports.driving import MetricsFacade
 
 class MetricsDemoController(Controller):
     path = "/metrics-demo"
+    tags = ["Metrics"]  # noqa: RUF012
 
     @get()
     @inject

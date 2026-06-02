@@ -22,6 +22,7 @@ class HealthController(Controller):
     outside it is not covered."""
 
     path = ""
+    tags = ["Health"]  # noqa: RUF012
 
     @get("/health")
     @inject

@@ -20,6 +20,7 @@ from ...ports.driving import (
 
 class PerRequestItemController(Controller):
     path = "/db-example-sddd/per-request/items"
+    tags = ["db_example (SDDD)"]  # noqa: RUF012
     return_dto = ItemReadDTO
 
     @post("/", dto=ItemWriteDTO, status_code=HTTP_201_CREATED)

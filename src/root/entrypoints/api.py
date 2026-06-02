@@ -21,6 +21,7 @@ from litestar.exceptions import (
 )
 from litestar.middleware import DefineMiddleware
 from litestar.openapi import OpenAPIConfig
+from litestar.openapi.spec import Contact, Server, Tag
 from litestar.plugins.prometheus import PrometheusConfig
 from litestar.static_files import create_static_files_router
 from litestar.template.config import TemplateConfig
@@ -256,6 +257,25 @@ def create_app() -> Litestar:
         openapi_config=OpenAPIConfig(
             title=config.app_name,
             version=_resolve_app_version(),
+            description=(
+                "Litestar starter template (strict-DDD per bounded context). "
+                "Groups: Health, the two db_example CRUD contexts (raw aiosqlite "
+                "vs advanced-alchemy), Admin Logs (file-tail viewer API), Metrics "
+                "(Prometheus + custom by-name metrics), and Admin UI (server-rendered "
+                "pages). The db_example_* and Metrics endpoints are illustrative "
+                "examples meant to be deleted when adapting the template."
+            ),
+            use_handler_docstrings=True,
+            contact=Contact(name="litestar-base maintainers"),
+            servers=[Server(url="/", description="This deployment")],
+            tags=[
+                Tag(name="Health", description="Liveness/readiness probes and build info."),
+                Tag(name="db_example (SDDD)", description="Example CRUD over raw aiosqlite (pooled + per-request variants). Illustrative; delete when adapting."),
+                Tag(name="db_example (Alchemy)", description="Example CRUD via SQLAlchemy 2.0 + advanced-alchemy. Illustrative; delete when adapting."),
+                Tag(name="Admin Logs", description="JSON + SSE API backing the file-tail log viewer (admin role required)."),
+                Tag(name="Metrics", description="Prometheus scrape + a generic by-name custom-metrics demo. Illustrative."),
+                Tag(name="Admin UI", description="Server-rendered HTML pages and auth redirects - not a JSON API."),
+            ],
         ),
         # Single Jinja engine bound to the project's static/ root. Templates
         # are referenced by their path under static/ (e.g. "shared/_base.html",

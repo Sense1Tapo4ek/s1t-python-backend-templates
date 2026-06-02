@@ -15,7 +15,7 @@ def build_prom_controller(config: MetricsConfig) -> type[PrometheusController]:
     is created at wire time. Guards are omitted when ``prom_endpoint_public``
     is True; otherwise the admin role is required.
     """
-    attrs: dict[str, Any] = {"path": config.prom_endpoint_path}
+    attrs: dict[str, Any] = {"path": config.prom_endpoint_path, "tags": ["Metrics"]}
     if not config.prom_endpoint_public:
         attrs["guards"] = [require_role(Role.ADMIN)]
     return type("ConfiguredPromController", (PrometheusController,), attrs)

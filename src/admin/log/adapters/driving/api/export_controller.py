@@ -19,6 +19,7 @@ _VALID_FORMATS = frozenset({"ndjson", "csv"})
 class ExportController(Controller):
     path = "/api/v1/admin/logs/export"
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
+    tags = ["Admin Logs"]  # noqa: RUF012
 
     @get("/", status_code=HTTP_200_OK)
     @inject

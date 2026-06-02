@@ -24,6 +24,7 @@ from ...ports.driving import (
 
 class AuthorController(Controller):
     path = "/db-example-litestar/authors"
+    tags = ["db_example (Alchemy)"]  # noqa: RUF012
     return_dto = AuthorReadDTO
 
     @post("/", dto=AuthorWriteDTO, status_code=HTTP_201_CREATED)

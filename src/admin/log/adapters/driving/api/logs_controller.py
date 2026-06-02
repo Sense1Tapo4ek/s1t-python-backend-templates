@@ -30,6 +30,7 @@ _SSE_HEADERS = {
 class LogsPageController(Controller):
     path = "/admin/logs"
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
+    tags = ["Admin UI"]  # noqa: RUF012
 
     @get("/", status_code=HTTP_200_OK)
     async def index(self) -> Template:
@@ -39,6 +40,7 @@ class LogsPageController(Controller):
 class LogsApiController(Controller):
     path = "/api/v1/admin/logs"
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
+    tags = ["Admin Logs"]  # noqa: RUF012
 
     @get("/", status_code=HTTP_200_OK)
     @inject

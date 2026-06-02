@@ -26,6 +26,7 @@ DASHBOARD_PATH = "/admin/"
 
 class LoginController(Controller):
     path = "/admin"
+    tags = ["Admin UI"]  # noqa: RUF012
 
     @get("/login")
     @inject
