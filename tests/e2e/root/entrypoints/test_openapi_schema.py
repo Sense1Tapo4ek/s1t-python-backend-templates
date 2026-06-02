@@ -41,3 +41,27 @@ def test_top_level_metadata(e2e_client) -> None:
     """Given the spec, When reading info, Then a non-empty description is present."""
     spec = _spec(e2e_client)
     assert spec["info"].get("description")
+
+
+def test_api_operations_have_summary_or_description(e2e_client) -> None:
+    """Given the spec, When scanning JSON-API operations, Then each (non Admin UI) has a summary or description."""
+    spec = _spec(e2e_client)
+    bare = []
+    for path, ops in spec["paths"].items():
+        for method, op in ops.items():
+            if method not in _API_METHODS:
+                continue
+            if "Admin UI" in (op.get("tags") or []):
+                continue
+            if not (op.get("summary") or op.get("description")):
+                bare.append(f"{method.upper()} {path}")
+    assert not bare, f"undocumented operations: {bare}"
+
+
+def test_error_envelope_documented_on_item_lookup(e2e_client) -> None:
+    """Given the spec, When reading the item-by-id GET, Then 404 is documented."""
+    spec = _spec(e2e_client)
+    # find the pooled items by-id path key (Litestar renders the param placeholder)
+    key = next(p for p in spec["paths"] if p.startswith("/db-example-sddd/pooled/items/")
+               and "{" in p and "get" in spec["paths"][p])
+    assert "404" in spec["paths"][key]["get"]["responses"]

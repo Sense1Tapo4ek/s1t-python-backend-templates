@@ -9,6 +9,7 @@ from litestar.response import ServerSentEvent, Template
 from litestar.status_codes import HTTP_200_OK
 
 from auth.ports.driving import require_role
+from shared.adapters.openapi import error_responses
 from shared.domain.auth import Role
 
 from ....config import AdminLogConfig
@@ -34,6 +35,7 @@ class LogsPageController(Controller):
 
     @get("/", status_code=HTTP_200_OK)
     async def index(self) -> Template:
+        """Render the admin log-viewer HTML page."""
         return Template(template_name="admin/log/index.html")
 
 
@@ -42,13 +44,15 @@ class LogsApiController(Controller):
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
     tags = ["Admin Logs"]  # noqa: RUF012
 
-    @get("/", status_code=HTTP_200_OK)
+    @get("/", status_code=HTTP_200_OK,
+         summary="Latest log page", responses=error_responses(401, 403))
     @inject
     async def api_logs(
         self,
         facade: FromDishka[LogsFacade],
         config: FromDishka[AdminLogConfig],
     ) -> LogPageResponseSchema:
+        """Return the newest page of log entries plus a cursor for older pages."""
         entries, cursor = await facade.render_log_page(config.tail_lines)
         _log.info("logs page served", entry_count=len(entries))
         return LogPageResponseSchema(
@@ -56,7 +60,8 @@ class LogsApiController(Controller):
             cursor=encode_cursor(cursor) if cursor is not None else None,
         )
 
-    @get("/older", status_code=HTTP_200_OK)
+    @get("/older", status_code=HTTP_200_OK,
+         summary="Older log page (cursor)", responses=error_responses(400, 401, 403))
     @inject
     async def api_older(
         self,
@@ -64,6 +69,7 @@ class LogsApiController(Controller):
         config: FromDishka[AdminLogConfig],
         cursor: str,
     ) -> LogPageResponseSchema:
+        """Return an older page of log entries from the given opaque cursor."""
         try:
             decoded = decode_cursor(cursor)
         except ValueError as exc:
@@ -78,13 +84,18 @@ class LogsApiController(Controller):
             cursor=encode_cursor(next_cursor) if next_cursor is not None else None,
         )
 
-    @get("/stream", status_code=HTTP_200_OK)
+    @get("/stream", status_code=HTTP_200_OK,
+         summary="Live log tail (SSE)", responses=error_responses(401, 403))
     @inject
     async def api_stream(
         self,
         facade: FromDishka[LogsFacade],
         config: FromDishka[AdminLogConfig],
     ) -> ServerSentEvent:
+        """Tail the log file live as ``text/event-stream``.
+
+        Each event carries one log entry serialized as JSON.
+        """
         # Synchronous validation BEFORE building the response: headers are
         # already flushed once the generator starts, so any error raised
         # inside it cannot become a 4xx/5xx (spec 10.5 G).

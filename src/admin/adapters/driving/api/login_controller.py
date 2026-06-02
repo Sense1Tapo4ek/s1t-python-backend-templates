@@ -35,6 +35,7 @@ class LoginController(Controller):
         build: FromDishka[BuildInfoVo],
         next: str = DASHBOARD_PATH,
     ) -> Template:
+        """Render the admin login form."""
         return _render(app_name=build.app_name, next_path=_safe_next(next))
 
     @post("/login", status_code=HTTP_303_SEE_OTHER)

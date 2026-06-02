@@ -5,6 +5,7 @@ from litestar import Controller, get
 from litestar.exceptions import HTTPException
 from litestar.status_codes import HTTP_503_SERVICE_UNAVAILABLE
 
+from shared.adapters.openapi import error_responses
 from shared.config import BaseAppConfig
 
 from ....ports.driving import BuildInfoVo
@@ -24,9 +25,10 @@ class HealthController(Controller):
     path = ""
     tags = ["Health"]  # noqa: RUF012
 
-    @get("/health")
+    @get("/health", summary="Liveness")
     @inject
     async def health(self, build: FromDishka[BuildInfoVo]) -> dict[str, str | bool]:
+        """Always-200 liveness probe returning build/version metadata."""
         return {
             "status": "ok",
             "app": build.app_name,
@@ -36,12 +38,16 @@ class HealthController(Controller):
             "started_at": build.started_at.isoformat(),
         }
 
-    @get("/health/ready")
+    @get("/health/ready", summary="Readiness", responses=error_responses(503))
     @inject
     async def ready(
         self,
         config: FromDishka[BaseAppConfig],
     ) -> dict[str, str]:
+        """Readiness probe: config resolves and the log directory is writable.
+
+        Returns 503 when the writability probe fails.
+        """
         # Readiness = config resolved + the log directory is actually
         # writable, so the structlog file handler can append. A bare is_dir()
         # passes on a read-only mount where every log write then fails; probe
@@ -58,6 +64,7 @@ class HealthController(Controller):
             ) from exc
         return {"status": "ready"}
 
-    @get("/ping", sync_to_thread=False)
+    @get("/ping", sync_to_thread=False, summary="Ping")
     def ping(self) -> dict[str, str]:
+        """Minimal liveness check returning a static pong."""
         return {"message": "pong"}

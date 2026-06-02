@@ -7,6 +7,7 @@ from litestar.response import Stream
 from litestar.status_codes import HTTP_200_OK
 
 from auth.ports.driving import require_role
+from shared.adapters.openapi import error_responses
 from shared.domain.auth import Role
 
 from ....ports.driving.facades import LogsFacade
@@ -21,13 +22,15 @@ class ExportController(Controller):
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
     tags = ["Admin Logs"]  # noqa: RUF012
 
-    @get("/", status_code=HTTP_200_OK)
+    @get("/", status_code=HTTP_200_OK,
+         summary="Export logs", responses=error_responses(400, 401, 403))
     @inject
     async def export(
         self,
         facade: FromDishka[LogsFacade],
         format: str = "ndjson",
     ) -> Stream:
+        """Stream the log file as a download in ``ndjson`` (default) or ``csv``."""
         if format not in _VALID_FORMATS:
             raise ValidationException(
                 f"unknown format {format!r}; expected one of: "

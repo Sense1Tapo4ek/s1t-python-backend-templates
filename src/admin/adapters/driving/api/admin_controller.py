@@ -25,6 +25,7 @@ class AdminController(Controller):
         self,
         facade: FromDishka[AdminFacade],
     ) -> Template:
+        """Render the admin dashboard HTML page."""
         view = facade.render_dashboard()
         _log.info(
             "dashboard rendered",

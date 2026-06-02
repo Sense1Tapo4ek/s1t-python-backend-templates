@@ -12,7 +12,7 @@ class MetricsDemoController(Controller):
     path = "/metrics-demo"
     tags = ["Metrics"]  # noqa: RUF012
 
-    @get()
+    @get(summary="Emit demo metrics")
     @inject
     async def emit(self, facade: FromDishka[MetricsFacade]) -> dict[str, Any]:
         """Teaching endpoint: exercise all three metric types via the facade.
