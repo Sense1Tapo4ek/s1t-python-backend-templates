@@ -2,9 +2,9 @@ from dataclasses import dataclass
 
 import structlog
 
-from ....config import DbExampleSdddConfig
-from ..db.migrations_runner import apply_migrations
-from ..db.sqlite_pool import SqlitePool
+from ..config import DbExampleSdddConfig
+from .driven.db.migrations_runner import apply_migrations
+from .driven.db.sqlite_pool import SqlitePool
 
 _log = structlog.get_logger(__name__)
 

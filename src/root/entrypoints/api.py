@@ -46,7 +46,9 @@ from db_example_litestar.adapters.db_example_litestar_lifespan_manager import (
     DbExampleLitestarLifespanManager,
 )
 from db_example_litestar.adapters.driving import AuthorController, BookController
-from db_example_sddd.adapters.driven.lifespan import DbExampleSdddLifespanManager
+from db_example_sddd.adapters.db_example_sddd_lifespan_manager import (
+    DbExampleSdddLifespanManager,
+)
 from db_example_sddd.adapters.driving.api import PerRequestItemController, PooledItemController
 from db_example_sddd.app import ItemNotFound
 from root.composition.container import build_container
