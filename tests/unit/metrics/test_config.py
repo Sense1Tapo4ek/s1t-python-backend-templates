@@ -50,3 +50,16 @@ class TestMetricsConfigDefaults:
         cfg = MetricsConfig()
         assert isinstance(cfg.multiproc_dir, Path)
         assert cfg.multiproc_dir.is_absolute()
+
+    def test_prometheus_multiproc_dir_env_takes_precedence(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Given PROMETHEUS_MULTIPROC_DIR set in the environment,
+        When constructing MetricsConfig,
+        Then multiproc_dir equals that path (prometheus_client's own env wins
+        over the volume_path/prometheus default).
+        """
+        monkeypatch.setenv("PROMETHEUS_MULTIPROC_DIR", "/tmp/prometheus")
+        cfg = MetricsConfig()
+        assert cfg.multiproc_dir == Path("/tmp/prometheus")

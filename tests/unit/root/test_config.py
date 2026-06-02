@@ -9,7 +9,7 @@ def test_root_config_can_be_created_without_env_file() -> None:
     assert config.app_name == "litestar-base"
     assert config.app_host == "127.0.0.1"
     assert config.app_port == 8000
-    assert config.app_workers == 1
+    assert config.app_workers == 2
     assert config.src_dir.name == "src"
     assert config.project_root == config.src_dir.parent
 

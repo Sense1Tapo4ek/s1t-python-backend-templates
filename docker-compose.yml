@@ -19,15 +19,18 @@ services:
       # Container-only overrides; .env still feeds APP_NAME / AUTH_ADMIN_TOKEN / etc.
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
-      # Free knob now the single-writer sink is gone. Each worker appends to
-      # the same JSONL file via O_APPEND (atomic single-write per record).
-      APP_WORKERS: 1
+      # Free knob: each worker appends to the same JSONL log via O_APPEND
+      # (atomic per-record), and metrics aggregate across workers via
+      # prometheus_client multiprocess mode (see PROMETHEUS_MULTIPROC_DIR).
+      APP_WORKERS: 2
       VOLUME_PATH: /data
       # UI history + live tail source of truth. Rotated by logrotate (create
       # mode) so an open export fd reads a consistent inode (spec 10.5 F).
       LOG_FILE_PATH: /data/logs/app.jsonl
-      # Prometheus multiprocess mode: directory for per-worker mmap metric files.
-      # Wiped at container start (tmpfs auto-cleans on restart).
+      # Prometheus multiprocess mode: directory for per-worker mmap metric
+      # shards. MetricsConfig + server.py honor this exact path (variant A);
+      # server.py wipes stale *.db on start and the tmpfs mount below clears
+      # it on container restart.
       PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus
     logging:
       driver: json-file

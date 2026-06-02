@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Self
 
@@ -21,7 +22,14 @@ class MetricsConfig(BaseAppConfig):
 
     @model_validator(mode="after")
     def resolve_multiproc_dir(self) -> Self:
-        if self.multiproc_dir is None:
+        # Precedence: PROMETHEUS_MULTIPROC_DIR (prometheus_client's own env --
+        # e.g. a compose tmpfs mount) > METRICS_MULTIPROC_DIR > volume_path/prometheus.
+        # The library reads PROMETHEUS_MULTIPROC_DIR directly, so it is the single
+        # source of truth when present; otherwise we materialize our own path.
+        env_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR", "").strip()
+        if env_dir:
+            self.multiproc_dir = Path(env_dir)
+        elif self.multiproc_dir is None:
             self.multiproc_dir = self.volume_path / "prometheus"
         elif not self.multiproc_dir.is_absolute():
             self.multiproc_dir = self.volume_path / self.multiproc_dir

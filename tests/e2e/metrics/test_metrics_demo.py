@@ -1,10 +1,12 @@
 """E2E for the metrics demo endpoint and the custom demo metrics.
 
-PROMETHEUS_MULTIPROC_DIR is intentionally NOT set here. The template runs
-with a single Uvicorn master (APP_WORKERS=1 default); in the test process
-prometheus_client is already imported before any per-test env patch, so
-metric objects (Counter / Gauge / Histogram) are bound to the in-process
-REGISTRY, not to mmap files. Setting PROMETHEUS_MULTIPROC_DIR after import
+PROMETHEUS_MULTIPROC_DIR is intentionally NOT set here. The test client runs
+the app in-process (no Uvicorn worker fork), and prometheus_client is already
+imported before any per-test env patch, so metric objects (Counter / Gauge /
+Histogram) are bound to the in-process REGISTRY, not to mmap files. (Under
+`docker compose` with APP_WORKERS>=1 the env IS set and multiprocess mmap is
+used -- that path is exercised in test_metrics_endpoint.py.) Setting
+PROMETHEUS_MULTIPROC_DIR after import
 causes PrometheusController to read empty mmap files while the actual
 values live in REGISTRY -- yielding an empty scrape body.
 

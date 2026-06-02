@@ -19,7 +19,7 @@ class RootConfig(BaseAppConfig):
         validation_alias="APP_PORT",
     )
     app_workers: int = Field(
-        default=1,
+        default=2,
         description="Number of ASGI worker processes for production runs",
         ge=1,
         validation_alias="APP_WORKERS",

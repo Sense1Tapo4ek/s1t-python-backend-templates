@@ -22,6 +22,8 @@ def _isolate_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "VOLUME_PATH",
         "RUNTIME_PATH",
         "AUTH_ADMIN_TOKEN",
+        "PROMETHEUS_MULTIPROC_DIR",
+        "METRICS_MULTIPROC_DIR",
     ):
         monkeypatch.delenv(env_var, raising=False)
     yield
