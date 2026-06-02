@@ -121,7 +121,7 @@ decisions, layers, invariants, and how-to recipes.
 | [docs/architecture.md](docs/architecture.md) | Project overview: contexts, layers, error hierarchy, DI, lifespan, invariants. |
 | [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, metrics, db_example_sddd, db_example_litestar). |
 | [docs/subsystems/](docs/subsystems/) | Cross-cutting: error hierarchy, observability, metrics. |
-| [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, jinja). |
+| [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, jinja, openapi). |
 | [docs/adr/](docs/adr/) | Architecture Decision Records (MADR format). |
 
 ---
