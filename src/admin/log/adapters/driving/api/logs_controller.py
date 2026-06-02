@@ -8,7 +8,7 @@ from litestar.exceptions import ValidationException
 from litestar.response import ServerSentEvent, Template
 from litestar.status_codes import HTTP_200_OK
 
-from auth.ports.driving import require_role
+from auth.ports.driving import ADMIN_SECURITY, require_role
 from shared.adapters.openapi import error_responses
 from shared.domain.auth import Role
 
@@ -31,6 +31,7 @@ _SSE_HEADERS = {
 class LogsPageController(Controller):
     path = "/admin/logs"
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
+    security = ADMIN_SECURITY
     tags = ["Admin UI"]  # noqa: RUF012
 
     @get("/", status_code=HTTP_200_OK)
@@ -42,6 +43,7 @@ class LogsPageController(Controller):
 class LogsApiController(Controller):
     path = "/api/v1/admin/logs"
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
+    security = ADMIN_SECURITY
     tags = ["Admin Logs"]  # noqa: RUF012
 
     @get("/", status_code=HTTP_200_OK,

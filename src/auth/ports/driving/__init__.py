@@ -1,4 +1,5 @@
 from .facades import AuthFacade
 from .guards import require_role
+from .openapi import ADMIN_SECURITY, SECURITY_COMPONENTS
 
-__all__ = ["AuthFacade", "require_role"]
+__all__ = ["ADMIN_SECURITY", "SECURITY_COMPONENTS", "AuthFacade", "require_role"]

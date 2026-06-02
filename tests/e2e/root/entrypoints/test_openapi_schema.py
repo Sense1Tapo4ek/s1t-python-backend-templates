@@ -1,5 +1,7 @@
 """E2E: the OpenAPI schema is grouped and documented (no bare 'default')."""
 
+from auth.config import ADMIN_COOKIE_NAME
+
 _API_METHODS = {"get", "post", "patch", "put", "delete"}
 _EXPECTED_TAGS = {
     "Health",
@@ -81,3 +83,36 @@ def test_item_schema_has_field_examples_and_descriptions(e2e_client) -> None:
     )
     assert name.get("description")
     assert name.get("examples") or name.get("example")
+
+
+def test_security_schemes_declared(e2e_client) -> None:
+    """Given the spec, When reading components, Then bearer + adminCookie schemes exist."""
+    spec = _spec(e2e_client)
+    schemes = spec.get("components", {}).get("securitySchemes", {})
+    assert schemes.get("bearer") == {"type": "http", "scheme": "bearer"}
+    assert schemes.get("adminCookie", {}).get("type") == "apiKey"
+    assert schemes["adminCookie"]["in"] == "cookie"
+    assert schemes["adminCookie"]["name"] == ADMIN_COOKIE_NAME
+
+
+_EXPECTED_PROTECTED_PATHS = {
+    "/admin",
+    "/admin/logs",
+    "/api/v1/admin/logs",
+    "/api/v1/admin/logs/export",
+    "/api/v1/admin/logs/older",
+    "/api/v1/admin/logs/stream",
+}
+
+
+def test_protected_operations_declare_security(e2e_client) -> None:
+    """Given the spec, When scanning operations, Then all known protected paths require security."""
+    spec = _spec(e2e_client)
+    secured_paths = {
+        p
+        for p, ops in spec["paths"].items()
+        for m, op in ops.items()
+        if m in _API_METHODS and op.get("security")
+    }
+    missing = _EXPECTED_PROTECTED_PATHS - secured_paths
+    assert not missing, f"missing security on: {missing}"

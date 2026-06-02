@@ -32,6 +32,7 @@ from admin.log.adapters.driving.api import (
     LogsPageController,
 )
 from auth.adapters.middleware import AuthMiddleware
+from auth.ports.driving import SECURITY_COMPONENTS
 from db_example_litestar.adapters.driving import AuthorController, BookController
 from db_example_sddd.adapters.driving import PerRequestItemController, PooledItemController
 from db_example_sddd.app import ItemNotFound
@@ -134,6 +135,7 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
         use_handler_docstrings=True,
         contact=Contact(name="litestar-base maintainers"),
         servers=[Server(url="/", description="This deployment")],
+        components=SECURITY_COMPONENTS,
         tags=[
             Tag(name="Health", description="Liveness/readiness probes and build info."),
             Tag(name="db_example (SDDD)", description="Example CRUD over raw aiosqlite (pooled + per-request variants). Illustrative; delete when adapting."),

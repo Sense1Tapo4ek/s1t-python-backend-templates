@@ -6,7 +6,7 @@ from dishka.integrations.litestar import inject
 from litestar import Controller, get
 from litestar.response import Template
 
-from auth.ports.driving import require_role
+from auth.ports.driving import ADMIN_SECURITY, require_role
 from shared.domain.auth import Role
 
 from ....ports.driving.facades import AdminFacade
@@ -17,6 +17,7 @@ _log = structlog.get_logger(__name__)
 class AdminController(Controller):
     path = "/admin"
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
+    security = ADMIN_SECURITY
     tags = ["Admin UI"]  # noqa: RUF012
 
     @get("/")

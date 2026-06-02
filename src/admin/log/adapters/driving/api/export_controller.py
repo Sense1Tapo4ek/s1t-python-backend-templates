@@ -6,7 +6,7 @@ from litestar.exceptions import ValidationException
 from litestar.response import Stream
 from litestar.status_codes import HTTP_200_OK
 
-from auth.ports.driving import require_role
+from auth.ports.driving import ADMIN_SECURITY, require_role
 from shared.adapters.openapi import error_responses
 from shared.domain.auth import Role
 
@@ -20,6 +20,7 @@ _VALID_FORMATS = frozenset({"ndjson", "csv"})
 class ExportController(Controller):
     path = "/api/v1/admin/logs/export"
     guards = [require_role(Role.ADMIN)]  # noqa: RUF012
+    security = ADMIN_SECURITY
     tags = ["Admin Logs"]  # noqa: RUF012
 
     @get("/", status_code=HTTP_200_OK,
