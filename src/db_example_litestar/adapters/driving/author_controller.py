@@ -10,12 +10,16 @@ from litestar.pagination import OffsetPagination
 from litestar.params import Parameter
 from litestar.status_codes import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
-# Hybrid context: driving adapters import the ORM model from adapters/driven so
-# the SQLAlchemy DTOs can operate on it. CRUD itself goes through the facade
-# (ports/driving), the context's single public API for both HTTP and code.
-# Do NOT copy this model import into a strict context.
-from ....adapters.driven.db.orm_models import AuthorModel
-from ....ports.driving import AuthorFacade, AuthorPatchDTO, AuthorReadDTO, AuthorWriteDTO
+# Everything comes from ports/driving: the facade (CRUD entry point), the DTOs,
+# and the AuthorModel (re-exported from domain there, since SQLAlchemyDTO
+# generics need the ORM type). Controllers stay within their allowed layer.
+from ...ports.driving import (
+    AuthorFacade,
+    AuthorModel,
+    AuthorPatchDTO,
+    AuthorReadDTO,
+    AuthorWriteDTO,
+)
 
 
 class AuthorController(Controller):

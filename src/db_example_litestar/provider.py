@@ -3,8 +3,8 @@ from collections.abc import AsyncIterator
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from .adapters.driven.db.engine import build_engine, build_sessionmaker
-from .adapters.driven.lifespan import DbExampleLitestarLifespanManager
+from .adapters.db_example_litestar_lifespan_manager import DbExampleLitestarLifespanManager
+from .adapters.driven.engine import build_engine, build_sessionmaker
 from .config import DbExampleLitestarConfig
 from .ports.driven.services.author_service import AuthorService
 from .ports.driven.services.book_service import BookService

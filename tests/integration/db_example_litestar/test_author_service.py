@@ -9,8 +9,8 @@ from advanced_alchemy.filters import (
 )
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from db_example_litestar.adapters.driven.db.engine import build_engine, build_sessionmaker
-from db_example_litestar.adapters.driven.db.orm_models import AuthorModel, BookModel
+from db_example_litestar.adapters.driven.engine import build_engine, build_sessionmaker
+from db_example_litestar.domain import AuthorModel, BookModel
 from db_example_litestar.ports.driven.services.author_service import AuthorService
 
 

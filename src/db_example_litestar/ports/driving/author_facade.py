@@ -5,11 +5,11 @@ from uuid import UUID
 
 from advanced_alchemy.filters import LimitOffset, OrderBy, SearchFilter
 
-# Hybrid context: the facade wraps the advanced-alchemy service directly and
-# speaks the ORM model as its currency. This crosses the strict driving->driven
-# boundary on purpose (see ADR 0012) so the same CRUD is callable from code
-# without going through HTTP. Do NOT copy this into a strict S-DDD context.
-from ...adapters.driven.db.orm_models import AuthorModel
+from ...domain import AuthorModel
+
+# Hybrid context: the facade holds the advanced-alchemy service directly -- the
+# one deliberate driving->driven crossing (ADR 0014), so the same CRUD is
+# callable from code, not only over HTTP. Do NOT copy into a strict context.
 from ..driven.services.author_service import AuthorService
 
 

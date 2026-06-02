@@ -4,8 +4,9 @@ from typing import Any
 
 from advanced_alchemy.filters import LimitOffset, OrderBy
 
-# Hybrid context — see author_facade.py for the boundary note (ADR 0012).
-from ...adapters.driven.db.orm_models import BookModel
+from ...domain import BookModel
+
+# Hybrid context -- facade holds the service (driving->driven, ADR 0014).
 from ..driven.services.book_service import BookService
 
 

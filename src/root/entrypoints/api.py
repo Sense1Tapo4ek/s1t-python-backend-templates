@@ -42,8 +42,10 @@ from admin.metrics.adapters.lifespan import MetricsLifespanManager
 from admin.metrics.config import MetricsConfig
 from auth.adapters.middleware import AuthMiddleware
 from auth.ports.driving import AuthFacade
-from db_example_litestar.adapters.driven.lifespan import DbExampleLitestarLifespanManager
-from db_example_litestar.adapters.driving.api import AuthorController, BookController
+from db_example_litestar.adapters.db_example_litestar_lifespan_manager import (
+    DbExampleLitestarLifespanManager,
+)
+from db_example_litestar.adapters.driving import AuthorController, BookController
 from db_example_sddd.adapters.driven.lifespan import DbExampleSdddLifespanManager
 from db_example_sddd.adapters.driving.api import PerRequestItemController, PooledItemController
 from db_example_sddd.app import ItemNotFound

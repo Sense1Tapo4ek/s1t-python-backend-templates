@@ -8,9 +8,7 @@ from litestar.pagination import OffsetPagination
 from litestar.params import Parameter
 from litestar.status_codes import HTTP_201_CREATED
 
-# Hybrid context — see author_controller.py for the model-import note (ADR 0012).
-from ....adapters.driven.db.orm_models import BookModel
-from ....ports.driving import BookFacade, BookReadDTO, BookWriteDTO
+from ...ports.driving import BookFacade, BookModel, BookReadDTO, BookWriteDTO
 
 
 class BookController(Controller):

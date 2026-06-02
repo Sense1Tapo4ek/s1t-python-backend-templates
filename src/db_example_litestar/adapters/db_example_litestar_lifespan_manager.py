@@ -12,8 +12,10 @@ class DbExampleLitestarLifespanManager:
     engine: AsyncEngine
 
     async def start(self) -> None:
-        # Import models so they register with UUIDAuditBase.metadata before create_all.
-        import db_example_litestar.adapters.driven.db.orm_models  # noqa: F401
+        # Import the domain models so they register with UUIDAuditBase.metadata
+        # before create_all. The one place an adapter reaches into domain -- a
+        # pure side-effect import for table registration, no use of the types.
+        import db_example_litestar.domain  # noqa: F401
 
         async with self.engine.begin() as conn:
             await conn.run_sync(UUIDAuditBase.metadata.create_all)

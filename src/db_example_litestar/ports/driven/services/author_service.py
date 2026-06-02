@@ -1,6 +1,6 @@
 from advanced_alchemy.service import SQLAlchemyAsyncRepositoryService
 
-from ....adapters.driven.db.orm_models import AuthorModel
+from ....domain import AuthorModel
 from ..repos.author_repo import AuthorRepository
 
 
