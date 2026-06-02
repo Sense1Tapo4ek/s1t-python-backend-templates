@@ -7,6 +7,7 @@ from db_example_sddd.provider import (
     PerRequestDbExampleSdddProvider,
     PooledDbExampleSdddProvider,
 )
+from metrics.provider import MetricsProvider
 from shared.provider import SharedProvider
 
 
@@ -14,8 +15,11 @@ from shared.provider import SharedProvider
 async def test_infra_resolves(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     monkeypatch.setenv("APP_NAME", "x")
     monkeypatch.setenv("VOLUME_PATH", str(tmp_path))
+    # MetricsProvider is required: the infra provider binds IMetrics -> MetricsAcl,
+    # whose MetricsFacade dependency comes from the metrics context (cross-context
+    # ACL). Dishka validates the whole graph at construction time.
     container = make_async_container(
-        SharedProvider(), DbExampleSdddInfraProvider(),
+        SharedProvider(), MetricsProvider(), DbExampleSdddInfraProvider(),
         PooledDbExampleSdddProvider(), PerRequestDbExampleSdddProvider(),
     )
     cfg = await container.get(DbExampleSdddConfig)

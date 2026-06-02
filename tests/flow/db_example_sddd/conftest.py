@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from db_example_sddd.app import IItemRepo
+from db_example_sddd.app import IItemRepo, IMetrics
 from db_example_sddd.domain import Item
 
 
@@ -32,3 +32,15 @@ class FakeRepo(IItemRepo):
 
     async def delete(self, item_id: UUID) -> bool:
         return self.items.pop(item_id, None) is not None
+
+
+class FakeMetrics(IMetrics):
+    def __init__(self) -> None:
+        self.increments: list[tuple[str, float]] = []
+        self.observations: list[tuple[str, float]] = []
+
+    def increment(self, name: str, value: float = 1.0, **labels: str) -> None:
+        self.increments.append((name, value))
+
+    def observe(self, name: str, value: float, **labels: str) -> None:
+        self.observations.append((name, value))
