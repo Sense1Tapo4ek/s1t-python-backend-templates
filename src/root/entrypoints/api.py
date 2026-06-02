@@ -49,7 +49,7 @@ from db_example_sddd.adapters.db_example_sddd_lifespan_manager import (
 from db_example_sddd.adapters.driving import PerRequestItemController, PooledItemController
 from db_example_sddd.app import ItemNotFound
 from metrics.adapters import MetricsLifespanManager
-from metrics.adapters.driving import build_prom_controller
+from metrics.adapters.driving import MetricsDemoController, build_prom_controller
 from metrics.config import MetricsConfig
 from root.composition.container import build_container
 from root.config import RootConfig
@@ -237,6 +237,7 @@ def create_app() -> Litestar:
             PerRequestItemController,
             AuthorController,
             BookController,
+            MetricsDemoController,
             static_router,
             *extra_handlers,
         ],
