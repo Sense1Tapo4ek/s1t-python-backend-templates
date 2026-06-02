@@ -12,6 +12,7 @@ from litestar.params import Body
 from litestar.response import Redirect, Template
 from litestar.status_codes import HTTP_303_SEE_OTHER
 
+from admin.config import LOGIN_PATH
 from auth.config import ADMIN_COOKIE_NAME, MAX_TOKEN_LEN
 from auth.ports.driving import AuthFacade
 from shared.domain.auth import Role
@@ -20,7 +21,6 @@ from ....domain import BuildInfoVo
 
 _log = structlog.get_logger(__name__)
 
-LOGIN_PATH = "/admin/login"
 DASHBOARD_PATH = "/admin/"
 
 

@@ -10,7 +10,7 @@ from litestar.status_codes import (
     HTTP_403_FORBIDDEN,
 )
 
-from .api.login_controller import LOGIN_PATH
+from admin.config import LOGIN_PATH
 
 
 def not_authorized_handler(request: Request, exc: NotAuthorizedException) -> Response:
