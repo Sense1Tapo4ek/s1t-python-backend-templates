@@ -1,5 +1,5 @@
 # 0015 - db_example_litestar: ORM model lives in domain/
-Status: accepted
+Status: superseded by 0016
 Date: 2026-06-02
 
 ## Context

@@ -6,17 +6,18 @@ full ports/driving layer.
 
 ## Mental model
 
-This context uses **hybrid layering**: no `app/` layer. advanced-alchemy's
-`SQLAlchemyAsyncRepositoryService` absorbs both CRUD orchestration and
-repository access, leaving a `domain/` (the SQLAlchemy entities), repo/service
-subclasses, a thin facade, DTOs, controllers, and config.
+This context uses **hybrid layering**: no `domain/` and no `app/` layer (no
+business logic). advanced-alchemy's `SQLAlchemyAsyncRepositoryService` absorbs
+both CRUD orchestration and repository access, leaving the ORM model,
+repo/service subclasses, a thin facade, DTOs, controllers, and config.
 
-The ORM model is the context's shared entity, used by **both** sides of ports
-(driving serialises it, driven persists it), so it lives in `domain/` -- the
-one layer both may import. `ports/driving` re-exports it so controllers (which
-may import only `ports/driving`) get the type for their `SQLAlchemyDTO`
-generics. The facade in `ports/driving/` is the single public API: HTTP
-controllers and in-process callers both reach the CRUD through it.
+The ORM model is used by **both** sides of ports (driving serialises it, driven
+persists it), so it lives at the **`ports/` root** (`ports/orm_models.py`) — not
+under `driving/` or `driven/`, which keeps it out of a `driving <-> driven`
+crossing. `ports/driving` re-exports it so controllers (which may import only
+`ports/driving`) get the type for their `SQLAlchemyDTO` generics. The facade in
+`ports/driving/` is the single public API: HTTP controllers and in-process
+callers both reach the CRUD through it.
 
 ```
 AuthorController                     BookController
@@ -38,9 +39,10 @@ AuthorController                     BookController
      aiosqlite (SQLite file)
 ```
 
-`AuthorModel` 1--* `BookModel` via `relationship`, both in `domain/orm_models.py`
+`AuthorModel` 1--* `BookModel` via `relationship`, both in `ports/orm_models.py`
 extending `UUIDAuditBase` (`id` UUID PK, `created_at`, `updated_at`). DTOs,
-facades (driving) and repos, services (driven) all import them from `domain/`.
+facades (driving) and repos, services (driven) all import them from
+`ports/orm_models`.
 
 ## Public surface
 
@@ -77,7 +79,7 @@ Currency is the ORM model: facades accept/return `AuthorModel` / `BookModel`.
 of changed fields (the controller feeds it `DTOData.as_builtins()`); `get`
 eager-loads `books`. All mutating methods `auto_commit`.
 
-### ORM models (`domain/`)
+### ORM models (`ports/orm_models.py`)
 
 `AuthorModel`: `name: str`, `dob: date | None`, `books` (relationship, lazy=noload).
 `BookModel`: `title: str`, `author_id: UUID` (FK to `author.id`).
@@ -121,19 +123,19 @@ invariants to enforce.
 
 The convention holds: the `ports/driven/` layer still separates repo
 (`SQLAlchemyAsyncRepository` subclass) from service
-(`SQLAlchemyAsyncRepositoryService` subclass). The ORM model lives in `domain/`
-(the context's entity), so both ports sides import it without crossing
-`driving <-> driven`; controllers reach it via the `ports/driving` re-export
-(they may import only `ports/driving`). See ADR 0015 for why the model moved
-out of `adapters/driven/db/`.
+(`SQLAlchemyAsyncRepositoryService` subclass). The ORM model lives at the
+`ports/` root (used by both branches), so both ports sides import it without
+crossing `driving <-> driven`; controllers reach it via the `ports/driving`
+re-export (they may import only `ports/driving`). See ADR 0016 for the model
+placement (supersedes ADR 0015).
 
 Remaining deliberate relaxations, both narrow and documented:
 - the facade holds the service (`driving -> driven`) so the CRUD has a single
   public entry point usable from HTTP and code (ADR 0014);
-- the lifespan manager (at `adapters/`) imports `domain` once for `create_all`
-  table registration (`adapters -> domain`, a pure side-effect import);
-- the `domain/` entity is a SQLAlchemy model rather than a framework-free
-  dataclass -- the core hybrid trade (ADR 0012).
+- the lifespan manager (at `adapters/`) imports `ports.orm_models` once for
+  `create_all` table registration — a pure side-effect import;
+- the model is a SQLAlchemy ORM type rather than a framework-free dataclass —
+  acceptable because the context has no business logic (ADR 0012).
 
 ## Schema management
 
@@ -143,8 +145,9 @@ appropriate for demo/prototype contexts where schema drift is not a concern.
 Production contexts should use yoyo (see `db_example_sddd`) or Alembic.
 
 The ORM models must be imported before `create_all` so they register with
-`UUIDAuditBase.metadata`. The lifespan manager (`adapters/db_example_litestar_lifespan_manager.py`)
-imports `domain` as a side-effect immediately before the call.
+`UUIDAuditBase.metadata`. The lifespan manager
+(`adapters/db_example_litestar_lifespan_manager.py`) imports `ports.orm_models`
+at module level for that side effect.
 
 ## SQLAlchemy scope in the template
 
@@ -173,7 +176,8 @@ following this one as a reference.
 - `src/db_example_litestar/` — full context source
 - [docs/adr/0012-db-example-litestar-advanced-alchemy-dishka.md](../adr/0012-db-example-litestar-advanced-alchemy-dishka.md) — advanced-alchemy + hybrid layering + create_all decision
 - [docs/adr/0014-db-example-litestar-facade-as-public-api.md](../adr/0014-db-example-litestar-facade-as-public-api.md) — facade as single public API for HTTP + code
-- [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](../adr/0015-db-example-litestar-orm-model-in-domain.md) — ORM model in domain/ (entity shared by both ports sides)
+- [docs/adr/0016-db-example-litestar-orm-model-in-ports-root.md](../adr/0016-db-example-litestar-orm-model-in-ports-root.md) — ORM model at `ports/` root (used by both branches); supersedes 0015
+- [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](../adr/0015-db-example-litestar-orm-model-in-domain.md) — (superseded by 0016) ORM model in domain/
 - [docs/adr/0013-litestar-2.23-floor.md](../adr/0013-litestar-2.23-floor.md) — version bump rationale
 - [docs/contexts/db_example_sddd.md](db_example_sddd.md) — raw aiosqlite counterpart
 - [docs/architecture.md](../architecture.md) — S-DDD layers and DI scopes

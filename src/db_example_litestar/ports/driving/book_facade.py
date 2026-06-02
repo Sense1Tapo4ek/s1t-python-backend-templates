@@ -4,10 +4,9 @@ from typing import Any
 
 from advanced_alchemy.filters import LimitOffset, OrderBy
 
-from ...domain import BookModel
-
 # Hybrid context -- facade holds the service (driving->driven, ADR 0014).
 from ..driven.services.book_service import BookService
+from ..orm_models import BookModel
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

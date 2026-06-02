@@ -1,6 +1,6 @@
 from advanced_alchemy.repository import SQLAlchemyAsyncRepository
 
-from ....domain import BookModel
+from ...orm_models import BookModel
 
 
 class BookRepository(SQLAlchemyAsyncRepository[BookModel]):

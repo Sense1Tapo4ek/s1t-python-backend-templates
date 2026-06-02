@@ -1,6 +1,6 @@
 from advanced_alchemy.extensions.litestar.dto import SQLAlchemyDTO, SQLAlchemyDTOConfig
 
-from ...domain import BookModel
+from ..orm_models import BookModel
 
 
 class BookReadDTO(SQLAlchemyDTO[BookModel]):

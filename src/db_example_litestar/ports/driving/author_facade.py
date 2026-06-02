@@ -5,12 +5,11 @@ from uuid import UUID
 
 from advanced_alchemy.filters import LimitOffset, OrderBy, SearchFilter
 
-from ...domain import AuthorModel
-
 # Hybrid context: the facade holds the advanced-alchemy service directly -- the
 # one deliberate driving->driven crossing (ADR 0014), so the same CRUD is
 # callable from code, not only over HTTP. Do NOT copy into a strict context.
 from ..driven.services.author_service import AuthorService
+from ..orm_models import AuthorModel
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

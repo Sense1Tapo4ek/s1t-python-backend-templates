@@ -11,8 +11,8 @@ from litestar.params import Parameter
 from litestar.status_codes import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
 # Everything comes from ports/driving: the facade (CRUD entry point), the DTOs,
-# and the AuthorModel (re-exported from domain there, since SQLAlchemyDTO
-# generics need the ORM type). Controllers stay within their allowed layer.
+# and the AuthorModel (re-exported there from ports/orm_models, since
+# SQLAlchemyDTO generics need the ORM type). Controllers stay within their layer.
 from ...ports.driving import (
     AuthorFacade,
     AuthorModel,

@@ -1,6 +1,6 @@
 from advanced_alchemy.extensions.litestar.dto import SQLAlchemyDTO, SQLAlchemyDTOConfig
 
-from ...domain import AuthorModel
+from ..orm_models import AuthorModel
 
 
 class AuthorReadDTO(SQLAlchemyDTO[AuthorModel]):

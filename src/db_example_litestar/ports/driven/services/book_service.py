@@ -1,6 +1,6 @@
 from advanced_alchemy.service import SQLAlchemyAsyncRepositoryService
 
-from ....domain import BookModel
+from ...orm_models import BookModel
 from ..repos.book_repo import BookRepository
 
 

@@ -1,6 +1,6 @@
 from advanced_alchemy.repository import SQLAlchemyAsyncRepository
 
-from ....domain import AuthorModel
+from ...orm_models import AuthorModel
 
 
 class AuthorRepository(SQLAlchemyAsyncRepository[AuthorModel]):
