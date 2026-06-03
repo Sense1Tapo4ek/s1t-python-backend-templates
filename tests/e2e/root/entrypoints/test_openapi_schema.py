@@ -60,13 +60,28 @@ def test_api_operations_have_summary_or_description(e2e_client) -> None:
     assert not bare, f"undocumented operations: {bare}"
 
 
+def _item_by_id_key(spec) -> str:
+    # find the pooled items by-id path key (Litestar renders the param placeholder)
+    return next(p for p in spec["paths"] if p.startswith("/db-example-sddd/pooled/items/")
+                and "{" in p and "get" in spec["paths"][p])
+
+
 def test_error_envelope_documented_on_item_lookup(e2e_client) -> None:
     """Given the spec, When reading the item-by-id GET, Then 404 is documented."""
     spec = _spec(e2e_client)
-    # find the pooled items by-id path key (Litestar renders the param placeholder)
-    key = next(p for p in spec["paths"] if p.startswith("/db-example-sddd/pooled/items/")
-               and "{" in p and "get" in spec["paths"][p])
-    assert "404" in spec["paths"][key]["get"]["responses"]
+    assert "404" in spec["paths"][_item_by_id_key(spec)]["get"]["responses"]
+
+
+def test_error_response_advertises_problem_details(e2e_client) -> None:
+    """Given the spec, When reading the item 404 response, Then it serves the RFC 9457 problem+json schema."""
+    spec = _spec(e2e_client)
+    resp = spec["paths"][_item_by_id_key(spec)]["get"]["responses"]["404"]
+    content = resp["content"]
+    assert "application/problem+json" in content, list(content)
+    ref = content["application/problem+json"]["schema"]["$ref"]
+    schema_name = ref.rsplit("/", 1)[-1]
+    props = spec["components"]["schemas"][schema_name]["properties"]
+    assert {"type", "title", "status"} <= set(props)
 
 
 def test_item_schema_has_field_examples_and_descriptions(e2e_client) -> None:
