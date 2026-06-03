@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "advanced-alchemy>=0.30",
-    "aiosqlite>=0.20",
     "asyncpg>=0.30",
     "dishka>=1.10.1",
     "litestar[jinja,prometheus]>=2.23.0",
@@ -97,5 +96,5 @@ disallow_untyped_defs = false
 check_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = ["snitchbot.*", "yoyo.*", "aiosqlite.*", "asyncpg.*"]
+module = ["snitchbot.*", "yoyo.*", "asyncpg.*"]
 ignore_missing_imports = true

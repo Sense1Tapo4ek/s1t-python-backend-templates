@@ -2,7 +2,7 @@
 
 Each E2E module that opts in by requesting `e2e_client` gets a single
 Litestar app and a single TestClient for the whole module — the lifespan
-runs once, not once per test. Lifespan boots SQLite, runs migrations,
+runs once, not once per test. Lifespan boots Postgres, runs migrations,
 opens channels, and resolves the DI graph; doing it 50x per file is the
 dominant cost of the e2e suite.
 

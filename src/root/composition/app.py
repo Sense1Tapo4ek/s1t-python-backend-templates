@@ -143,7 +143,7 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
         version=_resolve_app_version(),
         description=(
             "Litestar starter template (strict-DDD per bounded context). "
-            "Groups: Health, the two db_example CRUD contexts (raw aiosqlite "
+            "Groups: Health, the two db_example CRUD contexts (raw asyncpg "
             "vs advanced-alchemy), Admin Logs (file-tail viewer API), Metrics "
             "(Prometheus + custom by-name metrics), and Admin UI (server-rendered "
             "pages). The db_example_* and Metrics endpoints are illustrative "
@@ -155,7 +155,7 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
         components=SECURITY_COMPONENTS,
         tags=[
             Tag(name="Health", description="Liveness/readiness probes and build info."),
-            Tag(name="db_example (SDDD)", description="Example CRUD over raw aiosqlite (pooled + per-request variants). Illustrative; delete when adapting."),
+            Tag(name="db_example (SDDD)", description="Example CRUD over raw asyncpg (pooled + per-request variants). Illustrative; delete when adapting."),
             Tag(name="db_example (Alchemy)", description="Example CRUD via SQLAlchemy 2.0 + advanced-alchemy. Illustrative; delete when adapting."),
             Tag(name="Admin Logs", description="JSON + SSE API backing the file-tail log viewer (admin role required)."),
             Tag(name="Metrics", description="Prometheus scrape + a generic by-name custom-metrics demo. Illustrative."),

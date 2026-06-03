@@ -14,7 +14,7 @@ API.
 
 | Context | Path | Responsibility |
 |:---|:---|:---|
-| `shared` | `src/shared/` | Cross-cutting kernel: domain types (`Role`, `Principal`), base config, error hierarchy, db connection, middleware, structlog setup. Imported by every other context; imports nothing from them. |
+| `shared` | `src/shared/` | Cross-cutting kernel: domain types (`Role`, `Principal`), base config, error hierarchy, `PostgresConfig` (the three driver DSNs), middleware, structlog setup. Imported by every other context; imports nothing from them. |
 | `root` | `src/root/` | Entrypoints (`api.py`, `cli.py`) and DI container assembly. The only place that wires providers together. |
 | `auth` | `src/auth/` | Bearer/cookie auth: token resolution, `AuthMiddleware`, `require_role` guards. See [contexts/auth.md](contexts/auth.md). |
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
@@ -224,8 +224,8 @@ Things that, if you change them, will break the app silently or in production.
 
 ### Add a migration
 
-No context currently ships SQL migrations. If you add a SQL-backed context,
-introduce a migration tool then and document it in `docs/infra/`.
+Postgres 18, schema-per-context via `search_path` ([infra/postgres.md](infra/postgres.md), [adr/0019](adr/0019-sqlite-to-postgres.md)).
+`db_example_sddd` ships yoyo SQL under `migrations/<context>/`; `db_example_litestar` uses `create_all` -- follow whichever matches your driver.
 
 ### Add an ADR
 

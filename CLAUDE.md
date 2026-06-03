@@ -23,11 +23,11 @@ writes), role-based auth, and a Prometheus metrics endpoint via
 Logs go to stdout and to `LOG_FILE_PATH`; the admin UI tails that file.
 
 Two always-on example contexts ship in the template:
-- `db_example_sddd/` — raw aiosqlite, pool vs per-request variants, yoyo migrations,
-  `MsgspecDTO`. See [docs/contexts/db_example_sddd.md](docs/contexts/db_example_sddd.md).
-- `db_example_litestar/` — SQLAlchemy 2.0 + advanced-alchemy 1.11, hybrid
-  layering, `SQLAlchemyDTO`, `create_all`. The **only** SQLAlchemy user in the
-  template. See [docs/contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md).
+- `db_example_sddd/` — raw asyncpg, pool vs per-request variants, yoyo migrations
+  (psycopg3 backend), `MsgspecDTO`. See [docs/contexts/db_example_sddd.md](docs/contexts/db_example_sddd.md).
+- `db_example_litestar/` — SQLAlchemy 2.0 + advanced-alchemy 1.11 on Postgres,
+  hybrid layering, `SQLAlchemyDTO`, `create_all`. The **only** SQLAlchemy user in
+  the template. See [docs/contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md).
 
 ## Quick verifications
 
@@ -39,14 +39,16 @@ docker compose run --rm test                       # full gate
 docker compose run --rm test pytest tests/unit -q  # any subset
 ```
 
-Local `uv` for the fast inner loop:
+Local `uv` for the fast inner loop. Integration + e2e need a Postgres
+testcontainer, so **Docker must be running** (or point at an external DB via
+`POSTGRES_HOST` + the other `POSTGRES_*` vars):
 
 ```bash
-uv run pytest                     # full suite (~10s)
-uv run pytest tests/unit/         # domain only, instant
-uv run pytest tests/flow/         # app-level with mocked interfaces
-uv run pytest tests/integration/  # FileLogReader against tmp_path JSONL
-uv run pytest tests/e2e/          # full app via AsyncTestClient
+uv run pytest                     # full suite (needs Docker)
+uv run pytest tests/unit/         # domain only, instant, no DB
+uv run pytest tests/flow/         # app-level with mocked interfaces, no DB
+uv run pytest tests/integration/  # FileLogReader (tmp_path) + real Postgres (testcontainer)
+uv run pytest tests/e2e/          # full app via AsyncTestClient + Postgres
 uv run ruff check . && uv run mypy
 ```
 
@@ -76,8 +78,10 @@ without it the app 500s on every rendered page.
 - **Migrations live in `migrations/<context>/`.** The project-root
   `migrations/` folder mirrors `src/`, `static/`, `docs/`, `tests/`. Each
   context that uses yoyo gets its own subfolder (e.g.
-  `migrations/db_example_sddd/`). `db_example_litestar` uses `create_all` and
-  has no migration files.
+  `migrations/db_example_sddd/`); yoyo now targets Postgres via the psycopg3
+  sync backend (`yoyo_url` = `postgresql+psycopg://...`). `db_example_litestar`
+  uses `create_all` and has no migration files. See
+  [docs/infra/postgres.md](docs/infra/postgres.md).
 - **SQLAlchemy is used only in `db_example_litestar/`.** Do not import
   SQLAlchemy into other contexts. Litestar >= 2.23.0 is required because
   advanced-alchemy 1.11 needs `litestar.di.NamedDependency`.
@@ -129,7 +133,7 @@ uv run start_litestar             # API workers
 ### Docker
 
 ```bash
-docker compose up --build         # app:8000, all on /data volume
+docker compose up --build         # db (postgres:18) + app:8000; app data on /data, db on pg_data
 ```
 
 ### Adding a bounded context
