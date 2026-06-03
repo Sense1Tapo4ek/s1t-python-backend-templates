@@ -5,7 +5,7 @@ Documentation: <https://docs.litestar.dev/2/usage/openapi/>.
 
 ## Where it's configured
 
-`src/root/entrypoints/api.py::create_app` builds one `OpenAPIConfig`:
+`src/root/composition/app.py::build_app` builds one `OpenAPIConfig`:
 
 ```python
 OpenAPIConfig(
@@ -57,8 +57,9 @@ schema (not hidden) but carry only a one-line description, no error responses.
   `Field(description=, examples=)`.
 - **Error responses** are documented with one shared helper,
   `src/shared/adapters/openapi.py::error_responses(*codes)`, which maps each
-  status to a `ResponseSpec` over the `ErrorDetail` struct (`{"detail": str}` --
-  the envelope every global exception handler returns). Attach per handler:
+  status to a `ResponseSpec` over the `ProblemDetail` struct, media type
+  `application/problem+json` (RFC 9457 -- the envelope every error now
+  returns). Attach per handler:
 
 ```python
 from shared.adapters.openapi import error_responses
@@ -66,11 +67,13 @@ from shared.adapters.openapi import error_responses
 @get("/{item_id:uuid}", summary="Get an item by id", responses=error_responses(404, 503))
 ```
 
-Only codes an endpoint can actually emit are documented (see the exception map
-in `shared/adapters/error_handlers.py`): DomainError->409, ItemNotFound /
-advanced-alchemy NotFoundError->404, ValidationException->400, PortError->503,
+Only codes an endpoint can actually emit are documented (the status mapping
+lives in the converters in `shared/adapters/problem_details.py`, wired in
+`src/root/composition/app.py`): DomainError->409, ItemNotFound /
+advanced-alchemy NotFoundError->404, validation->400, PortError->503,
 NotAuthorized->401, PermissionDenied->403. App-wide there is no reachable 422
-path, so it is not documented.
+path declared on an endpoint, so it is not documented. The full wire contract
+is [../contract/errors.md](../contract/errors.md).
 
 ## Invariants
 

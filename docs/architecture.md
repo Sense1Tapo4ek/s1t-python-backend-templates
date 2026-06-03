@@ -67,18 +67,18 @@ Exception
     └── AdapterError     → 500 Internal       (EXCEPTION)
 ```
 
-Global mapping is registered in `src/root/entrypoints/api.py::create_app`
-via the `exception_handlers` dict. Specialised handlers
-(`NotAuthorizedException`, `PermissionDeniedException`, `ValidationException`)
-sit ahead of the generic ones — registration order matters because Litestar
-resolves the most specific handler.
+Every error is rendered as RFC 9457 `application/problem+json` (ADR 0018),
+wired in `src/root/composition/app.py::build_app`.
+`ProblemDetailsPlugin(enable_for_all_http_exceptions=True)` converts framework
+`HTTPException`s; `LayerError` subtypes convert via pure functions in
+`src/shared/adapters/problem_details.py`, registered as **app-level**
+`exception_handlers` (so the request-derived `instance` field survives — the
+plugin's own map drops it). A 5xx **never** carries a traceback: 4xx expose
+`str(exc)`, 5xx use a generic `detail` and log full context. A catch-all
+`Exception -> unexpected_to_problem` yields a generic 500; `debug=True` shows them.
 
-A 5xx response **never** carries a traceback to the client. In dev,
-`debug=True` enables Litestar's debug renderer; in prod, the catch-all
-`fallback_500_handler` returns an opaque body.
-
-See [subsystems/error_hierarchy.md](subsystems/error_hierarchy.md) for raise/catch
-conventions per layer.
+Wire contract: [contract/errors.md](contract/errors.md). Per-layer raise/catch
+conventions: [subsystems/error_hierarchy.md](subsystems/error_hierarchy.md).
 
 ---
 
@@ -111,22 +111,21 @@ For the *why*, see [adr/0001-dishka-for-di.md](adr/0001-dishka-for-di.md).
 
 ## 5. Lifespan & startup ordering
 
-`src/root/entrypoints/api.py::lifespan` is the single place that owns
-process startup and shutdown.
+`src/root/composition/lifespan.py` owns process startup and shutdown,
+registered from `build_app`.
 
 Order of operations on startup:
 1. `RootConfig()` — fail fast on misconfig (PROD without admin token).
 2. `snitchbot.init(...)` — crash reporter armed.
 3. `build_container()` — providers wired.
-4. `configure_structlog()` — JSON logger with two stdlib handlers: a
-   `StreamHandler` (stdout) and a `WatchedFileHandler(LOG_FILE_PATH)`. No
-   queue, no async sink.
-5. `app.state.auth_facade = await container.get(AuthFacade)` — middleware-
-   bound singletons resolved once.
+4. `configure_structlog()` — JSON logger, two stdlib handlers:
+   `StreamHandler` (stdout) + `WatchedFileHandler(LOG_FILE_PATH)`. No queue.
+5. `app.state.auth_facade = await container.get(AuthFacade)` — middleware-bound
+   singletons resolved once.
 6. `MetricsLifespanManager.start()` — ensures `multiproc_dir` exists.
 
-Shutdown unwinds in reverse with each `try/finally` so a single component's
-failure never blocks the rest from stopping.
+Shutdown unwinds in reverse, each in `try/finally` so one component's failure
+never blocks the rest.
 
 ---
 
@@ -179,8 +178,7 @@ the *how* is in [infra/jinja.md](infra/jinja.md).
 
 ## 7. Invariants
 
-Things that, if you change them, will break the app silently or in
-production.
+Things that, if you change them, will break the app silently or in production.
 
 - **One JSONL file, two handlers.** structlog writes each record to stdout
   and to `WatchedFileHandler(LOG_FILE_PATH)`. The admin log UI reads that
@@ -190,23 +188,23 @@ production.
   browser over loaded rows; "load more" pulls deeper into the file.
 - **Cross-worker metrics use multiprocess mode.** `prometheus_client` writes
   mmap shards to `PROMETHEUS_MULTIPROC_DIR`; no external store required.
-- **Cross-context calls go through an ACL.** `db_example_sddd -> metrics` is
-  the worked example: `db_example_sddd` emits a create counter + histogram via
+- **Cross-context calls go through an ACL.** Worked example
+  `db_example_sddd -> metrics`: a create counter + histogram emitted via
   `ports/driven/acl/metrics_acl.py` (the only cross-context import), adapting
   `metrics.ports.driving.MetricsFacade` to its own `app/i_metrics.py` protocol.
-- **APP-scope DI is lazy.** The graph resolves on the first HTTP request.
-  Tests must warm DI before any global env-isolation fixture runs (see
+- **APP-scope DI is lazy.** The graph resolves on the first HTTP request, so
+  tests must warm DI before any env-isolation fixture runs (see
   `tests/e2e/conftest.py::e2e_client`).
-- **Cookie auth contract.** `ADMIN_COOKIE_NAME` is the single source of
-  truth in `auth/config.py`. Cookie is `HttpOnly`, `SameSite=Strict`,
-  `Secure` only when the request was HTTPS.
+- **Cookie auth contract.** `ADMIN_COOKIE_NAME` lives in `auth/config.py`.
+  Cookie is `HttpOnly`, `SameSite=Strict`, `Secure` only over HTTPS.
 - **Errors propagate; adapters catch.** Domain/app code never catches
-  `LayerError` to "convert" it. The global exception handler does.
+  `LayerError` to "convert" it — the problem+json plugin (framework
+  `HTTPException`s) and the converters in `shared/adapters/problem_details.py`
+  (`LayerError` subtypes) do.
 - **No emoji or filler in logs.** Event names are stable literals; dynamic
   values go in kwargs (`log.info("user paid", user_id=x)`).
 - **Static config in code, not env, when it doesn't vary per deployment.**
-  Things like CSP defaults live in `RootConfig` with override-by-env, not
-  required-by-env.
+  CSP defaults live in `RootConfig` with override-by-env, not required-by-env.
 
 ---
 
@@ -221,7 +219,7 @@ production.
    `app/interfaces/` Protocols.
 4. Register the provider in `src/root/composition/container.py`.
 5. Register controllers (and middleware/lifespan if needed) in
-   `src/root/entrypoints/api.py::create_app`.
+   `src/root/composition/app.py::build_app`.
 6. Mirror tests under `tests/{unit,flow,integration,e2e}/<name>/`.
 
 ### Add a migration

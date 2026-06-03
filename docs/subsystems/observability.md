@@ -92,10 +92,12 @@ configured in the structlog pipeline via `make_structlog_processor()`.
 When `SNITCHBOT_TELEGRAM_*` env vars are set, exceptions and selected
 events are forwarded to a Telegram channel. Disabled by default.
 
-A required workaround lives in `_http_exception_handler`: snitchbot's
-`install()` registers a generic `Exception` handler that re-raises
-`HTTPException`, which Litestar converts to a bare 500. The catch-all
-restores the original status code and detail.
+snitchbot's `install()` registers a generic `Exception` crash-reporting
+handler. The `ProblemDetailsPlugin` is configured with
+`enable_for_all_http_exceptions=True`, so framework `HTTPException`s are
+rendered as `application/problem+json` (correct status and body) ahead of
+snitchbot's bare-500 path — no manual catch-all needed. See the
+[error hierarchy](error_hierarchy.md).
 
 ## Pointers
 
