@@ -100,10 +100,10 @@ client-side by `(timestamp, logger, event)` — file-tail lines have no id.
 
 ## Invariants & gotchas
 
-- **One JSON object per line (JSONL).** A structlog processor truncates each
-  rendered line to `LOG_MAX_LINE_BYTES` before the handler, so each record is
-  one `write`. Relies on `O_APPEND` single-write atomicity (Linux, single
-  host). Best-effort; documented platform assumption.
+- **One JSON object per line (JSONL).** The reader treats each `\n`-delimited
+  line as one record. The write-side guarantee that keeps it so (line
+  truncation to `LOG_MAX_LINE_BYTES`, `O_APPEND` single-write atomicity) lives
+  in [infra/structlog.md](../infra/structlog.md).
 - **Trailing partial line is not a line.** Bytes after the last `\n` are
   discarded by the reader; `follow` advances only past a confirmed `\n`.
   Prevents torn JSON and corrupt cursors during a concurrent append.
@@ -121,9 +121,6 @@ client-side by `(timestamp, logger, event)` — file-tail lines have no id.
   consistent inode.
 - **Filters are client-side.** Level chips and substring search apply only to
   rows already loaded in the browser. "Load more" widens the loaded set.
-- **`WatchedFileHandler` re-stats every emit** (cost at high volume) and is
-  POSIX-only; on non-POSIX fall back to plain `FileHandler` (no rotation
-  detection).
 
 ## Recipes
 

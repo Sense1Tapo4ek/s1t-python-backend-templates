@@ -20,6 +20,8 @@ API.
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
 | `admin/log` | `src/admin/log/` | Sub-context: file-tail log viewer over the rotating JSONL file the app writes; SSE live tail, NDJSON/CSV export. See [contexts/admin-log.md](contexts/admin-log.md). |
 | `metrics` | `src/metrics/` | Example infra context: Prometheus `/metrics` endpoint via multiprocess mode, plus a generic by-name custom-metrics facade. See [contexts/metrics.md](contexts/metrics.md). |
+| `db_example_sddd` | `src/db_example_sddd/` | Example context: raw asyncpg (Postgres), pool vs per-request connection variants, yoyo migrations, cross-context ACL example. See [contexts/db_example_sddd.md](contexts/db_example_sddd.md). |
+| `db_example_litestar` | `src/db_example_litestar/` | Example context: SQLAlchemy 2.0 + advanced-alchemy, hybrid layering, `SQLAlchemyDTO`. The only SQLAlchemy user in the template. See [contexts/db_example_litestar.md](contexts/db_example_litestar.md). |
 
 Adding a context: see §8 below.
 
@@ -55,30 +57,15 @@ overview; that ruleset is the source of truth.
 
 ## 3. Error hierarchy
 
-Defined in `src/shared/generics/errors.py`. Each layer raises its own
-subtype; adapters catch and map to HTTP.
+Defined in `src/shared/generics/errors.py`. Four subtypes of `LayerError`
+map to HTTP status codes (DomainError → 409, AppError → 422, PortError → 503,
+AdapterError → 500). Every error renders as RFC 9457 `application/problem+json`
+(ADR 0018). 5xx never carries a traceback.
 
-```
-Exception
-└── LayerError
-    ├── DomainError      → 409 Conflict       (WARNING)
-    ├── AppError         → 422 Unprocessable  (WARNING)
-    ├── PortError        → 503 Unavailable    (ERROR + traceback)
-    └── AdapterError     → 500 Internal       (EXCEPTION)
-```
-
-Every error is rendered as RFC 9457 `application/problem+json` (ADR 0018),
-wired in `src/root/composition/app.py::build_app`.
-`ProblemDetailsPlugin(enable_for_all_http_exceptions=True)` converts framework
-`HTTPException`s; `LayerError` subtypes convert via pure functions in
-`src/shared/adapters/problem_details.py`, registered as **app-level**
-`exception_handlers` (so the request-derived `instance` field survives — the
-plugin's own map drops it). A 5xx **never** carries a traceback: 4xx expose
-`str(exc)`, 5xx use a generic `detail` and log full context. A catch-all
-`Exception -> unexpected_to_problem` yields a generic 500; `debug=True` shows them.
-
-Wire contract: [contract/errors.md](contract/errors.md). Per-layer raise/catch
-conventions: [subsystems/error_hierarchy.md](subsystems/error_hierarchy.md).
+Full hierarchy, raise/catch contract, handler registration, snitchbot
+interaction, and DEV vs PROD behaviour:
+[subsystems/error_hierarchy.md](subsystems/error_hierarchy.md).
+Wire contract: [contract/errors.md](contract/errors.md).
 
 ---
 
@@ -88,26 +75,13 @@ Dishka, scoped at `Scope.APP` for everything by default. Each context exports
 one `Provider`. The root assembly lives in
 `src/root/composition/container.py::build_container`.
 
-```python
-return make_async_container(
-    SharedProvider(),
-    AdminProvider(),
-    AdminLogWebProvider(),
-    MetricsProvider(),
-    AuthProvider(),
-    DbExampleSdddInfraProvider(),
-    PooledDbExampleSdddProvider(),
-    PerRequestDbExampleSdddProvider(),
-    DbExampleLitestarProvider(),
-)
-```
-
 Rules:
 - Root imports only `provider.py` from each context. Never internals.
 - Concrete-to-interface mapping happens in the provider, never anywhere else.
 - APP-scope graph resolves lazily on the first request — see §6.
 
-For the runtime Dishka API used here, see [infra/dishka.md](infra/dishka.md).
+Current provider list, scopes, and container-access patterns:
+[infra/dishka.md](infra/dishka.md).
 For the *why*, see [adr/0001-dishka-for-di.md](adr/0001-dishka-for-di.md).
 
 ---
@@ -191,10 +165,9 @@ Things that, if you change them, will break the app silently or in production.
   browser over loaded rows; "load more" pulls deeper into the file.
 - **Cross-worker metrics use multiprocess mode.** `prometheus_client` writes
   mmap shards to `PROMETHEUS_MULTIPROC_DIR`; no external store required.
-- **Cross-context calls go through an ACL.** Worked example
-  `db_example_sddd -> metrics`: a create counter + histogram emitted via
-  `ports/driven/acl/metrics_acl.py` (the only cross-context import), adapting
-  `metrics.ports.driving.MetricsFacade` to its own `app/i_metrics.py` protocol.
+- **Cross-context calls go through an ACL.** See the worked example
+  (`db_example_sddd -> metrics`) in
+  [contexts/metrics.md](contexts/metrics.md#how-to-emit-a-metric-cross-context-acl).
 - **APP-scope DI is lazy.** The graph resolves on the first HTTP request, so
   tests must warm DI before any env-isolation fixture runs (see
   `tests/e2e/conftest.py::e2e_client`).
@@ -275,7 +248,7 @@ uv run pytest tests/integration/  # ports/adapters against tmp_path files
 
 This project's documentation rules live in
 [~/.claude/rules/common/documentation.md](../../.claude/rules/common/documentation.md).
-That file defines the seven kinds of writing, line budgets, anti-patterns,
+That file defines the eight kinds of writing, line budgets, anti-patterns,
 docstring/comment policy, and the MADR template.
 
 Project-specific overrides:

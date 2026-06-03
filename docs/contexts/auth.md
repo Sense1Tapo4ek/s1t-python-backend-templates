@@ -33,7 +33,7 @@ handler runs
 | `AuthMiddleware` | `auth/adapters/middleware/` | Reads token, attaches `Principal` to scope. Never raises. |
 | `require_role(Role)` | `auth/ports/driving/guards.py` | Litestar guard factory. Cross-context callable, lives in `ports/driving/`. |
 | `AuthFacade` | `auth/ports/driving/` | `authenticate(token) -> Principal`. Used by login flow. |
-| `ITokenResolver` | `auth/app/interfaces/` | Swap point for real auth (DB tokens, JWT). Default: `StaticTokenResolver`. |
+| `ITokenResolver` | `auth/app/` | Swap point for real auth (DB tokens, JWT). Default: `StaticTokenResolver`. |
 | `Role`, `Principal` | `shared/domain/auth/` | Cross-cutting kernel types. |
 
 ### Endpoints
@@ -87,7 +87,7 @@ AUTH_ADMIN_TOKEN=<your-secret>
 
 ```python
 # shared/domain/auth/role.py
-class Role(str, Enum):
+class Role(StrEnum):
     UNKNOWN = "unknown"
     ADMIN = "admin"
     OPERATOR = "operator"   # new
@@ -108,10 +108,10 @@ class MyController(Controller):
 
 ### Swap the resolver
 
-Implement `ITokenResolver` in `auth/ports/driven/repos/`, then:
+Implement `ITokenResolver` in `auth/ports/driven/`, then:
 
 ```python
-# auth/provider.py::AuthPortBindings
+# auth/provider.py::AuthProvider
 token_resolver = provide(YourResolver, provides=ITokenResolver)
 ```
 

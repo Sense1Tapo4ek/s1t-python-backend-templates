@@ -68,21 +68,14 @@ need no facade call.
 
 ## Invariants & gotchas
 
-- **Gauge uses `multiprocess_mode="livesum"`.** Without it a Gauge in
-  multiprocess mode is undefined across workers; `livesum` sums live workers'
-  values on scrape.
-- **`PrometheusSink` caches metric objects at class level.** Multiple
-  `create_app()` calls (notably in tests) reuse the same series instead of
-  re-registering — `prometheus_client` raises on duplicate registration of the
-  same name otherwise.
 - **A metric name's label set is fixed at first use.** The first `increment`/
   `set_gauge`/`observe` for a name pins its labels; later calls must pass the
   same label keys.
-- **`PROMETHEUS_MULTIPROC_DIR` must be set before `import prometheus_client`.**
-  The master sets it from `MetricsConfig.multiproc_dir` and wipes stale shards
-  before workers start. See [docs/subsystems/metrics.md](../subsystems/metrics.md).
 - **Unrelated:** the single-process file-log writer (admin log viewer) is a
   different subsystem; it does not share the multiprocess machinery.
+
+Multiprocess-mode invariants (livesum Gauge, class-level cache, env-var ordering,
+shard wipe): [subsystems/metrics.md](../subsystems/metrics.md#invariants--gotchas).
 
 ## How to: emit a custom metric from your own context
 

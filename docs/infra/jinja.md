@@ -7,7 +7,8 @@ For the *why*, see [adr/0008-jinja-server-side-rendering.md](../adr/0008-jinja-s
 
 ## Where it's used
 
-`src/root/entrypoints/api.py::create_app` wires one engine:
+`src/root/composition/app.py::build_app` (the entrypoint `create_app` is a
+thin re-export) wires one engine:
 
 ```python
 template_config=TemplateConfig(
@@ -17,10 +18,11 @@ template_config=TemplateConfig(
 ```
 
 Controllers return `litestar.response.Template(template_name=..., context=...)`.
-Currently three places:
+Currently four places:
 
 - `admin/adapters/driving/api/admin_controller.py` -> `admin/dashboard.html`
 - `admin/adapters/driving/api/login_controller.py` -> `admin/login.html`
+- `admin/log/adapters/driving/api/logs_controller.py` -> `admin/log/index.html`
 - `admin/adapters/driving/error_handlers.py` -> `admin/forbidden.html` (403)
 
 ## Layout
@@ -35,7 +37,7 @@ static/
   admin/dashboard.html
   admin/login.html
   admin/forbidden.html
-  admin/log/index.html       # served as File (no Jinja vars yet)
+  admin/log/index.html
   admin/log/{style.css, tail.js}
 ```
 
@@ -58,7 +60,7 @@ Child templates `{% extends "shared/_base.html" %}` and override blocks.
 - **Template name == path under `static/`.** Do not pass absolute paths.
 - **Assets URL == file path under `static/`.** `<link href="/static/admin/log/style.css">`
   loads `static/admin/log/style.css`. The single mount `/static/...` in
-  `create_app` enforces this.
+  `build_app` enforces this.
 - **No per-context `adapters/driving/static/` folders.** The convention
   is deprecated; rule §1.3 forbids it.
 
@@ -67,7 +69,7 @@ Child templates `{% extends "shared/_base.html" %}` and override blocks.
 - `Template` from exception handlers works (Litestar attaches the engine
   on the response at send time), but the request must reach the handler —
   middleware short-circuits before that don't render templates.
-- Static-mount cache headers: 1h `max_age` is set in `create_app`. For
+- Static-mount cache headers: 1h `max_age` is set in `build_app`. For
   designer iterations, hard-reload the browser or temporarily drop the
   `cache_control=` argument.
 - `_base.html` includes a `<link>` to Google Fonts. CSP must allow

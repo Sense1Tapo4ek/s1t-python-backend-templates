@@ -52,8 +52,10 @@ Query params for list: `limit` (default 50), `offset` (default 0).
 
 ### ItemModel
 
-`msgspec.Struct` with fields: `id: UUID`, `name: str` (1-200 chars),
-`description: str | None`, `created_at: datetime`.
+`msgspec.Struct` (read-only wire shape). Invariants: `name` 1-200 chars
+(enforced by `EmptyItemName` domain error and a length check in the use case);
+`description` nullable — setting to `None` in a PATCH is a no-op, send `""`
+to clear. `id` and `created_at` are server-assigned.
 
 `ItemWriteDTO` excludes `{id, created_at}`.
 `ItemPatchDTO` excludes `{id, created_at}`, all fields partial.

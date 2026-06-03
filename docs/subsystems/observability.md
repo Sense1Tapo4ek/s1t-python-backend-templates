@@ -26,27 +26,8 @@ process, no message bus on the log path. See
                                        FileLogReader -> facade -> UI / SSE
 ```
 
-A write-side processor truncates each rendered line to `LOG_MAX_LINE_BYTES`
-so one record is one `write` (relies on `O_APPEND` atomicity; single host,
-POSIX). The reader skips malformed or oversized lines rather than failing the
-request.
-
-### Layer rules
-
-Per `~/.claude/rules/s-ddd_python/logging.md`:
-
-| Layer | Logging |
-|:---|:---|
-| Domain | forbidden |
-| App | trace only (start/end of critical processes) |
-| Ports | forbidden |
-| Adapters | full |
-
-Event names are stable literals. Dynamic values go in kwargs:
-
-```python
-log.info("user paid", user_id=user_id, amount=amount, currency=currency)
-```
+Write-side invariants (line-length cap, `O_APPEND` atomicity, `WatchedFileHandler`
+cost), layer rules, and event naming: [infra/structlog.md](../infra/structlog.md).
 
 ## Trace correlation
 
@@ -68,11 +49,7 @@ prod. Health probes are filtered to keep log volume reasonable.
 
 Reported via `GET /health` and the dashboard's "Build" panel. See
 [contexts/admin.md](../contexts/admin.md) for resolution order, Docker /
-GitHub Actions setup, and response shape.
-
-`BuildInfoVo(app_name, started_at, commit_sha, branch, dirty)` is a single
-VO because all five fields describe one process instance — splitting per
-field would be noise (per S-DDD `domain.md` §3.1).
+GitHub Actions setup, response shape, and the rationale for `BuildInfoVo`.
 
 ## Health & readiness
 
@@ -92,12 +69,8 @@ configured in the structlog pipeline via `make_structlog_processor()`.
 When `SNITCHBOT_TELEGRAM_*` env vars are set, exceptions and selected
 events are forwarded to a Telegram channel. Disabled by default.
 
-snitchbot's `install()` registers a generic `Exception` crash-reporting
-handler. The `ProblemDetailsPlugin` is configured with
-`enable_for_all_http_exceptions=True`, so framework `HTTPException`s are
-rendered as `application/problem+json` (correct status and body) ahead of
-snitchbot's bare-500 path — no manual catch-all needed. See the
-[error hierarchy](error_hierarchy.md).
+Interaction with `ProblemDetailsPlugin` and `enable_for_all_http_exceptions`:
+[error hierarchy](error_hierarchy.md#snitchbot-interaction).
 
 ## Pointers
 

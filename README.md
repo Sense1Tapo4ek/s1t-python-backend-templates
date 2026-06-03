@@ -71,10 +71,10 @@ src/
 ├── root/                 Entrypoints (api, cli) + container assembly
 ├── auth/                 Bounded context: token validation, role guard, middleware
 ├── admin/                Bounded context: dashboard + observability
-│   ├── log/              Sub-context: file-tail log viewer (JSONL), SSE, export
-│   └── metrics/          Sub-context: Prometheus `/metrics` endpoint
-├── db_example_sddd/           Example context: raw asyncpg (Postgres), pool vs per-request DI
-└── db_example_litestar/   Example context: SQLAlchemy + advanced-alchemy on Postgres (only SQLAlchemy user)
+│   └── log/              Sub-context: file-tail log viewer (JSONL), SSE, export
+├── metrics/              Example infra context: Prometheus `/metrics` endpoint
+├── db_example_sddd/      Example context: raw asyncpg (Postgres), pool vs per-request DI
+└── db_example_litestar/  Example context: SQLAlchemy + advanced-alchemy on Postgres (only SQLAlchemy user)
 ```
 
 Each context has its own `domain/`, `app/`, `ports/{driving,driven}/`,
