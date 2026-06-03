@@ -12,7 +12,7 @@ class ErrorDetail(msgspec.Struct, frozen=True):
     detail: str
 
 
-# Matches src/shared/adapters/error_handlers.py + auth middleware status codes.
+# Matches src/shared/adapters/problem_details.py + auth middleware status codes.
 _ERROR_DESCRIPTIONS: dict[int, str] = {
     400: "Validation error - malformed or invalid request body/params.",
     401: "Missing or invalid admin bearer token / cookie.",

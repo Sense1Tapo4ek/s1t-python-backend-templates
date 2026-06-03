@@ -77,3 +77,18 @@ class TestExportEndpoint:
             "/api/v1/admin/logs/export/?format=xml", headers=e2e_auth_headers
         )
         assert resp.status_code == 400
+
+
+def test_admin_api_401_is_problem_json(e2e_client) -> None:
+    """Given no token, When calling the admin logs API, Then 401 problem+json."""
+    resp = e2e_client.get("/api/v1/admin/logs/", headers={"accept": "application/json"})
+    assert resp.status_code == 401
+    assert resp.headers["content-type"].startswith("application/problem+json")
+    assert resp.json()["type"] == "urn:litestar-base:error:unauthorized"
+
+
+def test_admin_browser_401_redirects_to_login(e2e_client) -> None:
+    """Given a browser with no cookie, When GETting /admin, Then 303 to login."""
+    resp = e2e_client.get("/admin", headers={"accept": "text/html"}, follow_redirects=False)
+    assert resp.status_code == 303
+    assert resp.headers["location"].startswith("/admin/login")

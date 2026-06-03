@@ -3,6 +3,7 @@ from urllib.parse import quote
 from litestar import Response
 from litestar.connection import Request
 from litestar.exceptions import NotAuthorizedException, PermissionDeniedException
+from litestar.plugins.problem_details import ProblemDetailsException
 from litestar.response import Redirect, Template
 from litestar.status_codes import (
     HTTP_303_SEE_OTHER,
@@ -11,6 +12,7 @@ from litestar.status_codes import (
 )
 
 from admin.config import LOGIN_PATH
+from shared.adapters.problem_details import problem_handler
 
 
 def not_authorized_handler(request: Request, exc: NotAuthorizedException) -> Response:
@@ -21,10 +23,15 @@ def not_authorized_handler(request: Request, exc: NotAuthorizedException) -> Res
     """
     if request.url.path.startswith("/admin") and _wants_html(request):
         return _login_redirect(request)
-    return Response(
+    # Framework exceptions don't follow our class-name slug convention
+    # (_type_uri); use a stable, human-readable URN directly.
+    pd = ProblemDetailsException(
         status_code=HTTP_401_UNAUTHORIZED,
-        content={"detail": exc.detail},
+        title="Unauthorized",
+        detail=exc.detail,
+        type_="urn:litestar-base:error:unauthorized",
     )
+    return problem_handler(request, pd)
 
 
 def permission_denied_handler(request: Request, exc: PermissionDeniedException) -> Response:
@@ -37,10 +44,13 @@ def permission_denied_handler(request: Request, exc: PermissionDeniedException) 
             template_name="admin/forbidden.html",
             status_code=HTTP_403_FORBIDDEN,
         )
-    return Response(
+    pd = ProblemDetailsException(
         status_code=HTTP_403_FORBIDDEN,
-        content={"detail": exc.detail},
+        title="Forbidden",
+        detail=exc.detail,
+        type_="urn:litestar-base:error:forbidden",
     )
+    return problem_handler(request, pd)
 
 
 def _wants_html(request: Request) -> bool:
