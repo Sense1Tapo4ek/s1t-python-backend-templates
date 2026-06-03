@@ -4,9 +4,9 @@
 > deploying the system.
 
 This is an **example infra context**. The Prometheus scrape is real and
-production-usable, but the three demo metrics and the `/metrics-demo` endpoint
-are illustrative — delete them (and `demo_controller.py`) once you have your
-own signals.
+multi-worker safe (prometheus_client multiprocess mode), but the three demo
+metrics and the `/metrics-demo` endpoint are illustrative — delete them (and
+`demo_controller.py`) once you have your own signals.
 
 ## Purpose
 

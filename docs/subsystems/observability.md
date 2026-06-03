@@ -31,13 +31,16 @@ cost), layer rules, and event naming: [infra/structlog.md](../infra/structlog.md
 
 ## Trace correlation
 
-Every log line emitted during a request carries `trace_id` / `span_id`; the
-admin log viewer shows them in the row drilldown (no server-side DSL filter).
+`TraceIdMiddleware` binds a `trace_id` to structlog contextvars for each HTTP
+request, so every log line emitted during the request carries it; the admin
+log viewer shows it in the row drilldown (no server-side DSL filter).
 
-Headers:
-- Reads incoming `traceparent` (W3C Trace Context) when present; otherwise
-  generates fresh ids.
-- Emits `traceparent` on the response so an upstream proxy can chain.
+Header (`X-Trace-Id`):
+- Reads the incoming `X-Trace-Id` when present; otherwise generates a fresh
+  16-char hex id.
+- Echoes `X-Trace-Id` on the response so an upstream proxy can correlate.
+
+`snitchbot` keeps its own request-context id, intentionally not unified.
 
 ## Access log
 
@@ -53,21 +56,19 @@ GitHub Actions setup, response shape, and the rationale for `BuildInfoVo`.
 
 ## Health & readiness
 
-- `/health` — liveness. Always 200 while the process is alive.
-- `/health/ready` — liveness-plus-config check. 503 on failure; logs
-  `error_type` for diagnosis. (The log path is a plain file, so there is no
-  DB pool to probe.)
-- `/ping` — sync heartbeat, no I/O.
-
-Failing `/health/ready` removes the replica from the load balancer
-without restarting it.
+`/health` (liveness) and `/health/ready` (readiness; 503 when config fails to
+resolve or the log dir is not writable, removing the replica from the LB pool
+without restarting it) — semantics in
+[contexts/admin.md](../contexts/admin.md#two-tier-health). `/ping` is a sync
+heartbeat with no I/O.
 
 ## Crash reporting
 
-`snitchbot` is wired in `create_app` via `install_snitchbot(app)` and
+`snitchbot` is wired in `build_app` via `install_snitchbot(app)` and
 configured in the structlog pipeline via `make_structlog_processor()`.
-When `SNITCHBOT_TELEGRAM_*` env vars are set, exceptions and selected
-events are forwarded to a Telegram channel. Disabled by default.
+Set `SNITCHBOT_TOKEN` and `SNITCHBOT_CHAT_ID` (and unset `SNITCHBOT_DISABLED`)
+to forward exceptions and selected events to a Telegram chat. Disabled by
+default.
 
 Interaction with `ProblemDetailsPlugin` and `enable_for_all_http_exceptions`:
 [error hierarchy](error_hierarchy.md#snitchbot-interaction).
