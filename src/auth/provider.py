@@ -7,12 +7,6 @@ from .ports.driven.gateways import StaticTokenResolver
 from .ports.driving.facades import AuthFacade
 
 
-class AuthPortBindings(Provider):
-    scope = Scope.APP
-
-    token_resolver = provide(StaticTokenResolver, provides=ITokenResolver)
-
-
 class AuthProvider(Provider):
     scope = Scope.APP
 
@@ -20,5 +14,6 @@ class AuthProvider(Provider):
     def config(self) -> AuthConfig:
         return AuthConfig()
 
+    token_resolver = provide(StaticTokenResolver, provides=ITokenResolver)
     authenticate_uc = provide(AuthenticateUc)
     auth_facade = provide(AuthFacade)

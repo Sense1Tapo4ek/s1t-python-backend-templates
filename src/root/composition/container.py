@@ -2,7 +2,7 @@ from dishka import AsyncContainer, make_async_container
 
 from admin.log.provider import AdminLogWebProvider
 from admin.provider import AdminProvider
-from auth.provider import AuthPortBindings, AuthProvider
+from auth.provider import AuthProvider
 from db_example_litestar.provider import DbExampleLitestarProvider
 from db_example_sddd.provider import (
     DbExampleSdddInfraProvider,
@@ -20,7 +20,6 @@ def build_container() -> AsyncContainer:
         AdminLogWebProvider(),
         MetricsProvider(),
         AuthProvider(),
-        AuthPortBindings(),
         DbExampleSdddInfraProvider(),
         PooledDbExampleSdddProvider(),
         PerRequestDbExampleSdddProvider(),
