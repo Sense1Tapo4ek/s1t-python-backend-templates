@@ -7,7 +7,7 @@ from shared.config import BaseAppConfig
 from .adapters.driven.build_info.git_build_info import resolve_build_meta
 from .app.use_cases import RenderDashboardUc
 from .domain import BuildInfoVo
-from .ports.driving.facades import AdminFacade
+from .ports.driving import AdminFacade
 
 
 class AdminProvider(Provider):

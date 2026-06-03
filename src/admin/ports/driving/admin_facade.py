@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from ....app.use_cases import RenderDashboardUc
-from ....domain import DashboardViewVo
+from ...app.use_cases import RenderDashboardUc
+from ...domain import DashboardViewVo
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

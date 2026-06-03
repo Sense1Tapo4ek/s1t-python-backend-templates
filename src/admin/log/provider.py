@@ -10,7 +10,7 @@ from .app.use_cases import (
 )
 from .config import AdminLogConfig
 from .ports.driven.repos import FileLogReader
-from .ports.driving.facades import LogsFacade
+from .ports.driving import LogsFacade
 
 
 class AdminLogWebProvider(Provider):

@@ -9,7 +9,7 @@ from litestar.response import Template
 from auth.ports.driving import ADMIN_SECURITY, require_role
 from shared.domain.auth import Role
 
-from ....ports.driving.facades import AdminFacade
+from ....ports.driving import AdminFacade
 
 _log = structlog.get_logger(__name__)
 

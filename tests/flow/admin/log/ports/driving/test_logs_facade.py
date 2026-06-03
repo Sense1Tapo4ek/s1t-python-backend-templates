@@ -10,7 +10,7 @@ from admin.log.app.use_cases import (
     StreamLogTailUc,
 )
 from admin.log.domain import Cursor, LogEntryEnt
-from admin.log.ports.driving.facades import LogsFacade
+from admin.log.ports.driving import LogsFacade
 
 
 def _entry() -> LogEntryEnt:

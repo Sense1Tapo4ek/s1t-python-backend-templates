@@ -4,7 +4,7 @@ from .app import AuthenticateUc
 from .app.interfaces import ITokenResolver
 from .config import AuthConfig
 from .ports.driven.gateways import StaticTokenResolver
-from .ports.driving.facades import AuthFacade
+from .ports.driving import AuthFacade
 
 
 class AuthProvider(Provider):

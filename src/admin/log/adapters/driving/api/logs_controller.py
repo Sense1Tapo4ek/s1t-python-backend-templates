@@ -13,8 +13,7 @@ from shared.adapters.openapi import error_responses
 from shared.domain.auth import Role
 
 from ....config import AdminLogConfig
-from ....ports.driving import decode_cursor, encode_cursor
-from ....ports.driving.facades import LogsFacade
+from ....ports.driving import LogsFacade, decode_cursor, encode_cursor
 from ....ports.driving.schemas import LogPageResponseSchema
 
 _log = structlog.get_logger(__name__)

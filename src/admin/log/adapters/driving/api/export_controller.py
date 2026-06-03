@@ -10,7 +10,7 @@ from auth.ports.driving import ADMIN_SECURITY, require_role
 from shared.adapters.openapi import error_responses
 from shared.domain.auth import Role
 
-from ....ports.driving.facades import LogsFacade
+from ....ports.driving import LogsFacade
 
 _log = structlog.get_logger(__name__)
 

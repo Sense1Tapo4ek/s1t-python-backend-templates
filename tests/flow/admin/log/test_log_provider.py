@@ -2,7 +2,7 @@ import pytest
 from dishka import make_async_container
 
 from admin.log.app.interfaces import ILogFollower, ILogReader
-from admin.log.ports.driving.facades import LogsFacade
+from admin.log.ports.driving import LogsFacade
 from admin.log.provider import AdminLogWebProvider
 
 
