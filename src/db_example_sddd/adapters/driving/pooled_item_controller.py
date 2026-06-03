@@ -26,7 +26,7 @@ class PooledItemController(Controller):
     return_dto = ItemReadDTO
 
     @post("/", dto=ItemWriteDTO, status_code=HTTP_201_CREATED,
-          summary="Create an item", responses=error_responses(400, 503))
+          summary="Create an item", responses=error_responses(400, 409, 503))
     @inject
     async def create(self, data: DTOData[ItemModel], facade: FromDishka[PooledItemFacade]) -> ItemModel:
         """Create an item via the pooled (shared-connection) facade.
