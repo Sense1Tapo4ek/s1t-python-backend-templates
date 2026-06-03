@@ -1,4 +1,5 @@
-# Local + simple-prod compose. Single service — admin/log SQLite is per-process.
+# Local + simple-prod compose: a Postgres db service + the app (one log-writer
+# process; the admin/log UI tails the per-process JSONL file).
 # Override `image` and drop `build:` to deploy a prebuilt image from CI.
 
 services:
