@@ -11,7 +11,7 @@ from litestar.status_codes import (
     HTTP_403_FORBIDDEN,
 )
 
-from admin.config import LOGIN_PATH
+from admin.adapters.driving.api.login_controller import LOGIN_PATH
 from shared.adapters.problem_details import problem_handler
 
 

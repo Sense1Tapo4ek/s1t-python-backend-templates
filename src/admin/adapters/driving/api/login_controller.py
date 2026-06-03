@@ -12,7 +12,6 @@ from litestar.params import Body
 from litestar.response import Redirect, Template
 from litestar.status_codes import HTTP_303_SEE_OTHER
 
-from admin.config import LOGIN_PATH
 from auth.config import ADMIN_COOKIE_NAME, MAX_TOKEN_LEN
 from auth.ports.driving import AuthFacade
 from shared.domain.auth import Role
@@ -22,6 +21,10 @@ from ....ports.driving import BuildInfoVo
 _log = structlog.get_logger(__name__)
 
 DASHBOARD_PATH = "/admin/"
+# The login route lives at LoginController.path ("/admin") + "/login". Kept as a
+# single named literal: the auth error handlers redirect here, and the cookie is
+# scoped to it.
+LOGIN_PATH = "/admin/login"
 
 
 class LoginController(Controller):
