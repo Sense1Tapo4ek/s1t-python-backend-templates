@@ -27,7 +27,7 @@ src/admin/
 | Endpoint | Method | Auth | Purpose |
 |:---|:---|:---|:---|
 | `/health` | GET | none | Liveness; returns `BuildInfoVo` JSON. |
-| `/health/ready` | GET | none | Readiness; runs `SELECT 1` against the SQLite reader pool. 503 on failure. |
+| `/health/ready` | GET | none | Readiness; verifies config resolves and the log directory is writable. 503 on failure. |
 | `/ping` | GET | none | Minimal heartbeat (sync handler). |
 | `/admin/login` | GET | none | Renders the login form. |
 | `/admin/login` | POST | none | Validates token, sets cookie, 303 → `next`. |
@@ -64,9 +64,9 @@ Resolution order:
 Kubernetes-style separation:
 - `/health` → liveness. Always 200 while the process is alive. Failing
   this restarts the pod.
-- `/health/ready` → readiness. 503 when the reader pool is unhealthy.
-  Failing this removes the replica from the LB pool but does **not**
-  trigger a restart.
+- `/health/ready` → readiness. 503 when the config fails to resolve or the
+  log directory is not writable. Failing this removes the replica from the LB
+  pool but does **not** trigger a restart.
 
 ## CI/Docker setup for build info
 
