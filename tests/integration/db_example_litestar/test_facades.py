@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 import pytest_asyncio
 from advanced_alchemy.base import UUIDAuditBase
@@ -11,13 +9,19 @@ from db_example_litestar.ports.driven.services.book_service import BookService
 from db_example_litestar.ports.driving import AuthorFacade, BookFacade
 from db_example_litestar.ports.orm_models import AuthorModel, BookModel
 
+_SCHEMA = "db_example_litestar"
+
 
 @pytest_asyncio.fixture
-async def sm(tmp_path: Path):
-    engine = build_engine(tmp_path / "a.db")
+async def sm(pg_dsn: str):
+    alchemy_url = pg_dsn.replace("postgresql://", "postgresql+asyncpg://", 1)
+    engine = build_engine(alchemy_url, _SCHEMA)
     async with engine.begin() as conn:
+        await conn.exec_driver_sql(f'CREATE SCHEMA IF NOT EXISTS "{_SCHEMA}"')
         await conn.run_sync(UUIDAuditBase.metadata.create_all)
     yield build_sessionmaker(engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(UUIDAuditBase.metadata.drop_all)
     await engine.dispose()
 
 

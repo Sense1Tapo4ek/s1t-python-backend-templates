@@ -14,9 +14,11 @@ _log = structlog.get_logger(__name__)
 @dataclass(slots=True, kw_only=True)
 class DbExampleLitestarLifespanManager:
     engine: AsyncEngine
+    schema_name: str
 
     async def start(self) -> None:
         async with self.engine.begin() as conn:
+            await conn.exec_driver_sql(f'CREATE SCHEMA IF NOT EXISTS "{self.schema_name}"')
             await conn.run_sync(UUIDAuditBase.metadata.create_all)
         _log.info("db_example_litestar started")
 

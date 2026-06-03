@@ -3,6 +3,8 @@ from collections.abc import AsyncIterator
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from shared.config import PostgresConfig
+
 from .adapters.db_example_litestar_lifespan_manager import DbExampleLitestarLifespanManager
 from .adapters.driven.engine import build_engine, build_sessionmaker
 from .config import DbExampleLitestarConfig
@@ -15,13 +17,16 @@ class DbExampleLitestarProvider(Provider):
     scope = Scope.APP
 
     config = provide(DbExampleLitestarConfig)
-    lifespan = provide(DbExampleLitestarLifespanManager)
 
     @provide
-    def engine(self, config: DbExampleLitestarConfig) -> AsyncEngine:
-        if config.db_path is None:
-            raise RuntimeError("DB_EXAMPLE_LITESTAR_DB_PATH could not be resolved")
-        return build_engine(config.db_path)
+    def lifespan(
+        self, engine: AsyncEngine, config: DbExampleLitestarConfig
+    ) -> DbExampleLitestarLifespanManager:
+        return DbExampleLitestarLifespanManager(engine=engine, schema_name=config.schema_name)
+
+    @provide
+    def engine(self, pg: PostgresConfig, config: DbExampleLitestarConfig) -> AsyncEngine:
+        return build_engine(pg.alchemy_url, config.schema_name)
 
     @provide
     def sessionmaker(self, engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
