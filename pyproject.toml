@@ -7,10 +7,12 @@ requires-python = ">=3.12"
 dependencies = [
     "advanced-alchemy>=0.30",
     "aiosqlite>=0.20",
+    "asyncpg>=0.30",
     "dishka>=1.10.1",
     "litestar[jinja,prometheus]>=2.23.0",
     "msgspec>=0.18",
     "orjson>=3.10",
+    "psycopg[binary]>=3.2",
     "pydantic-settings>=2.12.0",
     "snitchbot>=1.2.0",
     "sqlalchemy[asyncio]>=2.0",
@@ -27,6 +29,7 @@ dev = [
     "mypy>=1.13",
     "pytest>=9.0.2",
     "pytest-asyncio>=0.24",
+    "polyfactory>=2.18",
     "ruff>=0.8",
     "testcontainers>=4.9",
 ]
@@ -94,5 +97,5 @@ disallow_untyped_defs = false
 check_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = ["snitchbot.*", "yoyo.*", "aiosqlite.*"]
+module = ["snitchbot.*", "yoyo.*", "aiosqlite.*", "asyncpg.*"]
 ignore_missing_imports = true

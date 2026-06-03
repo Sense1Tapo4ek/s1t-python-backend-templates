@@ -2,6 +2,20 @@
 # Override `image` and drop `build:` to deploy a prebuilt image from CI.
 
 services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: litestar_base
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d litestar_base"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
   app:
     build:
       context: .
@@ -24,6 +38,11 @@ services:
       # prometheus_client multiprocess mode (see PROMETHEUS_MULTIPROC_DIR).
       APP_WORKERS: 2
       VOLUME_PATH: /data
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: litestar_base
       # UI history + live tail source of truth. Rotated by logrotate (create
       # mode) so an open export fd reads a consistent inode (spec 10.5 F).
       LOG_FILE_PATH: /data/logs/app.jsonl
@@ -32,6 +51,9 @@ services:
       # server.py wipes stale *.db on start and the tmpfs mount below clears
       # it on container restart.
       PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus
+    depends_on:
+      db:
+        condition: service_healthy
     logging:
       driver: json-file
       options:
@@ -59,8 +81,16 @@ services:
       context: .
       target: tester
     image: litestar-base:test
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       VOLUME_PATH: /tmp/data
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: litestar_base
       # No .env in the test image; disable the Telegram reporter so e2e tests
       # that boot the app via lifespan don't demand a token.
       SNITCHBOT_DISABLED: "1"
@@ -69,3 +99,4 @@ services:
 
 volumes:
   app_data:
+  pg_data:

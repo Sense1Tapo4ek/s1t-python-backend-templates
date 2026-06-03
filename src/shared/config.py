@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Self
 
 from pydantic import Field, model_validator
+from pydantic_settings import SettingsConfigDict
 
 from shared.generics.config import PROJECT_ROOT, GenericConfig
 
@@ -50,3 +51,30 @@ class BaseAppConfig(GenericConfig):
     @property
     def log_dir(self) -> Path:
         return self.volume_path / "logs"
+
+
+class PostgresConfig(GenericConfig):
+    model_config = SettingsConfigDict(
+        env_prefix="POSTGRES_",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
+    )
+
+    host: str = "localhost"
+    port: int = 5432
+    user: str = "postgres"
+    password: str = "postgres"
+    db: str = "litestar_base"
+
+    @property
+    def asyncpg_dsn(self) -> str:
+        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
+
+    @property
+    def alchemy_url(self) -> str:
+        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
+
+    @property
+    def yoyo_url(self) -> str:
+        return f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
