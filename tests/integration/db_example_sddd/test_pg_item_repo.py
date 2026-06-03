@@ -4,6 +4,7 @@ from uuid import uuid4
 import asyncpg
 import pytest
 import pytest_asyncio
+from tests.factories import ItemFactory
 
 from db_example_sddd.adapters.driven.migrations_runner import apply_migrations
 from db_example_sddd.domain import Item
@@ -60,3 +61,12 @@ async def test_list_and_delete(conn) -> None:
     victim = rows[0].id
     assert await repo.delete(victim) is True
     assert await repo.delete(uuid4()) is False
+
+
+@pytest.mark.asyncio
+async def test_factory_built_item_roundtrips(conn) -> None:
+    """Given a polyfactory-built Item, When persisted, Then it round-trips."""
+    repo = PgItemRepo(_conn=conn)
+    item = ItemFactory.build()
+    await repo.add(item)
+    assert (await repo.get(item.id)) is not None
