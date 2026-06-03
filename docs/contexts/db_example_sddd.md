@@ -1,7 +1,7 @@
 # db_example_sddd context
 
-For contributors learning how to wire aiosqlite in an S-DDD context and
-how Litestar `MsgspecDTO` works with partial PATCH.
+For contributors learning how to wire raw asyncpg (Postgres) in an S-DDD
+context and how Litestar `MsgspecDTO` works with partial PATCH.
 
 This is an **example context** shipped in the template, alongside
 `db_example_litestar` and the `metrics` context. Delete them once you have
@@ -21,9 +21,9 @@ real contexts.
                      \          /
                     IItemRepo (Protocol)
                          |
-                   SqliteItemRepo
+                     PgItemRepo
                      /          \
-              SqlitePool        open_connection
+            asyncpg pool        open_connection
            (APP-scope, N conns)  (one conn per request)
 ```
 
@@ -63,8 +63,11 @@ PATCH uses `DTOData.as_builtins()` to forward only present keys to the facade.
 
 | Env var | Default | Notes |
 |---|---|---|
-| `DB_EXAMPLE_SDDD_DB_PATH` | `${VOLUME_PATH}/db_example_sddd.db` | Relative paths resolved under `VOLUME_PATH` |
-| `DB_EXAMPLE_SDDD_POOL_SIZE` | `4` | Pool-variant connection count (1-32) |
+| `DB_EXAMPLE_SDDD_SCHEMA_NAME` | `db_example_sddd` | Postgres schema this context owns (search_path) |
+| `DB_EXAMPLE_SDDD_POOL_SIZE` | `4` | asyncpg pool `max_size` (1-32) |
+
+Postgres connection settings (`POSTGRES_*`) live in shared `PostgresConfig`;
+see [docs/infra/postgres.md](../infra/postgres.md).
 
 ### Errors
 
@@ -77,44 +80,50 @@ PATCH uses `DTOData.as_builtins()` to forward only present keys to the facade.
 
 ### Pooled (APP-scope pool)
 
-`SqlitePool` opens `pool_size` aiosqlite connections at lifespan start and
-parks them in an `asyncio.Queue`. Each request borrows one connection via
-`pool.acquire()` (async context manager); the connection returns to the
-queue when the request ends. Dishka provides `PooledItemFacade` at
-`Scope.REQUEST` using an async generator that calls `pool.acquire()`.
+`build_pool` (`adapters/driven/pg_pool.py`) calls `asyncpg.create_pool`
+(`min_size=1`, `max_size=pool_size`, `search_path` server setting) at lifespan
+start. Each request borrows one connection via `pool.acquire()` (async context
+manager); the connection returns to the pool when the request ends. Dishka
+provides `PooledItemFacade` at `Scope.REQUEST` using an async generator that
+calls `pool.acquire()`.
 
-Use this when you want bounded connection count, connection reuse, and
-WAL-mode benefits.
+Use this when you want bounded connection count and connection reuse.
 
 ### Per-request (fresh connection)
 
-`PerRequestDbExampleSdddProvider` opens a fresh `aiosqlite` connection per
-request via `open_connection(db_path)` and closes it in the generator
-`finally` block. No pool involved.
+`PerRequestDbExampleSdddProvider` opens a fresh asyncpg connection per request
+via `open_connection(dsn, schema=...)` and closes it in the generator `finally`
+block. No pool involved.
 
 Use this to demonstrate the simplest possible wiring, or when
 connection-level state isolation matters.
 
 ## Migrations
 
-yoyo-migrations applied at lifespan start via `apply_migrations(db_path)`.
-Migration files live in `migrations/db_example_sddd/` (parallel to `src/`,
-`static/`, `docs/`, `tests/`). Migration table: `_yoyo_migration`.
-Currently: `001-create-items.sql` creates the `item` table.
+yoyo-migrations applied at lifespan start via `apply_migrations(yoyo_url)`
+(yoyo over the `postgresql+psycopg` backend, psycopg3). Migration files live in
+`migrations/db_example_sddd/` (parallel to `src/`, `static/`, `docs/`,
+`tests/`). Migration table: `_yoyo_migration`. Currently: `001-create-items.sql`
+creates the schema and the `items` table; the DDL is schema-qualified on
+purpose (yoyo's connection sets its own search_path).
 
 `apply_migrations` runs `yoyo` in `asyncio.to_thread` (yoyo is sync).
 
 ## Invariants and gotchas
 
-- Both variants share one SQLite file. WAL mode is enabled by `configure(conn)`
-  so concurrent reads from the pool do not block writes.
-- `SqlitePool` must be opened (lifespan start) before any request arrives.
-  Calling `acquire()` on a closed pool raises `RuntimeError`.
+- Both variants connect to the same Postgres database and schema; isolation
+  from `db_example_litestar` is by per-connection `search_path`, not a separate
+  store. There is no local DB file and no per-connection setup step. The pooled
+  variant shares one asyncpg pool; the per-request variant opens a fresh
+  connection each time.
+- The asyncpg pool must be created (lifespan start) before any request arrives.
+- asyncpg autocommits per statement; wrap multi-statement work in
+  `async with conn.transaction(): ...`.
 - `PooledItemFacade` and `PerRequestItemFacade` are distinct subclasses of
   `ItemFacade` solely to give Dishka two resolvable types. The implementation
   is inherited and identical.
-- Migrations run before `pool.open()`. Safe to run concurrently across
-  workers because yoyo acquires a file lock.
+- Migrations run before the pool is created. Safe to run concurrently across
+  workers because yoyo holds a lock for the duration (`backend.lock()`).
 - `description` is intentionally nullable (no domain invariant). Setting it
   to `None` in a PATCH does nothing; send `""` if you want to clear it.
 

@@ -22,7 +22,7 @@ project-specific wiring.
 |:---|:---|:---|:---|
 | Domain | `DomainError` | nothing | nothing |
 | App | `AppError` | `DomainError` (only to change context) | rare |
-| Ports/driven | `PortError` | infra exceptions (aiosqlite, httpx) | infra → `PortError` |
+| Ports/driven | `PortError` | infra exceptions (asyncpg, httpx) | infra → `PortError` |
 | Adapters/driving | — | all `LayerError` subtypes | error → HTTP response |
 
 Domain and app errors propagate **unchanged** through ports up to adapters.

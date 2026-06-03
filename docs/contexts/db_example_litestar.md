@@ -39,7 +39,7 @@ AuthorController                     BookController
           |
      AsyncEngine  <--- Dishka APP scope
           |
-     aiosqlite (SQLite file)
+     asyncpg (Postgres, schema db_example_litestar)
 ```
 
 `AuthorModel` 1--* `BookModel` via `relationship`, both in `ports/orm_models.py`
@@ -109,7 +109,10 @@ Bulk create (`/authors/bulk`) passes a raw `list[AuthorModel]` body without
 
 | Env var | Default | Notes |
 |---|---|---|
-| `DB_EXAMPLE_LITESTAR_DB_PATH` | `${VOLUME_PATH}/db_example_litestar.db` | Relative paths resolved under `VOLUME_PATH` |
+| `DB_EXAMPLE_LITESTAR_SCHEMA_NAME` | `db_example_litestar` | Postgres schema this context owns (search_path) |
+
+Postgres connection settings (`POSTGRES_*`) live in shared `PostgresConfig`;
+see [docs/infra/postgres.md](../infra/postgres.md).
 
 ### Errors
 
@@ -142,10 +145,12 @@ Remaining deliberate relaxations, both narrow and documented:
 
 ## Schema management
 
-`UUIDAuditBase.metadata.create_all` is called on lifespan start. There are
-no migration files for this context — this is deliberate. `create_all` is
-appropriate for demo/prototype contexts where schema drift is not a concern.
-Production contexts should use yoyo (see `db_example_sddd`) or Alembic.
+`UUIDAuditBase.metadata.create_all` is called on lifespan start, after the
+context's Postgres schema is created (`build_engine(alchemy_url, schema)` sets
+`search_path`, so tables land in `db_example_litestar`). There are no migration
+files for this context — this is deliberate. `create_all` is appropriate for
+demo/prototype contexts where schema drift is not a concern. Production contexts
+should use yoyo (see `db_example_sddd`) or Alembic.
 
 The ORM models must be imported before `create_all` so they register with
 `UUIDAuditBase.metadata`. The lifespan manager
@@ -154,8 +159,9 @@ at module level for that side effect.
 
 ## SQLAlchemy scope in the template
 
-`db_example_litestar` is the **only** SQLAlchemy user in the template.
-`db_example_sddd`, `admin/log`, and all other contexts use aiosqlite directly.
+`db_example_litestar` is the **only** SQLAlchemy / advanced-alchemy user in the
+template, now running on Postgres. `db_example_sddd` talks to the same Postgres
+database with raw asyncpg; `admin/log` reads JSONL log files and touches no DB.
 Do not pull SQLAlchemy into other contexts; if needed, write a new context
 following this one as a reference.
 
@@ -170,7 +176,7 @@ following this one as a reference.
   are also REQUEST-scoped; they share the same session instance within one
   request.
 - `create_all` is idempotent on existing tables. It does not apply column
-  changes — schema changes require dropping and recreating the file in dev.
+  changes — schema changes require dropping and recreating the tables in dev.
 - advanced-alchemy's `NamedDependency` API requires Litestar >= 2.23.0.
   The project version floor moved from 2.21 to 2.23 for this reason.
 
@@ -182,5 +188,6 @@ following this one as a reference.
 - [docs/adr/0016-db-example-litestar-orm-model-in-ports-root.md](../adr/0016-db-example-litestar-orm-model-in-ports-root.md) — ORM model at `ports/` root (used by both branches); supersedes 0015
 - [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](../adr/0015-db-example-litestar-orm-model-in-domain.md) — (superseded by 0016) ORM model in domain/
 - [docs/adr/0013-litestar-2.23-floor.md](../adr/0013-litestar-2.23-floor.md) — version bump rationale
-- [docs/contexts/db_example_sddd.md](db_example_sddd.md) — raw aiosqlite counterpart
+- [docs/contexts/db_example_sddd.md](db_example_sddd.md) — raw asyncpg counterpart
+- [docs/infra/postgres.md](../infra/postgres.md) — Postgres wiring (schemas, DSNs, search_path)
 - [docs/architecture.md](../architecture.md) — S-DDD layers and DI scopes
