@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ...app.use_cases import RenderDashboardUc
+from ...app import RenderDashboardUc
 from ...domain import DashboardViewVo
 
 

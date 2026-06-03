@@ -5,7 +5,7 @@ from dishka import Provider, Scope, provide
 from shared.config import BaseAppConfig
 
 from .adapters.driven.build_info.git_build_info import resolve_build_meta
-from .app.use_cases import RenderDashboardUc
+from .app import RenderDashboardUc
 from .domain import BuildInfoVo
 from .ports.driving import AdminFacade
 

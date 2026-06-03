@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from pathlib import Path
 
-from ....ports.errors import LogReadError
+from ...ports.errors import LogReadError
 
 _DEFAULT_CHUNK = 64 * 1024
 

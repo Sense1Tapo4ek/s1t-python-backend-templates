@@ -4,7 +4,7 @@ from dataclasses import dataclass
 # the metrics context's public facade to this context's IMetrics protocol.
 from metrics.ports.driving import MetricsFacade
 
-from ....app import IMetrics
+from ...app import IMetrics
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -1,7 +1,7 @@
 import pytest
 
 from auth.config import AuthConfig
-from auth.ports.driven.gateways import StaticTokenResolver
+from auth.ports.driven import StaticTokenResolver
 from shared.domain.auth import Role
 
 

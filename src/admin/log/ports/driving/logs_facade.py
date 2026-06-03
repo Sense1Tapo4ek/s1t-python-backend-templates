@@ -3,14 +3,14 @@ from dataclasses import dataclass
 
 import orjson
 
-from ...app.use_cases import (
+from ...app import (
     ExportLogsUc,
     LoadOlderLogsUc,
     RenderLogPageUc,
     StreamLogTailUc,
 )
 from ...domain import Cursor, LogEntryEnt
-from .schemas import LogEntrySchema
+from .log_schemas import LogEntrySchema
 
 # Promoted to top-level columns in LogEntrySchema; stripped from context_json
 # so each value ships once.

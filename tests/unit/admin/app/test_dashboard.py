@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from admin.app.use_cases import RenderDashboardUc
+from admin.app import RenderDashboardUc
 from admin.domain import BuildInfoVo
 from shared.config import BaseAppConfig
 

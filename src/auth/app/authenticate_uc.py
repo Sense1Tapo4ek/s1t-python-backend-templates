@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from shared.domain.auth import Principal
 
-from ..interfaces import ITokenResolver
+from .i_token_resolver import ITokenResolver
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

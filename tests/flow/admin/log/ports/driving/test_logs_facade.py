@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, create_autospec
 
 import pytest
 
-from admin.log.app.use_cases import (
+from admin.log.app import (
     ExportLogsUc,
     LoadOlderLogsUc,
     RenderLogPageUc,

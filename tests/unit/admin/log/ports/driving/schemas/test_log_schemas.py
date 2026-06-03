@@ -1,6 +1,6 @@
 import pytest
 
-from admin.log.ports.driving.schemas import LogEntrySchema, LogPageResponseSchema
+from admin.log.ports.driving import LogEntrySchema, LogPageResponseSchema
 
 
 class TestLogPageResponseSchema:
@@ -35,8 +35,8 @@ class TestLogPageResponseSchema:
         """
         # Act / Assert
         with pytest.raises(ImportError):
-            from admin.log.ports.driving.schemas import (  # noqa: F401
+            from admin.log.ports.driving import (  # noqa: F401
                 ClearLogsResponseSchema,
             )
         with pytest.raises(ImportError):
-            from admin.log.ports.driving.schemas import LogFilterSchema  # noqa: F401
+            from admin.log.ports.driving import LogFilterSchema  # noqa: F401

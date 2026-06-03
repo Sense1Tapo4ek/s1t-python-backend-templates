@@ -3,9 +3,9 @@ from pathlib import Path
 import orjson
 import pytest
 
-from admin.log.adapters.driven.files.log_file_source import LogFileSource
+from admin.log.adapters.driven.log_file_source import LogFileSource
 from admin.log.domain import Cursor
-from admin.log.ports.driven.repos.file_log_reader import FileLogReader
+from admin.log.ports.driven import FileLogReader
 
 
 def _line(event: str, **extra: object) -> str:

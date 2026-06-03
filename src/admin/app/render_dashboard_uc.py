@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from shared.app import IClock
 from shared.config import BaseAppConfig
 
-from ...domain import BuildInfoVo, DashboardViewVo
+from ..domain import BuildInfoVo, DashboardViewVo
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

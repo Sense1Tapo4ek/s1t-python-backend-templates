@@ -1,6 +1,6 @@
 from prometheus_client import REGISTRY
 
-from db_example_sddd.ports.driven.acl import MetricsAcl
+from db_example_sddd.ports.driven import MetricsAcl
 from metrics.adapters.driven import PrometheusSink
 from metrics.ports.driving import MetricsFacade
 

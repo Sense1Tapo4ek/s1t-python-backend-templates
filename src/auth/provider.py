@@ -1,9 +1,8 @@
 from dishka import Provider, Scope, provide
 
-from .app import AuthenticateUc
-from .app.interfaces import ITokenResolver
+from .app import AuthenticateUc, ITokenResolver
 from .config import AuthConfig
-from .ports.driven.gateways import StaticTokenResolver
+from .ports.driven import StaticTokenResolver
 from .ports.driving import AuthFacade
 
 

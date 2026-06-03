@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 from shared.domain.auth import Principal, Role
 
-from ....app.interfaces import ITokenResolver
-from ....config import AuthConfig
+from ...app import ITokenResolver
+from ...config import AuthConfig
 
 
 def _token_id(token: str) -> str:

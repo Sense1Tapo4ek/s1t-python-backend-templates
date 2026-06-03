@@ -5,7 +5,7 @@ from pathlib import Path
 import orjson
 import pytest
 
-from admin.log.adapters.driven.files.log_file_source import LogFileSource
+from admin.log.adapters.driven.log_file_source import LogFileSource
 from admin.log.ports.errors import LogReadError
 
 
@@ -241,7 +241,7 @@ class TestFollow:
         # real _read_delta must swallow it and the loop must not crash.
         import builtins
 
-        import admin.log.adapters.driven.files.log_file_source as mod
+        import admin.log.adapters.driven.log_file_source as mod
 
         real_open = builtins.open
         calls = {"n": 0}

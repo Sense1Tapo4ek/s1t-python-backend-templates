@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Protocol
 
-from ....domain import Cursor, LogEntryEnt, MalformedLogLine
+from ...domain import Cursor, LogEntryEnt, MalformedLogLine
 
 
 class ILogFileSource(Protocol):

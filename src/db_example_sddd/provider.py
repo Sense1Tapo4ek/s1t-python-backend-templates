@@ -10,8 +10,7 @@ from .adapters.db_example_sddd_lifespan_manager import DbExampleSdddLifespanMana
 from .adapters.driven.pg_pool import build_pool, open_connection
 from .app import IMetrics, ItemManagement, ItemQueries
 from .config import DbExampleSdddConfig
-from .ports.driven import PgItemRepo
-from .ports.driven.acl import MetricsAcl
+from .ports.driven import MetricsAcl, PgItemRepo
 from .ports.driving import PerRequestItemFacade, PooledItemFacade
 
 

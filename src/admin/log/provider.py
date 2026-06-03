@@ -1,15 +1,16 @@
 from dishka import Provider, Scope, provide
 
-from .adapters.driven.files import LogFileSource
-from .app.interfaces import ILogFollower, ILogReader
-from .app.use_cases import (
+from .adapters.driven.log_file_source import LogFileSource
+from .app import (
     ExportLogsUc,
+    ILogFollower,
+    ILogReader,
     LoadOlderLogsUc,
     RenderLogPageUc,
     StreamLogTailUc,
 )
 from .config import AdminLogConfig
-from .ports.driven.repos import FileLogReader
+from .ports.driven import FileLogReader
 from .ports.driving import LogsFacade
 
 
