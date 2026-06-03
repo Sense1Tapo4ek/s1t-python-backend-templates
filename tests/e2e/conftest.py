@@ -17,6 +17,7 @@ APP-scope objects, so the warmed BuildInfoVo etc. survive even after the
 autouse fixture deletes the env vars during each test.
 """
 
+import os
 from collections.abc import Iterator
 
 import pytest
@@ -30,7 +31,9 @@ E2E_APP_NAME = "test-service"
 
 
 @pytest.fixture(scope="module")
-def e2e_app(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Litestar]:
+def e2e_app(
+    tmp_path_factory: pytest.TempPathFactory, pg_dsn: str
+) -> Iterator[Litestar]:
     """Module-scoped Litestar app with isolated VOLUME_PATH and admin token.
 
     Uses `pytest.MonkeyPatch` directly — the function-scoped `monkeypatch`
@@ -40,6 +43,11 @@ def e2e_app(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Litestar]:
     mp.setenv("APP_NAME", E2E_APP_NAME)
     mp.setenv("VOLUME_PATH", str(tmp_path_factory.mktemp("e2e")))
     mp.setenv("AUTH_ADMIN_TOKEN", E2E_ADMIN_TOKEN)
+    mp.setenv("POSTGRES_HOST", os.environ["POSTGRES_HOST"])
+    mp.setenv("POSTGRES_PORT", os.environ["POSTGRES_PORT"])
+    mp.setenv("POSTGRES_USER", os.environ["POSTGRES_USER"])
+    mp.setenv("POSTGRES_PASSWORD", os.environ["POSTGRES_PASSWORD"])
+    mp.setenv("POSTGRES_DB", os.environ["POSTGRES_DB"])
     try:
         yield create_app()
     finally:
