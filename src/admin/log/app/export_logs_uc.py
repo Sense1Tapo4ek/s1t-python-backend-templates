@@ -3,8 +3,8 @@ import io
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
-from ...domain import LogEntryEnt, MalformedLogLine
-from ..interfaces import ILogReader
+from ..domain import LogEntryEnt, MalformedLogLine
+from .interfaces import ILogReader
 
 _CSV_HEADER = ("timestamp", "level", "logger", "event")
 

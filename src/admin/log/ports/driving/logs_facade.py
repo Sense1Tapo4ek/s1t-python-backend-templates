@@ -3,12 +3,7 @@ from dataclasses import dataclass
 
 import orjson
 
-from ...app import (
-    ExportLogsUc,
-    LoadOlderLogsUc,
-    RenderLogPageUc,
-    StreamLogTailUc,
-)
+from ...app import ExportLogsUc, LogQueries
 from ...domain import Cursor, LogEntryEnt
 from .log_schemas import LogEntrySchema
 
@@ -48,16 +43,14 @@ def _to_entry_schema(ent: LogEntryEnt) -> LogEntrySchema:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class LogsFacade:
-    _render_log_page_uc: RenderLogPageUc
-    _load_older_logs_uc: LoadOlderLogsUc
-    _stream_log_tail_uc: StreamLogTailUc
+    _log_queries: LogQueries
     _export_logs_uc: ExportLogsUc
 
     async def render_log_page(
         self,
         limit: int,
     ) -> tuple[list[LogEntrySchema], Cursor | None]:
-        entries, cursor = await self._render_log_page_uc.__call__(limit)
+        entries, cursor = await self._log_queries.render_page(limit)
         return [_to_entry_schema(e) for e in entries], cursor
 
     async def load_older_logs(
@@ -65,14 +58,14 @@ class LogsFacade:
         cursor: Cursor,
         limit: int,
     ) -> tuple[list[LogEntrySchema], Cursor | None]:
-        entries, next_cursor = await self._load_older_logs_uc.__call__(cursor, limit)
+        entries, next_cursor = await self._log_queries.load_older(cursor, limit)
         return [_to_entry_schema(e) for e in entries], next_cursor
 
     async def stream_tail(
         self,
         poll_ms: int,
     ) -> AsyncGenerator[LogEntrySchema, None]:
-        async for entry in self._stream_log_tail_uc.__call__(poll_ms):
+        async for entry in self._log_queries.stream_tail(poll_ms):
             yield _to_entry_schema(entry)
 
     async def export_ndjson(self) -> AsyncGenerator[str, None]:

@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "advanced-alchemy>=0.30",
+    "advanced-alchemy>=1.11",
     "asyncpg>=0.30",
     "dishka>=1.10.1",
     "litestar[jinja,prometheus]>=2.23.0",

@@ -1,6 +1,6 @@
 import pytest
 
-from admin.log.app.use_cases.export_logs_uc import ExportLogsUc
+from admin.log.app.export_logs_uc import ExportLogsUc
 
 
 class _FakeReader:

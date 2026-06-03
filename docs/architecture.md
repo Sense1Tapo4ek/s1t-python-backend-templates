@@ -85,8 +85,8 @@ conventions: [subsystems/error_hierarchy.md](subsystems/error_hierarchy.md).
 ## 4. Composition (DI)
 
 Dishka, scoped at `Scope.APP` for everything by default. Each context exports
-one `Provider` (and optional `*PortBindings` companion). The root assembly
-lives in `src/root/composition/container.py::build_container`.
+one `Provider`. The root assembly lives in
+`src/root/composition/container.py::build_container`.
 
 ```python
 return make_async_container(
@@ -95,7 +95,10 @@ return make_async_container(
     AdminLogWebProvider(),
     MetricsProvider(),
     AuthProvider(),
-    AuthPortBindings(),
+    DbExampleSdddInfraProvider(),
+    PooledDbExampleSdddProvider(),
+    PerRequestDbExampleSdddProvider(),
+    DbExampleLitestarProvider(),
 )
 ```
 

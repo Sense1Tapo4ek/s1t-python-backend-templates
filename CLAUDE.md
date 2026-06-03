@@ -105,7 +105,7 @@ without it the app 500s on every rendered page.
   `APP_WORKERS` scales freely. `/metrics` always-on when the context is
   composed; no admin metrics UI. e2e modules that build their own app must
   snapshot/restore `REGISTRY` to avoid collector collisions — see
-  `tests/e2e/admin/metrics/conftest.py`. Details:
+  `tests/e2e/metrics/conftest.py`. Details:
   [docs/subsystems/metrics.md](docs/subsystems/metrics.md).
 
 ## Editing rules

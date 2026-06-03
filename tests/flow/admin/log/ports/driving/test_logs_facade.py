@@ -3,12 +3,7 @@ from unittest.mock import AsyncMock, create_autospec
 
 import pytest
 
-from admin.log.app import (
-    ExportLogsUc,
-    LoadOlderLogsUc,
-    RenderLogPageUc,
-    StreamLogTailUc,
-)
+from admin.log.app import ExportLogsUc, LogQueries
 from admin.log.domain import Cursor, LogEntryEnt
 from admin.log.ports.driving import LogsFacade
 
@@ -22,16 +17,14 @@ def _entry() -> LogEntryEnt:
 
 @pytest.fixture
 def facade() -> LogsFacade:
-    render = create_autospec(RenderLogPageUc, instance=True)
-    render.__call__ = AsyncMock(return_value=([_entry()], Cursor(inode=1, offset=0)))
-    older = create_autospec(LoadOlderLogsUc, instance=True)
-    older.__call__ = AsyncMock(return_value=([_entry()], None))
-    stream = create_autospec(StreamLogTailUc, instance=True)
+    queries = create_autospec(LogQueries, instance=True)
+    queries.render_page = AsyncMock(
+        return_value=([_entry()], Cursor(inode=1, offset=0))
+    )
+    queries.load_older = AsyncMock(return_value=([_entry()], None))
     export = create_autospec(ExportLogsUc, instance=True)
     return LogsFacade(
-        _render_log_page_uc=render,
-        _load_older_logs_uc=older,
-        _stream_log_tail_uc=stream,
+        _log_queries=queries,
         _export_logs_uc=export,
     )
 

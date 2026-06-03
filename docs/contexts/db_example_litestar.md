@@ -117,7 +117,8 @@ see [docs/infra/postgres.md](../infra/postgres.md).
 ### Errors
 
 `advanced_alchemy.exceptions.NotFoundError` -> 404 (registered against
-`not_found_handler` in `api.py`, same handler as `ItemNotFound`).
+`not_found_to_problem` in `root/composition/app.py`, same handler as
+`ItemNotFound`).
 
 ## Hybrid layering rationale
 

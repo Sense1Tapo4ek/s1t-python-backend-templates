@@ -102,7 +102,7 @@ A context must not import another context's facade directly. Wrap it in an ACL.
 
 - `db_example_sddd/app/i_metrics.py` — `IMetrics` protocol (duplicated per the
   S-DDD cross-context rule; the app layer depends on this, not on `metrics`).
-- `db_example_sddd/ports/driven/acl/metrics_acl.py` — `MetricsAcl` adapts
+- `db_example_sddd/ports/driven/metrics_acl.py` — `MetricsAcl` adapts
   `metrics.ports.driving.MetricsFacade` to `IMetrics`. The only cross-context
   import lives here.
 

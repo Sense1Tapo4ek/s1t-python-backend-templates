@@ -71,8 +71,9 @@ see [docs/infra/postgres.md](../infra/postgres.md).
 
 ### Errors
 
-`ItemNotFound(AppError)` -> 404 (registered separately in `api.py` against
-`not_found_handler`, overrides the default `AppError` -> 422 mapping).
+`ItemNotFound(AppError)` -> 404 (registered separately in
+`root/composition/app.py` against `not_found_to_problem`, overrides the
+default `AppError` -> 422 mapping).
 
 `EmptyItemName(DomainError)` -> 409.
 
@@ -133,7 +134,7 @@ purpose (yoyo's connection sets its own search_path).
 histogram (`db_example_item_create_seconds`) to the `metrics` context — the
 template's **first ACL example**. The app layer depends on its own
 `app/i_metrics.py` (`IMetrics` protocol, duplicated per the S-DDD cross-context
-rule); `ports/driven/acl/metrics_acl.py` (`MetricsAcl`) adapts
+rule); `ports/driven/metrics_acl.py` (`MetricsAcl`) adapts
 `metrics.ports.driving.MetricsFacade` to that protocol and is the only place
 importing another context. See [docs/contexts/metrics.md](metrics.md).
 

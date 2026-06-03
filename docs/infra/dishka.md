@@ -7,9 +7,8 @@ For the *why*, see [adr/0001-dishka-for-di.md](../adr/0001-dishka-for-di.md).
 
 ## Where it's used
 
-Every context exposes one `Provider` (and optional `*PortBindings`
-companion). The root container assembles them in
-`src/root/composition/container.py::build_container`:
+Every context exposes one `Provider`. The root container assembles them
+in `src/root/composition/container.py::build_container`:
 
 ```python
 return make_async_container(
@@ -18,7 +17,10 @@ return make_async_container(
     AdminLogWebProvider(),
     MetricsProvider(),
     AuthProvider(),
-    AuthPortBindings(),
+    DbExampleSdddInfraProvider(),
+    PooledDbExampleSdddProvider(),
+    PerRequestDbExampleSdddProvider(),
+    DbExampleLitestarProvider(),
 )
 ```
 
@@ -55,8 +57,6 @@ class AdminLogWebProvider(Provider):
 Rules:
 - Map concretes to interfaces with `provides=`. The provider is the only
   place that knows the binding.
-- `*PortBindings` companion exists only to keep the main provider focused
-  on infra wiring.
 - Never import another context's `provider.py` — the root container is
   the only assembly point.
 

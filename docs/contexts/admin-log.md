@@ -21,7 +21,7 @@ structlog -> JSON line --+--> StreamHandler  -> stdout
                                                        |
                                   external rotation (logrotate / docker)
                                                        v
-                              FileLogReader (ports/driven/repos)
+                              FileLogReader (ports/driven)
                               read_tail / read_before / stream_all / follow
                                                        |
                               facade -> use cases -> controller
@@ -53,14 +53,14 @@ All require `Role.ADMIN`.
 
 | Symbol | Where | Role |
 |:---|:---|:---|
-| `LogsFacade` | `ports/driving/facades/` | render / older / stream / export. Thin. |
+| `LogsFacade` | `ports/driving/logs_facade.py` | render / older / stream / export. Thin. |
 | `ILogReader` | `app/interfaces/` | `read_tail`, `read_before`, `stream_all`. |
 | `ILogFollower` | `app/interfaces/` | `follow(poll_ms)` — yields appended entries. |
-| `FileLogReader` | `ports/driven/repos/` | implements both; maps lines, owns cursor. |
-| `LogFileSource` | `adapters/driven/files/` | raw I/O: open, stat, reverse-read, rotation. |
+| `FileLogReader` | `ports/driven/file_log_reader.py` | implements both; maps lines, owns cursor. |
+| `LogFileSource` | `adapters/driven/log_file_source.py` | raw I/O: open, stat, reverse-read, rotation. |
 | `LogEntryEnt` | `domain/` | parsed line: `timestamp, level, logger, event, raw`. |
 | `Cursor` | `domain/types.py` | `(inode, offset)`; base64 on the wire. |
-| `LogEntrySchema`, `LogPageResponseSchema` | `ports/driving/schemas/` | wire: `entries`, `cursor`. |
+| `LogEntrySchema`, `LogPageResponseSchema` | `ports/driving/log_schemas.py` | wire: `entries`, `cursor`. |
 
 ## Cursor semantics
 

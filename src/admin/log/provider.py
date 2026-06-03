@@ -1,14 +1,7 @@
 from dishka import Provider, Scope, provide
 
 from .adapters.driven.log_file_source import LogFileSource
-from .app import (
-    ExportLogsUc,
-    ILogFollower,
-    ILogReader,
-    LoadOlderLogsUc,
-    RenderLogPageUc,
-    StreamLogTailUc,
-)
+from .app import ExportLogsUc, ILogFollower, ILogReader, LogQueries
 from .config import AdminLogConfig
 from .ports.driven import FileLogReader
 from .ports.driving import LogsFacade
@@ -40,16 +33,10 @@ class AdminLogWebProvider(Provider):
         return reader
 
     @provide
-    def render_log_page_uc(self, reader: ILogReader) -> RenderLogPageUc:
-        return RenderLogPageUc(_reader=reader)
-
-    @provide
-    def load_older_logs_uc(self, reader: ILogReader) -> LoadOlderLogsUc:
-        return LoadOlderLogsUc(_reader=reader)
-
-    @provide
-    def stream_log_tail_uc(self, follower: ILogFollower) -> StreamLogTailUc:
-        return StreamLogTailUc(_follower=follower)
+    def log_queries(
+        self, reader: ILogReader, follower: ILogFollower
+    ) -> LogQueries:
+        return LogQueries(_reader=reader, _follower=follower)
 
     @provide
     def export_logs_uc(self, reader: ILogReader) -> ExportLogsUc:
