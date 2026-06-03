@@ -1,3 +1,3 @@
-from .sqlite_item_repo import SqliteItemRepo
+from .pg_item_repo import PgItemRepo
 
-__all__ = ["SqliteItemRepo"]
+__all__ = ["PgItemRepo"]

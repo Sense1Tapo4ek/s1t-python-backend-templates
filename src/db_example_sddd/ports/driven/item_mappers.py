@@ -1,16 +1,12 @@
-from uuid import UUID
-
-import aiosqlite
+import asyncpg
 
 from ...domain import Item
 
 
-def to_domain(row: aiosqlite.Row) -> Item:
-    from datetime import datetime
-
+def to_domain(row: asyncpg.Record) -> Item:
     return Item(
-        id=UUID(row["id"]),
+        id=row["id"],                  # native uuid.UUID
         name=row["name"],
         description=row["description"],
-        created_at=datetime.fromisoformat(row["created_at"]),
+        created_at=row["created_at"],  # native tz-aware datetime (TIMESTAMPTZ)
     )
