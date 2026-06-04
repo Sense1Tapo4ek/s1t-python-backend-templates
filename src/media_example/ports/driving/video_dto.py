@@ -9,13 +9,32 @@ from ...domain import Video
 
 
 class UploadVideoRequest(msgspec.Struct, kw_only=True):
-    source_key: Annotated[str, msgspec.Meta(min_length=1, examples=["s3://bucket/a.mp4"])]
+    source_key: Annotated[
+        str,
+        msgspec.Meta(
+            min_length=1,
+            description="Storage key of the uploaded source video.",
+            examples=["s3://bucket/a.mp4"],
+        ),
+    ]
 
 
 class VideoModel(msgspec.Struct, kw_only=True):
     id: UUID
-    source_key: str
-    status: str
+    source_key: Annotated[
+        str,
+        msgspec.Meta(
+            description="Storage key of the source video.",
+            examples=["s3://bucket/a.mp4"],
+        ),
+    ]
+    status: Annotated[
+        str,
+        msgspec.Meta(
+            description="Processing status: pending, processing, done or failed.",
+            examples=["pending"],
+        ),
+    ]
     uploaded_at: datetime
 
 

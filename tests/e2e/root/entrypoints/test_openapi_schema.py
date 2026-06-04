@@ -5,7 +5,7 @@ from auth.config import ADMIN_COOKIE_NAME
 _API_METHODS = {"get", "post", "patch", "put", "delete"}
 _EXPECTED_TAGS = {
     "Health",
-    "db_example (SDDD)",
+    "media",
     "db_example (Alchemy)",
     "Admin Logs",
     "Metrics",
@@ -60,22 +60,22 @@ def test_api_operations_have_summary_or_description(e2e_client) -> None:
     assert not bare, f"undocumented operations: {bare}"
 
 
-def _item_by_id_key(spec) -> str:
-    # find the pooled items by-id path key (Litestar renders the param placeholder)
-    return next(p for p in spec["paths"] if p.startswith("/db-example-sddd/pooled/items/")
+def _author_by_id_key(spec) -> str:
+    # find the authors by-id path key (Litestar renders the param placeholder)
+    return next(p for p in spec["paths"] if p.startswith("/db-example-litestar/authors/")
                 and "{" in p and "get" in spec["paths"][p])
 
 
-def test_error_envelope_documented_on_item_lookup(e2e_client) -> None:
-    """Given the spec, When reading the item-by-id GET, Then 404 is documented."""
+def test_error_envelope_documented_on_author_lookup(e2e_client) -> None:
+    """Given the spec, When reading the author-by-id GET, Then 404 is documented."""
     spec = _spec(e2e_client)
-    assert "404" in spec["paths"][_item_by_id_key(spec)]["get"]["responses"]
+    assert "404" in spec["paths"][_author_by_id_key(spec)]["get"]["responses"]
 
 
 def test_error_response_advertises_problem_details(e2e_client) -> None:
-    """Given the spec, When reading the item 404 response, Then it serves the RFC 9457 problem+json schema."""
+    """Given the spec, When reading the author 404 response, Then it serves the RFC 9457 problem+json schema."""
     spec = _spec(e2e_client)
-    resp = spec["paths"][_item_by_id_key(spec)]["get"]["responses"]["404"]
+    resp = spec["paths"][_author_by_id_key(spec)]["get"]["responses"]["404"]
     content = resp["content"]
     assert "application/problem+json" in content, list(content)
     ref = content["application/problem+json"]["schema"]["$ref"]
@@ -84,20 +84,20 @@ def test_error_response_advertises_problem_details(e2e_client) -> None:
     assert {"type", "title", "status"} <= set(props)
 
 
-def test_item_schema_has_field_examples_and_descriptions(e2e_client) -> None:
-    """Given the spec, When reading the ItemModel schema, Then name carries a description and an example."""
+def test_video_schema_has_field_examples_and_descriptions(e2e_client) -> None:
+    """Given the spec, When reading the VideoModel schema, Then source_key carries a description and an example."""
     spec = _spec(e2e_client)
     schemas = spec["components"]["schemas"]
-    # MsgspecDTO derives per-operation schemas (e.g. "GetOneItemModelResponseBody"),
-    # not a bare "ItemModel"; the exact key is auto-suffixed on collision. Scan
-    # for any DTO-derived ItemModel schema exposing the `name` property.
-    name = next(
-        props["name"]
+    # MsgspecDTO derives per-operation schemas (e.g. "UploadVideoModelResponseBody"),
+    # not a bare "VideoModel"; the exact key is auto-suffixed on collision. Scan
+    # for any DTO-derived VideoModel schema exposing the `source_key` property.
+    source_key = next(
+        props["source_key"]
         for k, v in schemas.items()
-        if "ItemModel" in k and "name" in (props := v.get("properties", {}))
+        if "VideoModel" in k and "source_key" in (props := v.get("properties", {}))
     )
-    assert name.get("description")
-    assert name.get("examples") or name.get("example")
+    assert source_key.get("description")
+    assert source_key.get("examples") or source_key.get("example")
 
 
 def test_security_schemes_declared(e2e_client) -> None:
