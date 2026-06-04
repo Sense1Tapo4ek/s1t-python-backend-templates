@@ -6,14 +6,14 @@ import asyncpg
 from dishka import Provider, Scope, provide
 from litestar import Litestar
 
+from shared.adapters.driven.postgres import SqlUoW, build_pool
 from shared.app import IClock
 from shared.config import PostgresConfig
 
-from .adapters.driven.pg_pool import build_pool
 from .adapters.orders_lifespan_manager import OrdersLifespanManager
 from .app import IEventBus, ListRecentOrdersQuery, PlaceOrderUC
 from .config import OrdersConfig
-from .ports.driven import LitestarEventBus, SqlOrderRepo, SqlUoW
+from .ports.driven import LitestarEventBus, SqlOrderRepo
 from .ports.driven.litestar_event_bus import _Emitter
 from .ports.driving import OrdersFacade
 

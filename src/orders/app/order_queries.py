@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from ..domain import Order
-from .i_order_repo import IOrderRepo
+from .interfaces import IOrderRepo
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

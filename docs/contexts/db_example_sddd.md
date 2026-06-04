@@ -83,20 +83,20 @@ default `AppError` -> 422 mapping).
 
 ### Pooled (APP-scope pool)
 
-`build_pool` (`adapters/driven/pg_pool.py`) calls `asyncpg.create_pool`
-(`min_size=1`, `max_size=pool_size`, `search_path` server setting) at lifespan
-start. Each request borrows one connection via `pool.acquire()` (async context
-manager); the connection returns to the pool when the request ends. Dishka
-provides `PooledItemFacade` at `Scope.REQUEST` using an async generator that
-calls `pool.acquire()`.
+`build_pool` (shared `shared/adapters/driven/postgres/`) calls
+`asyncpg.create_pool` (`min_size=1`, `max_size=pool_size`, `search_path` server
+setting) at lifespan start. Each request borrows one connection via
+`pool.acquire()` (async context manager); the connection returns to the pool
+when the request ends. Dishka provides `PooledItemFacade` at `Scope.REQUEST`
+using an async generator that calls `pool.acquire()`.
 
 Use this when you want bounded connection count and connection reuse.
 
 ### Per-request (fresh connection)
 
 `PerRequestDbExampleSdddProvider` opens a fresh asyncpg connection per request
-via `open_connection(dsn, schema=...)` and closes it in the generator `finally`
-block. No pool involved.
+via shared `open_connection(dsn, schema=...)` and closes it in the generator
+`finally` block. No pool involved.
 
 Use this to demonstrate the simplest possible wiring, or when
 connection-level state isolation matters.

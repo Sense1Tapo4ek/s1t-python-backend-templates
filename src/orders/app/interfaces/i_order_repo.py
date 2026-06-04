@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from ..domain import Order
+from ...domain import Order
 
 
 class IOrderRepo(Protocol):

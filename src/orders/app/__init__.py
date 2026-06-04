@@ -1,6 +1,4 @@
-from .i_event_bus import IEventBus
-from .i_order_repo import IOrderRepo
-from .i_uow import IUoW
+from .interfaces import IEventBus, IOrderRepo, IUoW
 from .order_queries import ListRecentOrdersQuery
 from .place_order_uc import PlaceOrderCommand, PlaceOrderUC
 

@@ -3,11 +3,11 @@ from collections.abc import AsyncIterator
 import asyncpg
 from dishka import Provider, Scope, provide
 
+from shared.adapters.driven.postgres import build_pool, open_connection
 from shared.app import IClock
 from shared.config import PostgresConfig
 
 from .adapters.db_example_sddd_lifespan_manager import DbExampleSdddLifespanManager
-from .adapters.driven.pg_pool import build_pool, open_connection
 from .app import IMetrics, ItemManagement, ItemQueries
 from .config import DbExampleSdddConfig
 from .ports.driven import MetricsAcl, PgItemRepo

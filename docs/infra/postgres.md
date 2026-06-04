@@ -57,11 +57,17 @@ through Pydantic Settings into Dishka providers.
 
 Each context opens connections with `server_settings={"search_path": <schema>}`:
 
-- sddd: `adapters/driven/pg_pool.py` (`build_pool`, `open_connection`).
+- asyncpg contexts (sddd, orders): shared `shared/adapters/driven/postgres/`
+  (`build_pool`, `open_connection`). Each context builds its OWN pool instance
+  (its schema) from the shared builder, so one pool == one search_path holds.
 - litestar: `adapters/driven/engine.py` (`build_engine` via `connect_args`).
 
 `search_path` is a connection startup-packet parameter, so it survives asyncpg
 pool connection reset/recycle. Unqualified runtime queries are safe.
+
+The shared `SqlUoW` (same package) wraps `conn.transaction()` and is reused by
+any asyncpg context; it satisfies each context's `IUoW` Protocol structurally,
+so `shared` never imports a bounded context.
 
 ## Migrations
 
@@ -79,7 +85,8 @@ runtime one.
 
 - `shared/config.py::PostgresConfig` -- the three DSNs.
 - `db_example_sddd/config.py` -- `schema_name`, `pool_size`.
-- `db_example_sddd/adapters/driven/pg_pool.py` -- pool + per-request connection.
+- `shared/adapters/driven/postgres/` -- shared `build_pool` + `open_connection`
+  + `SqlUoW`, reused by every asyncpg context.
 - `db_example_sddd/ports/driven/pg_item_repo.py` -- raw asyncpg repo.
 - `db_example_sddd/adapters/driven/migrations_runner.py` -- yoyo apply.
 - `db_example_litestar/adapters/driven/engine.py` -- async engine + sessionmaker.

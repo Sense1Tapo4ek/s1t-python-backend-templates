@@ -14,6 +14,5 @@ async def build_pool(dsn: str, *, schema: str, size: int) -> asyncpg.Pool:
 
 
 async def open_connection(dsn: str, *, schema: str) -> asyncpg.Connection:
-    # Per-request variant: a fresh connection, no pooling -- preserves the
-    # pooled-vs-per-request teaching contrast.
+    # Per-request variant: a fresh connection, no pooling.
     return await asyncpg.connect(dsn, server_settings={"search_path": schema})

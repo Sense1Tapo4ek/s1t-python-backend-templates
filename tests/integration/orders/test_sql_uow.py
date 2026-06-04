@@ -5,7 +5,7 @@ import pytest
 
 from orders.domain import Money, Order, OrderLine
 from orders.ports.driven.sql_order_repo import SqlOrderRepo
-from orders.ports.driven.sql_uow import SqlUoW
+from shared.adapters.driven.postgres import SqlUoW
 
 
 def _order() -> Order:

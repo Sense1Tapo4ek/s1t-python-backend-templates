@@ -102,10 +102,12 @@ live in shared `RedisConfig` ([docs/infra/redis.md](../infra/redis.md)).
 
 Full S-DDD context: `domain/` (Order aggregate, OrderLine entity, Money +
 OrderStatus VOs, OrderPlacedEvent, errors), `app/` (PlaceOrderUC,
-ListRecentOrdersQuery, `IOrderRepo`/`IUoW`/`IEventBus` Protocols), `ports/`
-(OrdersFacade + DTOs driving; SqlOrderRepo + SqlUoW + LitestarEventBus driven),
-`adapters/` (OrderController + OrderFeedController driving; pg_pool, migrations,
-listeners driven; lifespan manager).
+ListRecentOrdersQuery, `interfaces/` with `IOrderRepo`/`IUoW`/`IEventBus`
+Protocols), `ports/` (OrdersFacade + DTOs driving; SqlOrderRepo +
+LitestarEventBus driven), `adapters/` (OrderController + OrderFeedController
+driving; migrations + listeners driven; lifespan manager). The pool builder and
+`SqlUoW` are shared infra (`shared/adapters/driven/postgres/`); `SqlUoW`
+satisfies the local `IUoW` Protocol structurally.
 
 `LitestarEventBus` declares a local `_Emitter` Protocol (`emit(event, **kwargs)`)
 so the app/ports layers stay framework-free; the provider injects the Litestar

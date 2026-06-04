@@ -3,9 +3,7 @@ from dataclasses import dataclass
 from shared.app import IClock
 
 from ..domain import Order, OrderLine
-from .i_event_bus import IEventBus
-from .i_order_repo import IOrderRepo
-from .i_uow import IUoW
+from .interfaces import IEventBus, IOrderRepo, IUoW
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
