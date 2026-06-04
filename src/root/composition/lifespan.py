@@ -16,6 +16,7 @@ from db_example_sddd.adapters.db_example_sddd_lifespan_manager import (
     DbExampleSdddLifespanManager,
 )
 from metrics.adapters import MetricsLifespanManager
+from orders.adapters.orders_lifespan_manager import OrdersLifespanManager
 from root.composition.container import build_container
 from root.config import RootConfig
 from shared.logging import configure_structlog
@@ -28,7 +29,7 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     config = RootConfig()
     snitchbot.init(service=config.app_name)
 
-    container = build_container()
+    container = build_container(app)
     app.state.container = container
     setup_dishka(container=container, app=app)
 
@@ -53,6 +54,7 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     metrics_manager: MetricsLifespanManager | None = None
     db_manager: DbExampleSdddLifespanManager | None = None
     alchemy_manager: DbExampleLitestarLifespanManager | None = None
+    orders_manager: OrdersLifespanManager | None = None
     try:
         metrics_manager = await container.get(MetricsLifespanManager)
         log.info("metrics subsystem starting")
@@ -65,6 +67,10 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
         alchemy_manager = await container.get(DbExampleLitestarLifespanManager)
         log.info("db_example_litestar starting")
         await alchemy_manager.start()
+
+        orders_manager = await container.get(OrdersLifespanManager)
+        log.info("orders starting")
+        await orders_manager.start()
 
         log.info(
             "lifespan started",
@@ -79,6 +85,12 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     finally:
         log.info("lifespan stopping")
         stop_started = time.perf_counter()
+        try:
+            if orders_manager is not None:
+                await orders_manager.stop()
+                log.info("orders stopped")
+        except Exception:
+            log.exception("orders_stop_failed")
         try:
             if alchemy_manager is not None:
                 await alchemy_manager.stop()

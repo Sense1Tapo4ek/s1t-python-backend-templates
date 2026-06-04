@@ -12,7 +12,9 @@ from ...domain import Money, Order, OrderLine
 class OrderLineModel(msgspec.Struct, kw_only=True):
     product_ref: Annotated[str, msgspec.Meta(min_length=1, examples=["sku-1"])]
     quantity: Annotated[int, msgspec.Meta(ge=1, examples=[2])]
-    unit_price: Annotated[Decimal, msgspec.Meta(ge=0, examples=["5.00"])]
+    # `ge` is unsupported on Decimal by msgspec's DTO inspection; the domain
+    # Money VO rejects negative amounts (NegativeMoney) at construction.
+    unit_price: Annotated[Decimal, msgspec.Meta(examples=["5.00"])]
 
 
 class OrderModel(msgspec.Struct, kw_only=True):

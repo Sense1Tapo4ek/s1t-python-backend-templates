@@ -1,4 +1,5 @@
 from dishka import AsyncContainer, make_async_container
+from litestar import Litestar
 
 from admin.log.provider import AdminLogWebProvider
 from admin.provider import AdminProvider
@@ -10,10 +11,11 @@ from db_example_sddd.provider import (
     PooledDbExampleSdddProvider,
 )
 from metrics.provider import MetricsProvider
+from orders.provider import OrdersInfraProvider, OrdersWebProvider
 from shared.provider import SharedProvider
 
 
-def build_container() -> AsyncContainer:
+def build_container(app: Litestar) -> AsyncContainer:
     return make_async_container(
         SharedProvider(),
         AdminProvider(),
@@ -24,4 +26,7 @@ def build_container() -> AsyncContainer:
         PooledDbExampleSdddProvider(),
         PerRequestDbExampleSdddProvider(),
         DbExampleLitestarProvider(),
+        OrdersInfraProvider(),
+        OrdersWebProvider(),
+        context={Litestar: app},
     )
