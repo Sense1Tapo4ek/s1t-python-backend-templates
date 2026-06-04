@@ -1,3 +1,1 @@
-from .sddd import ItemFactory
-
-__all__ = ["ItemFactory"]
+__all__: list[str] = []

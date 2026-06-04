@@ -41,8 +41,6 @@ from admin.log.adapters.driving.api import (
 from auth.adapters.middleware import AuthMiddleware
 from auth.ports.driving import SECURITY_COMPONENTS
 from db_example_litestar.adapters.driving import AuthorController, BookController
-from db_example_sddd.adapters.driving import PerRequestItemController, PooledItemController
-from db_example_sddd.app import ItemNotFound
 from metrics.adapters.driving import MetricsDemoController, build_prom_controller
 from metrics.config import MetricsConfig
 from orders.adapters.driven.listeners import audit_order_placed, make_feed_listener
@@ -88,7 +86,6 @@ def _resolve_app_version() -> str:
 EXCEPTION_TO_PROBLEM: dict[type[Exception], Callable[[Any], ProblemDetailsException]] = {
     DomainError: domain_to_problem,
     AppError: app_to_problem,
-    ItemNotFound: not_found_to_problem,          # MRO: wins over AppError
     AlchemyNotFoundError: not_found_to_problem,
     PortError: port_to_problem,
     AdapterError: adapter_to_problem,
@@ -161,7 +158,6 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
         components=SECURITY_COMPONENTS,
         tags=[
             Tag(name="Health", description="Liveness/readiness probes and build info."),
-            Tag(name="db_example (SDDD)", description="Example CRUD over raw asyncpg (pooled + per-request variants). Illustrative; delete when adapting."),
             Tag(name="db_example (Alchemy)", description="Example CRUD via SQLAlchemy 2.0 + advanced-alchemy. Illustrative; delete when adapting."),
             Tag(name="Admin Logs", description="JSON + SSE API backing the file-tail log viewer (admin role required)."),
             Tag(name="Metrics", description="Prometheus scrape + a generic by-name custom-metrics demo. Illustrative."),
@@ -212,8 +208,6 @@ def build_app() -> Litestar:
             LogsPageController,
             LogsApiController,
             ExportController,
-            PooledItemController,
-            PerRequestItemController,
             AuthorController,
             BookController,
             MetricsDemoController,

@@ -14,7 +14,7 @@ class LogEntrySchema(BaseModel):
     )
     logger: str = Field(
         description="Dotted logger name (module path).",
-        examples=["db_example_sddd.app.create_item_uc"],
+        examples=["orders.app.place_order_uc"],
     )
     event: str = Field(
         description="Stable structured event key (not interpolated).",

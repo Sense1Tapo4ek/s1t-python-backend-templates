@@ -20,10 +20,10 @@ from .ports.driving import OrdersFacade
 
 @dataclass(frozen=True, slots=True)
 class OrdersPool:
-    """Distinct DI key for the orders pool. db_example_sddd also provides a bare
-    `asyncpg.Pool` at APP scope; two providers for the same type collide in one
-    container (last wins) and cross-wire the schemas, so each context's pool
-    needs its own type."""
+    """Distinct DI key for the orders pool. Wraps the raw `asyncpg.Pool` so each
+    context that uses asyncpg can register its own pool type without colliding in
+    the shared Dishka container (two providers for the same type collide; last
+    wins and cross-wires schemas)."""
 
     raw: asyncpg.Pool
 
