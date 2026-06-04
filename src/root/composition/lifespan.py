@@ -12,7 +12,6 @@ from auth.ports.driving import AuthFacade
 from db_example_litestar.adapters.db_example_litestar_lifespan_manager import (
     DbExampleLitestarLifespanManager,
 )
-from metrics.adapters import MetricsLifespanManager
 from orders.adapters.orders_lifespan_manager import OrdersLifespanManager
 from root.composition.container import build_container
 from root.config import RootConfig
@@ -48,14 +47,9 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     # is cheaper and clearer than walking the container each time.
     app.state.auth_facade = await container.get(AuthFacade)
 
-    metrics_manager: MetricsLifespanManager | None = None
     alchemy_manager: DbExampleLitestarLifespanManager | None = None
     orders_manager: OrdersLifespanManager | None = None
     try:
-        metrics_manager = await container.get(MetricsLifespanManager)
-        log.info("metrics subsystem starting")
-        await metrics_manager.start()
-
         alchemy_manager = await container.get(DbExampleLitestarLifespanManager)
         log.info("db_example_litestar starting")
         await alchemy_manager.start()
@@ -89,12 +83,6 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
                 log.info("db_example_litestar stopped")
         except Exception:
             log.exception("db_example_litestar_stop_failed")
-        try:
-            if metrics_manager is not None:
-                await metrics_manager.stop()
-                log.info("metrics subsystem stopped")
-        except Exception:
-            log.exception("metrics_lifespan_stop_failed")
         await container.close()
         log.info(
             "lifespan stopped",

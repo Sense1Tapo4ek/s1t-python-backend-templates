@@ -41,14 +41,13 @@ from admin.log.adapters.driving.api import (
 from auth.adapters.middleware import AuthMiddleware
 from auth.ports.driving import SECURITY_COMPONENTS
 from db_example_litestar.adapters.driving import AuthorController, BookController
-from metrics.adapters.driving import MetricsDemoController, build_prom_controller
-from metrics.config import MetricsConfig
 from orders.adapters.driven.listeners import audit_order_placed, make_feed_listener
 from orders.adapters.driving import OrderController, OrderFeedController
 from orders.ports.driving import ORDERS_CHANNEL
 from root.composition.lifespan import lifespan
 from root.config import RootConfig
 from shared.adapters.driven.valkey import build_valkey_client
+from shared.adapters.metrics import build_prom_controller
 from shared.adapters.middleware import (
     AccessLogMiddleware,
     SecurityHeadersMiddleware,
@@ -63,7 +62,7 @@ from shared.adapters.problem_details import (
     problem_handler,
     unexpected_to_problem,
 )
-from shared.config import AppEnv, BaseAppConfig, ValkeyConfig
+from shared.config import AppEnv, BaseAppConfig, MetricsConfig, ValkeyConfig
 from shared.generics.config import PROJECT_ROOT
 from shared.generics.errors import AdapterError, AppError, DomainError, PortError
 
@@ -210,7 +209,6 @@ def build_app() -> Litestar:
             ExportController,
             AuthorController,
             BookController,
-            MetricsDemoController,
             OrderController,
             OrderFeedController,
             static_router,

@@ -1,4 +1,3 @@
-import glob
 import os
 import signal
 import subprocess
@@ -7,9 +6,10 @@ from typing import Any
 
 import uvicorn
 
-from metrics.config import MetricsConfig
 from root.config import RootConfig
 from root.helpers.process import ensure_runtime_dirs, find_pid_on_port
+from shared.adapters.metrics import bootstrap_multiproc
+from shared.config import MetricsConfig
 
 
 def _ensure_runtime_dirs_or_exit(config: RootConfig) -> None:
@@ -55,17 +55,10 @@ def start_nohup(config: RootConfig) -> None:
 
 def _bootstrap_prometheus_multiproc() -> None:
     # MetricsConfig resolves multiproc_dir from PROMETHEUS_MULTIPROC_DIR when set
-    # (e.g. the compose tmpfs mount), else volume_path/prometheus. We materialize
-    # that dir, wipe stale per-process shards, and reaffirm the env so a non-compose
-    # run (local `start_litestar`) also exports it for prometheus_client.
-    metrics_cfg = MetricsConfig()
-    multiproc_dir = metrics_cfg.multiproc_dir
-    if multiproc_dir is None:  # validator always resolves it; fail loud, not at -O
-        raise RuntimeError("MetricsConfig failed to resolve multiproc_dir")
-    os.makedirs(multiproc_dir, exist_ok=True)
-    for stale in glob.glob(str(multiproc_dir / "*.db")):
-        os.remove(stale)
-    os.environ["PROMETHEUS_MULTIPROC_DIR"] = str(multiproc_dir)
+    # (e.g. the compose tmpfs mount), else volume_path/prometheus. bootstrap_multiproc
+    # materializes that dir, wipes stale per-process shards, and reaffirms the env so
+    # a non-compose run (local `start_litestar`) also exports it for prometheus_client.
+    bootstrap_multiproc(MetricsConfig())
 
 
 def start_foreground(config: RootConfig) -> None:
