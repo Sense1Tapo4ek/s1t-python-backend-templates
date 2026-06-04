@@ -17,6 +17,16 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
 
+  valkey:
+    image: valkey/valkey:8
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - valkey_data:/data
+
   app:
     build:
       context: .
@@ -44,6 +54,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: litestar_base
+      VALKEY_HOST: valkey
+      VALKEY_PORT: 6379
       # UI history + live tail source of truth. Rotated by logrotate (create
       # mode) so an open export fd reads a consistent inode (spec 10.5 F).
       LOG_FILE_PATH: /data/logs/app.jsonl
@@ -54,6 +66,8 @@ services:
       PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus
     depends_on:
       db:
+        condition: service_healthy
+      valkey:
         condition: service_healthy
     logging:
       driver: json-file
@@ -101,3 +115,4 @@ services:
 volumes:
   app_data:
   pg_data:
+  valkey_data:

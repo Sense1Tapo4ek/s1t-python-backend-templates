@@ -32,7 +32,7 @@ E2E_APP_NAME = "test-service"
 
 @pytest.fixture(scope="module")
 def e2e_app(
-    tmp_path_factory: pytest.TempPathFactory, pg_dsn: str, redis_url: str
+    tmp_path_factory: pytest.TempPathFactory, pg_dsn: str, valkey_url: str
 ) -> Iterator[Litestar]:
     """Module-scoped Litestar app with isolated VOLUME_PATH and admin token.
 
@@ -48,8 +48,8 @@ def e2e_app(
     mp.setenv("POSTGRES_USER", os.environ["POSTGRES_USER"])
     mp.setenv("POSTGRES_PASSWORD", os.environ["POSTGRES_PASSWORD"])
     mp.setenv("POSTGRES_DB", os.environ["POSTGRES_DB"])
-    mp.setenv("REDIS_HOST", os.environ["REDIS_HOST"])
-    mp.setenv("REDIS_PORT", os.environ["REDIS_PORT"])
+    mp.setenv("VALKEY_HOST", os.environ["VALKEY_HOST"])
+    mp.setenv("VALKEY_PORT", os.environ["VALKEY_PORT"])
     try:
         yield create_app()
     finally:

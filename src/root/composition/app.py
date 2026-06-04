@@ -50,7 +50,7 @@ from orders.adapters.driving import OrderController, OrderFeedController
 from orders.ports.driving import ORDERS_CHANNEL
 from root.composition.lifespan import lifespan
 from root.config import RootConfig
-from shared.adapters.driven.redis import build_redis_client
+from shared.adapters.driven.valkey import build_valkey_client
 from shared.adapters.middleware import (
     AccessLogMiddleware,
     SecurityHeadersMiddleware,
@@ -65,7 +65,7 @@ from shared.adapters.problem_details import (
     problem_handler,
     unexpected_to_problem,
 )
-from shared.config import AppEnv, BaseAppConfig, RedisConfig
+from shared.config import AppEnv, BaseAppConfig, ValkeyConfig
 from shared.generics.config import PROJECT_ROOT
 from shared.generics.errors import AdapterError, AppError, DomainError, PortError
 
@@ -195,11 +195,11 @@ def build_app() -> Litestar:
     )
     prom_controller = build_prom_controller(metrics_cfg)
 
-    # The ChannelsPlugin owns its Redis client's lifecycle (started/stopped via
+    # The ChannelsPlugin owns its Valkey client's lifecycle (started/stopped via
     # the app lifespan); history=0 means the live feed replays no backlog.
-    redis_cfg = RedisConfig()
+    valkey_cfg = ValkeyConfig()
     channels = ChannelsPlugin(
-        backend=RedisChannelsStreamBackend(history=0, redis=build_redis_client(redis_cfg.url)),
+        backend=RedisChannelsStreamBackend(history=0, redis=build_valkey_client(valkey_cfg.url)),
         channels=[ORDERS_CHANNEL],
     )
     feed_listener = make_feed_listener(channels, ORDERS_CHANNEL)

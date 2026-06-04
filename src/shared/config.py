@@ -80,9 +80,9 @@ class PostgresConfig(GenericConfig):
         return f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
 
 
-class RedisConfig(GenericConfig):
+class ValkeyConfig(GenericConfig):
     model_config = SettingsConfigDict(
-        env_prefix="REDIS_",
+        env_prefix="VALKEY_",
         env_file_encoding="utf-8",
         extra="ignore",
         populate_by_name=True,

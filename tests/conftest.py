@@ -50,21 +50,21 @@ def _pg_env(pg_dsn: str) -> None:
 
 
 @pytest.fixture(scope="session")
-def redis_url() -> Iterator[str]:
-    """Session Redis URL. Reuse REDIS_URL if set (compose/CI), else a container."""
-    if os.environ.get("REDIS_URL"):
-        yield os.environ["REDIS_URL"]
+def valkey_url() -> Iterator[str]:
+    """Session Valkey URL. Reuse VALKEY_URL if set (compose/CI), else a container."""
+    if os.environ.get("VALKEY_URL"):
+        yield os.environ["VALKEY_URL"]
         return
 
     from testcontainers.redis import RedisContainer
 
-    with RedisContainer("redis:7") as rc:
+    with RedisContainer("valkey/valkey:8") as rc:
         host = rc.get_container_host_ip()
         port = rc.get_exposed_port(6379)
         url = f"redis://{host}:{port}/0"
-        os.environ["REDIS_URL"] = url
-        os.environ["REDIS_HOST"] = host
-        os.environ["REDIS_PORT"] = str(port)
+        os.environ["VALKEY_URL"] = url
+        os.environ["VALKEY_HOST"] = host
+        os.environ["VALKEY_PORT"] = str(port)
         yield url
 
 
@@ -87,9 +87,9 @@ def _isolate_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "AUTH_ADMIN_TOKEN",
         "PROMETHEUS_MULTIPROC_DIR",
         "METRICS_MULTIPROC_DIR",
-        "REDIS_URL",
-        "REDIS_HOST",
-        "REDIS_PORT",
+        "VALKEY_URL",
+        "VALKEY_HOST",
+        "VALKEY_PORT",
     ):
         monkeypatch.delenv(env_var, raising=False)
     yield

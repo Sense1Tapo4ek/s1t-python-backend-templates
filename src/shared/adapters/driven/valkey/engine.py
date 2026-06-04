@@ -1,7 +1,7 @@
 import redis.asyncio as aioredis
 
 
-def build_redis_client(
+def build_valkey_client(
     url: str,
     *,
     max_connections: int = 20,
