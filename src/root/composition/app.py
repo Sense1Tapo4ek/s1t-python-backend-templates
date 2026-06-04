@@ -5,6 +5,8 @@ from typing import Any
 
 from advanced_alchemy.exceptions import NotFoundError as AlchemyNotFoundError
 from litestar import Litestar
+from litestar.channels import ChannelsPlugin
+from litestar.channels.backends.redis import RedisChannelsStreamBackend
 from litestar.connection import Request
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.datastructures import CacheControlHeader
@@ -39,8 +41,11 @@ from admin.log.adapters.driving.api import (
 from auth.adapters.middleware import AuthMiddleware
 from auth.ports.driving import SECURITY_COMPONENTS
 from db_example_litestar.adapters.driving import AuthorController, BookController
+from media_example.adapters.driving import VideoController, VideoFeedController
+from media_example.ports.driving import VIDEOS_CHANNEL
 from root.composition.lifespan import lifespan
 from root.config import RootConfig
+from shared.adapters.driven.valkey import build_valkey_client
 from shared.adapters.metrics import build_prom_controller
 from shared.adapters.middleware import (
     AccessLogMiddleware,
@@ -56,7 +61,7 @@ from shared.adapters.problem_details import (
     problem_handler,
     unexpected_to_problem,
 )
-from shared.config import AppEnv, BaseAppConfig, MetricsConfig
+from shared.config import AppEnv, BaseAppConfig, MetricsConfig, ValkeyConfig
 from shared.generics.config import PROJECT_ROOT
 from shared.generics.errors import AdapterError, AppError, DomainError, PortError
 
@@ -155,6 +160,7 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
             Tag(name="Admin Logs", description="JSON + SSE API backing the file-tail log viewer (admin role required)."),
             Tag(name="Metrics", description="Prometheus scrape + a generic by-name custom-metrics demo. Illustrative."),
             Tag(name="Admin UI", description="Server-rendered HTML pages and auth redirects - not a JSON API."),
+            Tag(name="media", description="Video ingest pipeline: upload (202 + outbox), list recent, live SSE feed. Golden example context."),
         ],
     )
 
@@ -183,6 +189,12 @@ def build_app() -> Litestar:
     )
     prom_controller = build_prom_controller(metrics_cfg)
 
+    valkey_cfg = ValkeyConfig()
+    channels = ChannelsPlugin(
+        backend=RedisChannelsStreamBackend(history=0, redis=build_valkey_client(valkey_cfg.url)),
+        channels=[VIDEOS_CHANNEL],
+    )
+
     app = Litestar(
         route_handlers=[
             HealthController,
@@ -193,11 +205,13 @@ def build_app() -> Litestar:
             ExportController,
             AuthorController,
             BookController,
+            VideoController,
+            VideoFeedController,
             static_router,
             prom_controller,
         ],
         middleware=_build_middleware(config, prom_config),
-        plugins=_build_plugins(),
+        plugins=[*_build_plugins(), channels],
         openapi_config=_build_openapi_config(config.app_name),
         # Single Jinja engine bound to the project's static/ root. Templates
         # are referenced by their path under static/ (e.g. "shared/_base.html",

@@ -12,6 +12,7 @@ from auth.ports.driving import AuthFacade
 from db_example_litestar.adapters.db_example_litestar_lifespan_manager import (
     DbExampleLitestarLifespanManager,
 )
+from media_example.adapters.media_example_lifespan_manager import MediaLifespanManager
 from root.composition.container import build_container
 from root.config import RootConfig
 from shared.logging import configure_structlog
@@ -24,7 +25,7 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     config = RootConfig()
     snitchbot.init(service=config.app_name)
 
-    container = build_container(app)
+    container = build_container()
     app.state.container = container
     setup_dishka(container=container, app=app)
 
@@ -47,10 +48,16 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     app.state.auth_facade = await container.get(AuthFacade)
 
     alchemy_manager: DbExampleLitestarLifespanManager | None = None
+    media_manager: MediaLifespanManager | None = None
     try:
         alchemy_manager = await container.get(DbExampleLitestarLifespanManager)
         log.info("db_example_litestar starting")
         await alchemy_manager.start()
+
+        media_manager = await container.get(MediaLifespanManager)
+        log.info("media_example starting")
+        await media_manager.start()
+        log.info("media_example started")
 
         log.info(
             "lifespan started",
@@ -71,6 +78,12 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
                 log.info("db_example_litestar stopped")
         except Exception:
             log.exception("db_example_litestar_stop_failed")
+        try:
+            if media_manager is not None:
+                await media_manager.stop()
+                log.info("media_example stopped")
+        except Exception:
+            log.exception("media_example_stop_failed")
         await container.close()
         log.info(
             "lifespan stopped",
