@@ -2,7 +2,7 @@ from litestar import Controller, get
 from litestar.channels import ChannelsPlugin
 from litestar.response import ServerSentEvent
 
-from ...adapters.driven.listeners import ORDERS_CHANNEL
+from ...ports.driving import ORDERS_CHANNEL
 
 
 class OrderFeedController(Controller):

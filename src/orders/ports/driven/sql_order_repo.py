@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 import asyncpg
 
@@ -43,7 +44,7 @@ class SqlOrderRepo(IOrderRepo):
             )
         except asyncpg.PostgresError as exc:
             raise PortError(f"list recent orders failed: {exc}") from exc
-        by_order: dict[object, list[asyncpg.Record]] = {}
+        by_order: dict[UUID, list[asyncpg.Record]] = {}
         for lr in line_rows:
             by_order.setdefault(lr["order_id"], []).append(lr)
         return [order_to_domain(o, by_order.get(o["id"], [])) for o in order_rows]

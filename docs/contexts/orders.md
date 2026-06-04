@@ -94,6 +94,9 @@ live in shared `RedisConfig` ([docs/infra/redis.md](../infra/redis.md)).
   point is to demonstrate the domain rule, not the validator.
 - `NegativeMoney`, `CurrencyMismatch` (`DomainError`) -> 409. Enforced by the
   `Money` VO.
+- `NonPositiveQuantity` (`DomainError`) -> 409. `OrderLine` rejects a quantity
+  below 1 in `__post_init__` (the wire DTO also guards `quantity >= 1`, but the
+  invariant lives in the domain too).
 
 ## Layers
 

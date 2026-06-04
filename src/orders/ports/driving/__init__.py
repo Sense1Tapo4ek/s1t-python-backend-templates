@@ -6,9 +6,10 @@ from .order_dto import (
     to_command_lines,
     to_model,
 )
+from .order_feed import ORDERS_CHANNEL
 from .orders_facade import OrdersFacade
 
 __all__ = [
-    "OrderLineModel", "OrderModel", "OrderReadDTO", "OrdersFacade",
-    "PlaceOrderRequest", "to_command_lines", "to_model",
+    "ORDERS_CHANNEL", "OrderLineModel", "OrderModel", "OrderReadDTO",
+    "OrdersFacade", "PlaceOrderRequest", "to_command_lines", "to_model",
 ]

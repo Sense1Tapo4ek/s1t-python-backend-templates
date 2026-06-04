@@ -11,6 +11,11 @@ class NegativeMoney(DomainError):
         super().__init__("money amount must not be negative")
 
 
+class NonPositiveQuantity(DomainError):
+    def __init__(self) -> None:
+        super().__init__("order line quantity must be at least 1")
+
+
 class CurrencyMismatch(DomainError):
     def __init__(self, expected: str, got: str) -> None:
         self.expected = expected

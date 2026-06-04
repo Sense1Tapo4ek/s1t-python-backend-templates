@@ -45,12 +45,9 @@ from db_example_sddd.adapters.driving import PerRequestItemController, PooledIte
 from db_example_sddd.app import ItemNotFound
 from metrics.adapters.driving import MetricsDemoController, build_prom_controller
 from metrics.config import MetricsConfig
-from orders.adapters.driven.listeners import (
-    ORDERS_CHANNEL,
-    audit_order_placed,
-    make_feed_listener,
-)
+from orders.adapters.driven.listeners import audit_order_placed, make_feed_listener
 from orders.adapters.driving import OrderController, OrderFeedController
+from orders.ports.driving import ORDERS_CHANNEL
 from root.composition.lifespan import lifespan
 from root.config import RootConfig
 from shared.adapters.driven.redis import build_redis_client
@@ -205,7 +202,7 @@ def build_app() -> Litestar:
         backend=RedisChannelsStreamBackend(history=0, redis=build_redis_client(redis_cfg.url)),
         channels=[ORDERS_CHANNEL],
     )
-    feed_listener = make_feed_listener(channels)
+    feed_listener = make_feed_listener(channels, ORDERS_CHANNEL)
 
     app = Litestar(
         route_handlers=[
