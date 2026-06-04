@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import cast
 
 import asyncpg
@@ -17,6 +18,16 @@ from .ports.driven.litestar_event_bus import _Emitter
 from .ports.driving import OrdersFacade
 
 
+@dataclass(frozen=True, slots=True)
+class OrdersPool:
+    """Distinct DI key for the orders pool. db_example_sddd also provides a bare
+    `asyncpg.Pool` at APP scope; two providers for the same type collide in one
+    container (last wins) and cross-wire the schemas, so each context's pool
+    needs its own type."""
+
+    raw: asyncpg.Pool
+
+
 class OrdersInfraProvider(Provider):
     scope = Scope.APP
 
@@ -28,20 +39,22 @@ class OrdersInfraProvider(Provider):
         return LitestarEventBus(_emitter=cast(_Emitter, app))
 
     @provide
-    async def pool(self, pg: PostgresConfig, config: OrdersConfig) -> asyncpg.Pool:
-        return await build_pool(pg.asyncpg_dsn, schema=config.schema_name, size=config.pool_size)
+    async def pool(self, pg: PostgresConfig, config: OrdersConfig) -> OrdersPool:
+        return OrdersPool(
+            raw=await build_pool(pg.asyncpg_dsn, schema=config.schema_name, size=config.pool_size)
+        )
 
     @provide
-    def lifespan(self, pool: asyncpg.Pool, pg: PostgresConfig) -> OrdersLifespanManager:
-        return OrdersLifespanManager(pool=pool, yoyo_url=pg.yoyo_url)
+    def lifespan(self, pool: OrdersPool, pg: PostgresConfig) -> OrdersLifespanManager:
+        return OrdersLifespanManager(pool=pool.raw, yoyo_url=pg.yoyo_url)
 
 
 class OrdersWebProvider(Provider):
     @provide(scope=Scope.REQUEST)
     async def facade(
-        self, pool: asyncpg.Pool, clock: IClock, event_bus: IEventBus
+        self, pool: OrdersPool, clock: IClock, event_bus: IEventBus
     ) -> AsyncIterator[OrdersFacade]:
-        async with pool.acquire() as conn:
+        async with pool.raw.acquire() as conn:
             repo = SqlOrderRepo(_conn=conn)
             uow = SqlUoW(_conn=conn)
             yield OrdersFacade(

@@ -30,7 +30,9 @@ class OrderModel(msgspec.Struct, kw_only=True):
 class PlaceOrderRequest(msgspec.Struct, kw_only=True):
     customer_ref: Annotated[str, msgspec.Meta(min_length=1, examples=["c-1"])]
     currency: Annotated[str, msgspec.Meta(min_length=3, max_length=3, examples=["USD"])]
-    lines: Annotated[list[OrderLineModel], msgspec.Meta(min_length=1)]
+    # No boundary min_length: an empty order is a domain rule (EmptyOrder ->
+    # 409), demonstrating domain validation rather than a 400 schema reject.
+    lines: list[OrderLineModel]
 
 
 OrderReadDTO = MsgspecDTO[OrderModel]
