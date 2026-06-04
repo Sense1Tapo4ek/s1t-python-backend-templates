@@ -1,85 +1,33 @@
-# TODO
+Архитектурный пайплайн обработки видео
+Вот как выглядит идеальный сквозной процесс в твоей системе:
 
-Deferred work with rationale. Land each one as its own PR.
+1. Прием и Ингресс (Litestar API + Outbox)
+Клиент делает POST запрос на загрузку видео.
 
-## Litestar idiom: Template engine for HTML responses
+Важный шаг Outbox: Внутри одной базы данных в рамках одной ACID-транзакции происходят два действия:
 
-**Scope:** Replace the hand-rolled f-string SSR in
-`src/admin/metrics/adapters/driving/api/metrics_overview_controller.py`
-(and `src/admin/adapters/driving/api/admin_controller.py`,
-`login_controller.py`) with Litestar's `Template` response + a template
-engine plugin (Jinja2 or Mako).
+В таблицу videos сохраняется запись о видео со статусом PENDING.
 
-**Why deferred:** the current f-string approach is intentional and
-lightweight — adding a template engine introduces a runtime dep, a
-plugin registration, and per-template files. Worth doing if/when:
-- A third+ HTML controller needs the same layout (DRY pressure).
-- Designers want to edit templates without touching Python.
-- Auto-escaping becomes a security concern (currently we hand-call
-  `html.escape` on every variable).
+В таблицу outbox_messages записывается событие video_uploaded с метаданными видео.
 
-**Approx effort:** half a day (engine wiring + template files + tests).
+HTTP-ответ возвращается клиенту мгновенно (202 Accepted).
 
-## Litestar idiom: ServerSentEvent for SSE log tail
 
-**Scope:** Replace the manual `Stream(...) + f"data: ...\n\n"` framing
-in `src/admin/log/adapters/driving/api/logs_controller.py::api_stream`
-with Litestar 2.21's `ServerSentEvent` response class.
+2. Доставка сообщения (Outbox Relay -> FastStream)
+   
+Специальный фоновый процесс (Outbox Relay) постоянно вычитывает таблицу outbox_messages, отправляет сообщения в брокер через FastStream и помечает их в БД как отправленные.
 
-**Why deferred:** the swap is ~4 lines smaller but needs verification
-that `ServerSentEvent` either preserves or correctly applies our
-`_SSE_HEADERS` dict (`Cache-Control: no-cache`, `X-Accel-Buffering:
-no`). Without those headers nginx and some browsers buffer the
-response, defeating the live-tail UX. Needs manual smoke against the
-real `/admin/logs/` UI + an nginx-in-front scenario before merging.
+FastStream доставляет событие video_uploaded на микросервис обработки.
 
-**Approx effort:** half a day (swap + manual smoke + integration test
-that asserts headers on the response).
 
-## Compose: wire the `seed` profile
+3. Оркестрация тяжелых задач (Микросервис + SAQ)
+Микросервис обработки ловит событие через FastStream. Чтобы не блокировать поток брокера, он моментально раскидывает «тяжелую» работу веером в SAQ.
 
-**Scope:** `scripts/seed_logs.py` exists and works locally, but
-`docker-compose.yml` doesn't yet expose it as a service. Once the
-pending log-subsystem updates to `docker-compose.yml` land (valkey +
-log-sink services), append the snippet below under `services:`:
+В SAQ параллельно запускаются три независимых воркера:
 
-```yaml
-seed:
-  profiles: ["demo"]
-  image: litestar-base:local
-  env_file:
-    - .env
-  environment:
-    VOLUME_PATH: /data
-  volumes:
-    - app_data:/data
-    - ./scripts:/app/scripts:ro
-    - ./tests:/app/tests:ro
-  depends_on:
-    app:
-      condition: service_started
-  entrypoint: ["/usr/bin/tini", "--"]
-  command:
-    - "python"
-    - "/app/scripts/seed_logs.py"
-    - "--count"
-    - "${SEED_COUNT:-1000}"
-    - "--minutes"
-    - "${SEED_MINUTES:-120}"
-```
+Воркер 1: Конвертация (транскодирование) видео.
 
-Usage: `docker compose --profile demo up seed` after the stack is up.
-The service is one-shot — it writes N rows directly to the SQLite
-volume (bypassing Valkey/sink) and exits. Re-run any time with
-`SEED_COUNT=...` to refresh.
+Воркер 2: Автопроверка на плагиат.
 
-**Why deferred:** keeping `docker-compose.yml` out of the metrics
-branch — it carries pre-existing log-subsystem modifications that
-should land separately.
+Воркер 3: STT (генерация субтитров из аудио).
 
-## Notes
-
-The Template-engine and ServerSentEvent items were intentionally
-skipped from the conciseness audit in commit 1430fdd. Everything else
-from that audit either landed in 1430fdd / 151adee or was deemed not
-worth the trade-off (see commit messages).
