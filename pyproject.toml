@@ -13,6 +13,7 @@ dependencies = [
     "orjson>=3.10",
     "psycopg[binary]>=3.2",
     "pydantic-settings>=2.12.0",
+    "redis[hiredis]>=5.0",
     "snitchbot>=1.2.0",
     "sqlalchemy[asyncio]>=2.0",
     "structlog>=25.5.0",
