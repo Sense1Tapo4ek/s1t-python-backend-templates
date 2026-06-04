@@ -78,3 +78,23 @@ class PostgresConfig(GenericConfig):
     @property
     def yoyo_url(self) -> str:
         return f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
+
+
+class RedisConfig(GenericConfig):
+    model_config = SettingsConfigDict(
+        env_prefix="REDIS_",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
+    )
+
+    host: str = "localhost"
+    port: int = 6379
+    db: int = 0
+    password: str | None = None
+    max_connections: int = 20
+
+    @property
+    def url(self) -> str:
+        auth = f":{self.password}@" if self.password else ""
+        return f"redis://{auth}{self.host}:{self.port}/{self.db}"

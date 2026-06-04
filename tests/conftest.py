@@ -49,6 +49,25 @@ def _pg_env(pg_dsn: str) -> None:
     return
 
 
+@pytest.fixture(scope="session")
+def redis_url() -> Iterator[str]:
+    """Session Redis URL. Reuse REDIS_URL if set (compose/CI), else a container."""
+    if os.environ.get("REDIS_URL"):
+        yield os.environ["REDIS_URL"]
+        return
+
+    from testcontainers.redis import RedisContainer
+
+    with RedisContainer("redis:7") as rc:
+        host = rc.get_container_host_ip()
+        port = rc.get_exposed_port(6379)
+        url = f"redis://{host}:{port}/0"
+        os.environ["REDIS_URL"] = url
+        os.environ["REDIS_HOST"] = host
+        os.environ["REDIS_PORT"] = str(port)
+        yield url
+
+
 @pytest.fixture(autouse=True)
 def _isolate_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep tests independent from the developer's local .env file."""
@@ -68,6 +87,9 @@ def _isolate_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "AUTH_ADMIN_TOKEN",
         "PROMETHEUS_MULTIPROC_DIR",
         "METRICS_MULTIPROC_DIR",
+        "REDIS_URL",
+        "REDIS_HOST",
+        "REDIS_PORT",
     ):
         monkeypatch.delenv(env_var, raising=False)
     yield
