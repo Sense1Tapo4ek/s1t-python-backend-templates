@@ -22,8 +22,13 @@ API.
 | `metrics` | `src/metrics/` | Example infra context: Prometheus `/metrics` endpoint via multiprocess mode, plus a generic by-name custom-metrics facade. See [contexts/metrics.md](contexts/metrics.md). |
 | `db_example_sddd` | `src/db_example_sddd/` | Example context: raw asyncpg (Postgres), pool vs per-request connection variants, yoyo migrations, cross-context ACL example. See [contexts/db_example_sddd.md](contexts/db_example_sddd.md). |
 | `db_example_litestar` | `src/db_example_litestar/` | Example context: SQLAlchemy 2.0 + advanced-alchemy, hybrid layering, `SQLAlchemyDTO`. The only SQLAlchemy user in the template. See [contexts/db_example_litestar.md](contexts/db_example_litestar.md). |
+| `orders` | `src/orders/` | Example context (realtime_litestar): event-driven showcase. `POST /orders` raises a domain event that fans out via Litestar's in-process bus (`litestar.events`) to audit/metrics + a `litestar.channels` SSE feed (Redis-backed). At-most-once, in-process. See [contexts/orders.md](contexts/orders.md). |
 
 Adding a context: see §8 below.
+
+Redis (`redis[hiredis]`) backs `litestar.channels` for the `orders` feed and is
+the shared infra for the planned event-driven Phases 2-3; configured once via
+`RedisConfig` (`REDIS_` prefix). See [infra/redis.md](infra/redis.md).
 
 ---
 

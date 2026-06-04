@@ -168,6 +168,7 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
             Tag(name="db_example (Alchemy)", description="Example CRUD via SQLAlchemy 2.0 + advanced-alchemy. Illustrative; delete when adapting."),
             Tag(name="Admin Logs", description="JSON + SSE API backing the file-tail log viewer (admin role required)."),
             Tag(name="Metrics", description="Prometheus scrape + a generic by-name custom-metrics demo. Illustrative."),
+            Tag(name="orders (realtime)", description="Event-driven example: place an order, list recent, live SSE feed (litestar.events + channels). Illustrative; delete when adapting."),
             Tag(name="Admin UI", description="Server-rendered HTML pages and auth redirects - not a JSON API."),
         ],
     )
