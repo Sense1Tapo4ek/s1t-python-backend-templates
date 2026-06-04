@@ -1,6 +1,0 @@
-from typing import Protocol
-
-
-class IUoW(Protocol):
-    async def __aenter__(self) -> "IUoW": ...
-    async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None: ...

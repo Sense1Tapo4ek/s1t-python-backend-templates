@@ -5,8 +5,6 @@ from typing import Any
 
 from advanced_alchemy.exceptions import NotFoundError as AlchemyNotFoundError
 from litestar import Litestar
-from litestar.channels import ChannelsPlugin
-from litestar.channels.backends.redis import RedisChannelsStreamBackend
 from litestar.connection import Request
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.datastructures import CacheControlHeader
@@ -41,12 +39,8 @@ from admin.log.adapters.driving.api import (
 from auth.adapters.middleware import AuthMiddleware
 from auth.ports.driving import SECURITY_COMPONENTS
 from db_example_litestar.adapters.driving import AuthorController, BookController
-from orders.adapters.driven.listeners import audit_order_placed, make_feed_listener
-from orders.adapters.driving import OrderController, OrderFeedController
-from orders.ports.driving import ORDERS_CHANNEL
 from root.composition.lifespan import lifespan
 from root.config import RootConfig
-from shared.adapters.driven.valkey import build_valkey_client
 from shared.adapters.metrics import build_prom_controller
 from shared.adapters.middleware import (
     AccessLogMiddleware,
@@ -62,7 +56,7 @@ from shared.adapters.problem_details import (
     problem_handler,
     unexpected_to_problem,
 )
-from shared.config import AppEnv, BaseAppConfig, MetricsConfig, ValkeyConfig
+from shared.config import AppEnv, BaseAppConfig, MetricsConfig
 from shared.generics.config import PROJECT_ROOT
 from shared.generics.errors import AdapterError, AppError, DomainError, PortError
 
@@ -160,7 +154,6 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
             Tag(name="db_example (Alchemy)", description="Example CRUD via SQLAlchemy 2.0 + advanced-alchemy. Illustrative; delete when adapting."),
             Tag(name="Admin Logs", description="JSON + SSE API backing the file-tail log viewer (admin role required)."),
             Tag(name="Metrics", description="Prometheus scrape + a generic by-name custom-metrics demo. Illustrative."),
-            Tag(name="orders (realtime)", description="Event-driven example: place an order, list recent, live SSE feed (litestar.events + channels). Illustrative; delete when adapting."),
             Tag(name="Admin UI", description="Server-rendered HTML pages and auth redirects - not a JSON API."),
         ],
     )
@@ -190,15 +183,6 @@ def build_app() -> Litestar:
     )
     prom_controller = build_prom_controller(metrics_cfg)
 
-    # The ChannelsPlugin owns its Valkey client's lifecycle (started/stopped via
-    # the app lifespan); history=0 means the live feed replays no backlog.
-    valkey_cfg = ValkeyConfig()
-    channels = ChannelsPlugin(
-        backend=RedisChannelsStreamBackend(history=0, redis=build_valkey_client(valkey_cfg.url)),
-        channels=[ORDERS_CHANNEL],
-    )
-    feed_listener = make_feed_listener(channels, ORDERS_CHANNEL)
-
     app = Litestar(
         route_handlers=[
             HealthController,
@@ -209,14 +193,11 @@ def build_app() -> Litestar:
             ExportController,
             AuthorController,
             BookController,
-            OrderController,
-            OrderFeedController,
             static_router,
             prom_controller,
         ],
         middleware=_build_middleware(config, prom_config),
-        plugins=[*_build_plugins(), channels],
-        listeners=[audit_order_placed, feed_listener],
+        plugins=_build_plugins(),
         openapi_config=_build_openapi_config(config.app_name),
         # Single Jinja engine bound to the project's static/ root. Templates
         # are referenced by their path under static/ (e.g. "shared/_base.html",
