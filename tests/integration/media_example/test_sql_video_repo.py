@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from media_example.domain import Video
 from media_example.domain.video_status_vo import VideoStatus
@@ -6,7 +7,7 @@ from media_example.ports.driven.sql_video_repo import SqlVideoRepo
 
 
 @pytest.mark.asyncio
-async def test_save_and_get_by_id_roundtrip(conn) -> None:
+async def test_save_and_get_by_id_roundtrip(session: AsyncSession) -> None:
     """
     Given a new Video built via upload(),
     When saved and fetched by id,
@@ -14,7 +15,7 @@ async def test_save_and_get_by_id_roundtrip(conn) -> None:
     """
     # Arrange
     video = Video.upload(source_key="s3://bucket/x.mp4")
-    repo = SqlVideoRepo(_conn=conn)
+    repo = SqlVideoRepo(_session=session)
 
     # Act
     await repo.save(video)
@@ -29,7 +30,7 @@ async def test_save_and_get_by_id_roundtrip(conn) -> None:
 
 
 @pytest.mark.asyncio
-async def test_save_upsert_updates_status(conn) -> None:
+async def test_save_upsert_updates_status(session: AsyncSession) -> None:
     """
     Given a saved PENDING video that is then marked PROCESSING,
     When the updated video is saved again,
@@ -37,14 +38,14 @@ async def test_save_upsert_updates_status(conn) -> None:
     """
     # Arrange
     video = Video.upload(source_key="s3://bucket/y.mp4")
-    repo = SqlVideoRepo(_conn=conn)
+    repo = SqlVideoRepo(_session=session)
     await repo.save(video)
 
     # Act
     video.mark_processing()
     await repo.save(video)
 
-    # Assert — locate by id, don't assume empty table
+    # Assert -- locate by id, don't assume empty table
     loaded = await repo.get_by_id(video.id)
     assert loaded is not None
     assert loaded.id == video.id

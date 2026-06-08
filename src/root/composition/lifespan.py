@@ -12,7 +12,7 @@ from auth.ports.driving import AuthFacade
 from db_example_litestar.adapters.lifespan_manager import (
     DbExampleLitestarLifespanManager,
 )
-from media_example.adapters.media_example_lifespan_manager import MediaLifespanManager
+from media_example.adapters.lifespan_manager import MediaLifespanManager
 from root.composition.container import build_container
 from root.config import RootConfig
 from shared.logging import configure_structlog

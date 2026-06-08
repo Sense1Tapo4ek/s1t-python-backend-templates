@@ -1,16 +1,16 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
-import asyncpg
 import redis.asyncio as aioredis
 from dishka import Provider, Scope, provide
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from shared.adapters.driven.postgres import SqlUoW, build_pool
+from shared.adapters.driven.postgres import SqlUoW, build_engine, build_sessionmaker
 from shared.app import IClock
 from shared.config import PostgresConfig
 
 from .adapters.driven.outbox_relay import OutboxRelay
-from .adapters.media_example_lifespan_manager import MediaLifespanManager
+from .adapters.lifespan_manager import MediaLifespanManager
 from .app import (
     ListVideosQuery,
     MarkDoneUC,
@@ -25,8 +25,9 @@ from .ports.driving.media_facade import MediaFacade
 
 
 @dataclass(frozen=True, slots=True)
-class MediaPool:
-    raw: asyncpg.Pool
+class MediaDb:
+    engine: AsyncEngine
+    sessionmaker: async_sessionmaker[AsyncSession]
 
 
 class MediaInfraProvider(Provider):
@@ -35,25 +36,31 @@ class MediaInfraProvider(Provider):
     config = provide(MediaConfig)
 
     @provide
-    async def pool(self, pg: PostgresConfig, config: MediaConfig) -> MediaPool:
-        return MediaPool(raw=await build_pool(pg.asyncpg_dsn, schema=config.schema_name, size=config.pool_size))
+    def db(self, pg: PostgresConfig, config: MediaConfig) -> MediaDb:
+        engine = build_engine(pg.alchemy_url, config.schema_name)
+        return MediaDb(engine=engine, sessionmaker=build_sessionmaker(engine))
 
     @provide
-    def relay(self, pool: MediaPool, valkey: aioredis.Redis, config: MediaConfig) -> OutboxRelay:
-        return OutboxRelay(_pool=pool.raw, _valkey=valkey, _batch=config.relay_batch, _idle_sleep=config.relay_idle_sleep)
+    def relay(self, db: MediaDb, valkey: aioredis.Redis, config: MediaConfig) -> OutboxRelay:
+        return OutboxRelay(
+            _sessionmaker=db.sessionmaker,
+            _valkey=valkey,
+            _batch=config.relay_batch,
+            _idle_sleep=config.relay_idle_sleep,
+        )
 
     @provide
-    def lifespan(self, pool: MediaPool, pg: PostgresConfig, relay: OutboxRelay) -> MediaLifespanManager:
-        return MediaLifespanManager(pool=pool.raw, yoyo_url=pg.yoyo_url, relay=relay)
+    def lifespan(self, db: MediaDb, pg: PostgresConfig, relay: OutboxRelay) -> MediaLifespanManager:
+        return MediaLifespanManager(engine=db.engine, yoyo_url=pg.yoyo_url, relay=relay)
 
 
 class MediaWebProvider(Provider):
     @provide(scope=Scope.REQUEST)
-    async def facade(self, pool: MediaPool, clock: IClock) -> AsyncIterator[MediaFacade]:
-        async with pool.raw.acquire() as conn:
-            repo = SqlVideoRepo(_conn=conn)
-            outbox = SqlOutboxRepo(_conn=conn)
-            uow = SqlUoW(_conn=conn)
+    async def facade(self, db: MediaDb, clock: IClock) -> AsyncIterator[MediaFacade]:
+        async with db.sessionmaker() as session:
+            repo = SqlVideoRepo(_session=session)
+            outbox = SqlOutboxRepo(_session=session)
+            uow = SqlUoW(_session=session)
             yield MediaFacade(
                 _upload=UploadVideoUC(_repo=repo, _uow=uow, _outbox=outbox, _clock=clock),
                 _recent=ListVideosQuery(_repo=repo),

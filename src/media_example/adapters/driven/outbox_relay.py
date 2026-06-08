@@ -1,24 +1,27 @@
 import asyncio
 from dataclasses import dataclass
 
-import asyncpg
 import redis.asyncio as aioredis
 import structlog
+from sqlalchemy import bindparam, text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 _log = structlog.get_logger("media_example.relay")
 VIDEO_UPLOADED_STREAM = "video_uploaded"
 
-_CLAIM = """
-SELECT id, event_type, payload FROM media.outbox_messages
-WHERE sent_at IS NULL ORDER BY created_at
-FOR UPDATE SKIP LOCKED LIMIT $1
-"""
-_MARK = "UPDATE media.outbox_messages SET sent_at = now() WHERE id = ANY($1::uuid[])"
+_CLAIM = text(
+    "SELECT id, event_type, payload FROM media.outbox_messages "
+    "WHERE sent_at IS NULL ORDER BY created_at "
+    "FOR UPDATE SKIP LOCKED LIMIT :batch"
+)
+_MARK = text("UPDATE media.outbox_messages SET sent_at = now() WHERE id IN :ids").bindparams(
+    bindparam("ids", expanding=True)
+)
 
 
 @dataclass(slots=True, kw_only=True)
 class OutboxRelay:
-    _pool: asyncpg.Pool
+    _sessionmaker: async_sessionmaker[AsyncSession]
     _valkey: aioredis.Redis
     _batch: int = 100
     _idle_sleep: float = 0.5
@@ -34,8 +37,8 @@ class OutboxRelay:
                 await asyncio.sleep(self._idle_sleep)
 
     async def _drain_once(self) -> int:
-        async with self._pool.acquire() as conn, conn.transaction():
-            rows = await conn.fetch(_CLAIM, self._batch)
+        async with self._sessionmaker() as session, session.begin():
+            rows = (await session.execute(_CLAIM, {"batch": self._batch})).mappings().all()
             if not rows:
                 return 0
             for r in rows:
@@ -43,6 +46,6 @@ class OutboxRelay:
                     VIDEO_UPLOADED_STREAM,
                     {"event_id": str(r["id"]), "event_type": r["event_type"], "payload": r["payload"]},
                 )
-            await conn.execute(_MARK, [r["id"] for r in rows])
+            await session.execute(_MARK, {"ids": [r["id"] for r in rows]})
             _log.info("relay published", count=len(rows))
             return len(rows)

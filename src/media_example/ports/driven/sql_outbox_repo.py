@@ -1,30 +1,34 @@
 from dataclasses import dataclass
+from uuid import uuid4
 
-import asyncpg
+import msgspec
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.generics.errors import PortError
 
 from ...app import IOutboxRepo
 from ...domain import VideoUploaded
-from .outbox_mappers import encode_payload, to_integration
+from .integration_events import VideoUploadedIntegration
+from .orm_models import OutboxRow
 
 
 @dataclass(slots=True, kw_only=True)
 class SqlOutboxRepo(IOutboxRepo):
-    _conn: asyncpg.Connection
+    _session: AsyncSession
 
     async def add(self, event: VideoUploaded) -> None:
-        integration = to_integration(event)
-        payload = encode_payload(integration)
+        integration = VideoUploadedIntegration(
+            event_id=uuid4(),
+            video_id=event.video_id,
+            source_key=event.source_key,
+            uploaded_at=event.uploaded_at,
+        )
+        payload = msgspec.json.encode(integration)
         try:
-            await self._conn.execute(
-                """
-                INSERT INTO outbox_messages (id, event_type, payload, created_at)
-                VALUES ($1, $2, $3, now())
-                """,
-                integration.event_id,
-                integration.event_type,
-                payload,
+            self._session.add(
+                OutboxRow(id=integration.event_id, event_type=integration.event_type, payload=payload)
             )
-        except asyncpg.PostgresError as exc:
+            await self._session.flush()
+        except SQLAlchemyError as exc:
             raise PortError(f"add outbox message failed: {exc}") from exc
