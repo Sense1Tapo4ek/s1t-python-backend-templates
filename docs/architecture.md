@@ -31,6 +31,8 @@ Valkey Stream. Producer: `litestar_backend` outbox relay. Consumer:
 OWN inbound schema and never imports the producer's integration-event type;
 idempotency is by `event_id`.
 
+Full field-by-field contract: [contract/video_uploaded.md](contract/video_uploaded.md).
+
 ---
 
 ## 1. Bounded contexts
