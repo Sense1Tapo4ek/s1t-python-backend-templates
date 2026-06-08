@@ -7,9 +7,9 @@ from advanced_alchemy.filters import (
 )
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from db_example_litestar.adapters.driven.engine import build_engine, build_sessionmaker
 from db_example_litestar.ports.driven.services.author_service import AuthorService
 from db_example_litestar.ports.orm_models import AuthorModel, BookModel
+from shared.adapters.driven.postgres import build_engine, build_sessionmaker
 
 _SCHEMA = "db_example_litestar"
 

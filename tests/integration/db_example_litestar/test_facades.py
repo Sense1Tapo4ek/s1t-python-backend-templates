@@ -3,11 +3,11 @@ import pytest_asyncio
 from advanced_alchemy.base import UUIDAuditBase
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from db_example_litestar.adapters.driven.engine import build_engine, build_sessionmaker
 from db_example_litestar.ports.driven.services.author_service import AuthorService
 from db_example_litestar.ports.driven.services.book_service import BookService
 from db_example_litestar.ports.driving import AuthorFacade, BookFacade
 from db_example_litestar.ports.orm_models import AuthorModel, BookModel
+from shared.adapters.driven.postgres import build_engine, build_sessionmaker
 
 _SCHEMA = "db_example_litestar"
 

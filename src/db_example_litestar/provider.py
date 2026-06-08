@@ -3,9 +3,9 @@ from collections.abc import AsyncIterator
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from shared.adapters.driven.postgres import build_engine, build_sessionmaker
 from shared.config import PostgresConfig
 
-from .adapters.driven.engine import build_engine, build_sessionmaker
 from .adapters.lifespan_manager import DbExampleLitestarLifespanManager
 from .config import DbExampleLitestarConfig
 from .ports.driven.services.author_service import AuthorService
