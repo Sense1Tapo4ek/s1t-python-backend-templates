@@ -7,9 +7,9 @@ Valkey Stream and fans heavy work out to SAQ jobs, joined in Valkey. Shares no
 code with `litestar_backend` -- only the wire contract (see
 [../architecture.md](../architecture.md)).
 
-Status: skeleton (slice 1). The `media_processing` context, the three SAQ
-execution models (async / thread pool / process pool), and the Valkey join land
-in slice 2 -- see
+Status: implemented (slice 2). The `media_processing` context, the three SAQ
+execution models, and the Valkey join are live. Return events + SSE broadcast
+are Phase C -- see
 [../superpowers/specs/2026-06-08-event-microservice-2-service-monorepo-design.md](../superpowers/specs/2026-06-08-event-microservice-2-service-monorepo-design.md).
 
 ## Layout
