@@ -3,6 +3,7 @@ from typing import Any
 import structlog
 
 from media_processing.adapters.driven.executors import build_process_pool, build_thread_pool
+from media_processing.adapters.driven.metrics import start_metrics_server
 from media_processing.adapters.driven.saq_setup import build_queue
 from media_processing.adapters.driving import plagiarism, stt, transcode
 from media_processing.config import MediaProcessingConfig
@@ -17,6 +18,7 @@ _config = MediaProcessingConfig()
 
 async def startup(ctx: dict[str, Any]) -> None:
     configure_logging()
+    start_metrics_server(_config.metrics_port)
     container = build_container()
     ctx["container"] = container
     ctx["config"] = _config

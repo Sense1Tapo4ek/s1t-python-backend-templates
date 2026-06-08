@@ -6,6 +6,7 @@ from faststream import Context
 from faststream.redis import RedisMessage, RedisRouter, StreamSub
 
 from ...ports.driving import MediaProcessingFacade, VideoUploadedSchema
+from ..driven.metrics import EVENTS_RECEIVED
 
 VIDEO_UPLOADED_STREAM = "video_uploaded"
 CONSUMER_GROUP = "media_processing"
@@ -17,6 +18,7 @@ router = RedisRouter()
 
 async def handle_uploaded(payload: str | bytes, facade: MediaProcessingFacade) -> None:
     event = msgspec.json.decode(payload, type=VideoUploadedSchema)
+    EVENTS_RECEIVED.inc()
     _log.info("video_uploaded received", video_id=str(event.video_id), event_id=str(event.event_id))
     await facade.on_uploaded(event.video_id)
 

@@ -21,6 +21,7 @@ class MediaProcessingConfig(BaseSettings):
     join_ttl_seconds: int = 3600
     job_retries: int = 3
     job_timeout_seconds: int = 120
+    metrics_port: int = 9100
 
     @model_validator(mode="after")
     def _fan_out_matches_job_kinds(self) -> "MediaProcessingConfig":

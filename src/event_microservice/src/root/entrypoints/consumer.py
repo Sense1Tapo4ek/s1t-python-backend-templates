@@ -1,7 +1,9 @@
 from faststream import FastStream
 from faststream.redis import RedisBroker
 
+from media_processing.adapters.driven.metrics import start_metrics_server
 from media_processing.adapters.driving import router
+from media_processing.config import MediaProcessingConfig
 from media_processing.ports.driving import MediaProcessingFacade
 from root.composition.container import build_container
 from root.config import RootConfig
@@ -20,6 +22,8 @@ def build_app() -> FastStream:
     async def _startup() -> None:
         facade = await container.get(MediaProcessingFacade)
         app.context.set_global("facade", facade)
+        cfg = await container.get(MediaProcessingConfig)
+        start_metrics_server(cfg.metrics_port)
 
     @app.on_shutdown
     async def _shutdown() -> None:
