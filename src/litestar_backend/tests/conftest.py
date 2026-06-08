@@ -87,9 +87,11 @@ def _isolate_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "AUTH_ADMIN_TOKEN",
         "PROMETHEUS_MULTIPROC_DIR",
         "METRICS_MULTIPROC_DIR",
-        "VALKEY_URL",
-        "VALKEY_HOST",
-        "VALKEY_PORT",
+        # VALKEY_* are intentionally NOT stripped: create_app() builds the
+        # litestar.channels Redis backend at startup, so every full-app e2e
+        # test transitively needs a reachable Valkey -- exactly like POSTGRES_*
+        # (also kept). The infra layer (compose env / the valkey_url
+        # testcontainer fixture) owns these values.
     ):
         monkeypatch.delenv(env_var, raising=False)
     yield

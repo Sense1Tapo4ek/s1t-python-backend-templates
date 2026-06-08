@@ -550,7 +550,7 @@ prometheus = [
 ]
 
 [[package]]
-name = "litestar-base"
+name = "litestar-backend"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [

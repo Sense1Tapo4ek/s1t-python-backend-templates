@@ -15,7 +15,10 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      # postgres:18 stores data in a major-version subdir and requires the
+      # mount at /var/lib/postgresql (not .../data); the old path trips the
+      # image's layout guard and the container exits on start.
+      - pg_data:/var/lib/postgresql
 
   valkey:
     image: valkey/valkey:8
@@ -27,14 +30,14 @@ services:
     volumes:
       - valkey_data:/data
 
-  app:
+  litestar_backend:
     build:
-      context: .
+      context: ./src/litestar_backend
       args:
         GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-unknown}
         GIT_BRANCH:     ${GIT_BRANCH:-unknown}
         GIT_DIRTY:      ${GIT_DIRTY:-0}
-    image: litestar-base:local
+    image: litestar-backend:local
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8000}:8000"
@@ -88,16 +91,18 @@ services:
   # Test/CI runner — full green gate (ruff + mypy + pytest) in the same uv
   # toolchain as the app, with the `dev` dependency group + tests/ layered on.
   # Profile-gated so `docker compose up` never starts it.
-  #   docker compose run --rm test                      # full gate
-  #   docker compose run --rm test pytest tests/unit -q # subset
-  test:
+  #   docker compose run --rm litestar_backend_test                      # full gate
+  #   docker compose run --rm litestar_backend_test pytest tests/unit -q # subset
+  litestar_backend_test:
     profiles: ["test"]
     build:
-      context: .
+      context: ./src/litestar_backend
       target: tester
-    image: litestar-base:test
+    image: litestar-backend:test
     depends_on:
       db:
+        condition: service_healthy
+      valkey:
         condition: service_healthy
     environment:
       VOLUME_PATH: /tmp/data
@@ -106,6 +111,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: litestar_base
+      # Integration/e2e tests reach the compose valkey instead of spinning a
+      # testcontainer (no docker socket inside this container). The conftest
+      # valkey_url fixture reuses VALKEY_URL; the e2e app config reads
+      # VALKEY_HOST/VALKEY_PORT (env_prefix VALKEY_).
+      VALKEY_URL: redis://valkey:6379/0
+      VALKEY_HOST: valkey
+      VALKEY_PORT: 6379
       # No .env in the test image; disable the Telegram reporter so e2e tests
       # that boot the app via lifespan don't demand a token.
       SNITCHBOT_DISABLED: "1"
