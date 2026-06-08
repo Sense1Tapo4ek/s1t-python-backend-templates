@@ -1,7 +1,7 @@
 from faststream import FastStream
 from faststream.redis import RedisBroker
 
-from media_processing.adapters.driving import bind_facade, router
+from media_processing.adapters.driving import router
 from media_processing.ports.driving import MediaProcessingFacade
 from root.composition.container import build_container
 from root.config import RootConfig
@@ -19,7 +19,7 @@ def build_app() -> FastStream:
     @app.on_startup
     async def _startup() -> None:
         facade = await container.get(MediaProcessingFacade)
-        bind_facade(facade)
+        app.context.set_global("facade", facade)
 
     @app.on_shutdown
     async def _shutdown() -> None:
