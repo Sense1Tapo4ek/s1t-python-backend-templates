@@ -9,8 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.generics.errors import PortError
 
 from ...app import IVideoRepo
-from ...domain import Video
-from ...domain.video_status_vo import VideoStatus
+from ...domain import Video, VideoStatus
 from .orm_models import VideoRow
 
 
