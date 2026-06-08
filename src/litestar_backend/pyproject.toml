@@ -1,8 +1,7 @@
 [project]
-name = "litestar-base"
+name = "litestar_backend"
 version = "1.0.0"
-description = "Add your description here"
-readme = "README.md"
+description = "Litestar backend service (media_example, auth, admin, db_example_litestar)"
 requires-python = ">=3.12"
 dependencies = [
     "advanced-alchemy>=1.11",
