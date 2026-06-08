@@ -8,7 +8,9 @@ from shared.adapters.driven.valkey import build_valkey
 class RootProvider(Provider):
     scope = Scope.APP
 
-    config = provide(RootConfig)
+    @provide
+    def config(self) -> RootConfig:
+        return RootConfig()
 
     @provide
     def valkey(self, config: RootConfig) -> aioredis.Redis:

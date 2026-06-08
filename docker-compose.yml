@@ -124,6 +124,34 @@ services:
     tmpfs:
       - /tmp/data
 
+  event_microservice:
+    build:
+      context: ./src/event_microservice
+    image: event-microservice:local
+    restart: unless-stopped
+    environment:
+      VALKEY_URL: redis://valkey:6379/0
+    depends_on:
+      valkey:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  event_microservice_test:
+    profiles: ["test"]
+    build:
+      context: ./src/event_microservice
+      target: tester
+    image: event-microservice:test
+    depends_on:
+      valkey:
+        condition: service_healthy
+    environment:
+      VALKEY_URL: redis://valkey:6379/0
+
 volumes:
   app_data:
   pg_data:
