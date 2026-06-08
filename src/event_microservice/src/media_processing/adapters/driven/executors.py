@@ -1,4 +1,5 @@
 import hashlib
+import multiprocessing
 import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
@@ -8,17 +9,22 @@ def build_thread_pool(size: int) -> ThreadPoolExecutor:
 
 
 def build_process_pool(size: int) -> ProcessPoolExecutor:
-    return ProcessPoolExecutor(max_workers=size)
+    # 'spawn', not the Linux default 'fork': forking a multi-threaded async worker
+    # can inherit a held lock (redis pool, structlog) and deadlock the child.
+    return ProcessPoolExecutor(max_workers=size, mp_context=multiprocessing.get_context("spawn"))
 
 
 def plagiarism_blocking(video_id: str, work_seconds: float) -> str:
-    """Blocking / GIL-releasing stand-in run off the event loop in a thread."""
+    """Stand-in for a blocking call that cannot be awaited (sync driver, C extension).
+
+    Dispatched to a thread so the event loop is not stalled. GIL release is a
+    bonus, not the reason -- the reason is that the call blocks its OS thread.
+    """
     time.sleep(work_seconds)
     return hashlib.sha256(video_id.encode()).hexdigest()
 
 
 def transcode_cpu(video_id: str, iterations: int) -> int:
-    """CPU-bound stand-in run in a separate process (true parallelism past the GIL)."""
     total = 0
     for i in range(iterations):
         total += i * i
