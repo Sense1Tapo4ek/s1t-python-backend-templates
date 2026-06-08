@@ -1,3 +1,5 @@
+from collections.abc import AsyncIterator
+
 import redis.asyncio as aioredis
 from dishka import AsyncContainer, Provider, Scope, make_async_container, provide
 
@@ -14,8 +16,12 @@ class RootProvider(Provider):
         return RootConfig()
 
     @provide
-    def valkey(self, config: RootConfig) -> aioredis.Redis:
-        return build_valkey(config.valkey_url)
+    async def valkey(self, config: RootConfig) -> AsyncIterator[aioredis.Redis]:
+        client = build_valkey(config.valkey_url)
+        try:
+            yield client
+        finally:
+            await client.aclose()
 
 
 def build_container() -> AsyncContainer:

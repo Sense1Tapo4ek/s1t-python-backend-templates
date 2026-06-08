@@ -16,7 +16,7 @@ class TestSaqJobQueue:
         await queue.connect()
         try:
             before = await queue.count("queued")
-            job_queue = SaqJobQueue(_queue=queue)
+            job_queue = SaqJobQueue(_queue=queue, _retries=3, _timeout=120)
 
             # Act
             await job_queue.enqueue(uuid4(), JobKind.STT)

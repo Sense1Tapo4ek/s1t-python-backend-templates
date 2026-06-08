@@ -22,8 +22,8 @@ class MediaProcessingProvider(Provider):
         return Queue.from_url(root.valkey_url)
 
     @provide
-    def job_queue(self, queue: Queue) -> IJobQueue:
-        return SaqJobQueue(_queue=queue)
+    def job_queue(self, queue: Queue, config: MediaProcessingConfig) -> IJobQueue:
+        return SaqJobQueue(_queue=queue, _retries=config.job_retries, _timeout=config.job_timeout_seconds)
 
     @provide
     def join_store(self, valkey: aioredis.Redis, config: MediaProcessingConfig) -> IJoinStore:
