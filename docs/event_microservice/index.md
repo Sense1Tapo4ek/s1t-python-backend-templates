@@ -17,7 +17,7 @@ are Phase C -- see
 - `src/root/` -- composition (Dishka container) + two entrypoints:
   `consumer` (FastStream app) and `saq_worker` (SAQ settings).
 - `src/shared/` -- own Valkey client, structlog setup, base errors/config.
-- `src/media_processing/` -- the bounded context (empty until slice 2).
+- `src/media_processing/` -- the bounded context: domain (JobKind, JoinPolicy), app (use cases), ports (facade, Valkey join store, SAQ queue), adapters (FastStream consumer, 3 SAQ jobs).
 
 ## Run
 

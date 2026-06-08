@@ -24,6 +24,7 @@ class ValkeyJoinStore(IJoinStore):
         try:
             async with self._valkey.pipeline(transaction=True) as pipe:
                 pipe.sadd(key, kind.value)
+                # reset TTL on each completion so a slow final job cannot let the join expire mid-flight
                 pipe.expire(key, self._ttl_seconds)
                 pipe.scard(key)
                 results = await pipe.execute()

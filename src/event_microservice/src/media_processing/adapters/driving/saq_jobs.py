@@ -7,14 +7,14 @@ from ..driven.executors import plagiarism_blocking, transcode_cpu
 
 
 async def stt(ctx: dict[str, Any], *, video_id: str) -> None:
-    """Async / I/O-bound: await an external STT API (stand-in: asyncio.sleep)."""
+    """I/O-bound: awaits the external STT API; no executor needed."""
     config = ctx["config"]
     await asyncio.sleep(config.fake_work_seconds)
     await ctx["facade"].complete_job(UUID(video_id), JobKind.STT)
 
 
 async def plagiarism(ctx: dict[str, Any], *, video_id: str) -> None:
-    """Thread pool: a blocking / GIL-releasing call run off the event loop."""
+    """Thread pool: a blocking call that cannot be awaited, dispatched off the event loop."""
     config = ctx["config"]
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(
