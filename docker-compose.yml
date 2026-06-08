@@ -140,6 +140,23 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  event_microservice_worker:
+    build:
+      context: ./src/event_microservice
+    image: event-microservice:local
+    restart: unless-stopped
+    command: ["saq", "root.entrypoints.saq_worker.settings"]
+    environment:
+      VALKEY_URL: redis://valkey:6379/0
+    depends_on:
+      valkey:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   event_microservice_test:
     profiles: ["test"]
     build:
