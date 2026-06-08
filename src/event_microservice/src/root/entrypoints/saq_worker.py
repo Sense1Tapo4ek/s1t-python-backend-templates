@@ -1,15 +1,15 @@
 from typing import Any
 
-from saq import Queue
+from media_processing.adapters.driving import plagiarism, stt, transcode
+from media_processing.adapters.driven.saq_setup import build_queue, shutdown, startup
+from media_processing.config import MediaProcessingConfig
 
-from root.config import RootConfig
+_config = MediaProcessingConfig()
 
-_config = RootConfig()
-_queue = Queue.from_url(_config.valkey_url)
-
-# Slice 2 fills `functions` with the 3 SAQ jobs and adds startup/shutdown hooks
-# that build and own the thread/process pools.
 settings: dict[str, Any] = {
-    "queue": _queue,
-    "functions": [],
+    "queue": build_queue(),
+    "functions": [stt, plagiarism, transcode],
+    "concurrency": _config.worker_concurrency,
+    "startup": startup,
+    "shutdown": shutdown,
 }

@@ -1,6 +1,9 @@
 from faststream import FastStream
 from faststream.redis import RedisBroker
 
+from media_processing.adapters.driving import bind_facade, router
+from media_processing.ports.driving import MediaProcessingFacade
+from root.composition.container import build_container
 from root.config import RootConfig
 from shared.logging import configure_logging
 
@@ -9,8 +12,20 @@ def build_app() -> FastStream:
     configure_logging()
     config = RootConfig()
     broker = RedisBroker(config.valkey_url)
-    # Slice 2 registers the `video_uploaded` stream subscriber on `broker` here.
-    return FastStream(broker)
+    broker.include_router(router)
+    app = FastStream(broker)
+    container = build_container()
+
+    @app.on_startup
+    async def _startup() -> None:
+        facade = await container.get(MediaProcessingFacade)
+        bind_facade(facade)
+
+    @app.on_shutdown
+    async def _shutdown() -> None:
+        await container.close()
+
+    return app
 
 
 app = build_app()
