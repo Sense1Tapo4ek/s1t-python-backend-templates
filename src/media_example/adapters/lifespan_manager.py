@@ -2,8 +2,6 @@ import asyncio
 import contextlib
 from dataclasses import dataclass, field
 
-from sqlalchemy.ext.asyncio import AsyncEngine
-
 from shared.adapters.driven.postgres import run_migrations
 from shared.generics.config import PROJECT_ROOT
 
@@ -14,7 +12,6 @@ _MIGRATIONS_DIR = str(PROJECT_ROOT / "migrations" / "media")
 
 @dataclass(slots=True, kw_only=True)
 class MediaLifespanManager:
-    engine: AsyncEngine
     yoyo_url: str
     relay: OutboxRelay
     _task: asyncio.Task[None] | None = field(default=None)
@@ -28,4 +25,3 @@ class MediaLifespanManager:
             self._task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-        await self.engine.dispose()

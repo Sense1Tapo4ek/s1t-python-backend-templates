@@ -1,5 +1,5 @@
 # 0024 - media_example is the single golden context
-Status: accepted
+Status: accepted (data-layer choice revised by 0025: SQLAlchemy, not raw asyncpg)
 Date: 2026-06-08
 
 Supersedes 0011, 0020.

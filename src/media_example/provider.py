@@ -36,9 +36,12 @@ class MediaInfraProvider(Provider):
     config = provide(MediaConfig)
 
     @provide
-    def db(self, pg: PostgresConfig, config: MediaConfig) -> MediaDb:
+    async def db(self, pg: PostgresConfig, config: MediaConfig) -> AsyncIterator[MediaDb]:
         engine = build_engine(pg.alchemy_url, config.schema_name, pool_size=config.pool_size)
-        return MediaDb(engine=engine, sessionmaker=build_sessionmaker(engine))
+        try:
+            yield MediaDb(engine=engine, sessionmaker=build_sessionmaker(engine))
+        finally:
+            await engine.dispose()
 
     @provide
     def relay(self, db: MediaDb, valkey: aioredis.Redis, config: MediaConfig) -> OutboxRelay:
@@ -50,8 +53,8 @@ class MediaInfraProvider(Provider):
         )
 
     @provide
-    def lifespan(self, db: MediaDb, pg: PostgresConfig, relay: OutboxRelay) -> MediaLifespanManager:
-        return MediaLifespanManager(engine=db.engine, yoyo_url=pg.yoyo_url, relay=relay)
+    def lifespan(self, pg: PostgresConfig, relay: OutboxRelay) -> MediaLifespanManager:
+        return MediaLifespanManager(yoyo_url=pg.yoyo_url, relay=relay)
 
 
 class MediaWebProvider(Provider):

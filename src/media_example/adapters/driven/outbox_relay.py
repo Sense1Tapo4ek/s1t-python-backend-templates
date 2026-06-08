@@ -9,12 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 _log = structlog.get_logger("media_example.relay")
 VIDEO_UPLOADED_STREAM = "video_uploaded"
 
+# Unqualified table names resolve via the engine's search_path (set to the
+# context schema in build_engine), so the relay follows MEDIA_SCHEMA_NAME.
 _CLAIM = text(
-    "SELECT id, event_type, payload FROM media.outbox_messages "
+    "SELECT id, event_type, payload FROM outbox_messages "
     "WHERE sent_at IS NULL ORDER BY created_at "
     "FOR UPDATE SKIP LOCKED LIMIT :batch"
 )
-_MARK = text("UPDATE media.outbox_messages SET sent_at = now() WHERE id IN :ids").bindparams(
+_MARK = text("UPDATE outbox_messages SET sent_at = now() WHERE id IN :ids").bindparams(
     bindparam("ids", expanding=True)
 )
 

@@ -19,7 +19,7 @@ API.
 | `auth` | `src/auth/` | Bearer/cookie auth: token resolution, `AuthMiddleware`, `require_role` guards. See [contexts/auth.md](contexts/auth.md). |
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
 | `admin/log` | `src/admin/log/` | Sub-context: file-tail log viewer over the rotating JSONL file the app writes; SSE live tail, NDJSON/CSV export. See [contexts/admin-log.md](contexts/admin-log.md). |
-| `db_example_litestar` | `src/db_example_litestar/` | Example context: SQLAlchemy 2.0 + advanced-alchemy, hybrid layering, `SQLAlchemyDTO`. The only SQLAlchemy user in the template. See [contexts/db_example_litestar.md](contexts/db_example_litestar.md). |
+| `db_example_litestar` | `src/db_example_litestar/` | Example context: SQLAlchemy 2.0 + advanced-alchemy, hybrid layering, `SQLAlchemyDTO`. The only advanced-alchemy user (both DB contexts run on SQLAlchemy). See [contexts/db_example_litestar.md](contexts/db_example_litestar.md). |
 | `media_example` | `src/media_example/` | Golden context: video ingest pipeline. `POST /videos` (202) writes a video row + outbox message in one SQLAlchemy session/tx; a lifespan background relay drains the outbox to a Valkey Stream (`video_uploaded`); `GET /videos/feed` is an SSE subscription (broadcast lands in a later phase). See [contexts/media_example.md](contexts/media_example.md). |
 
 Adding a context: see §8 below.
@@ -48,7 +48,7 @@ them is what kills the template's ability to grow.
 │   ├── driving/         # Controllers, consumers, CLI commands.
 │   ├── driven/          # DB engines, broker clients, workers, file sources.
 │   ├── middleware/      # Context-owned ASGI middleware.
-│   └── lifespan/        # Optional lifespan managers (e.g. metrics sampler).
+│   └── lifespan/        # Optional lifespan managers (e.g. outbox relay).
 ├── provider.py          # Dishka Provider — the only place mapping concretes to interfaces.
 └── config.py            # Pydantic Settings with a unique env_prefix.
 ```
