@@ -6,11 +6,13 @@ from sqlalchemy.ext.asyncio import (
 )
 
 
-def build_engine(alchemy_url: str, schema: str) -> AsyncEngine:
+def build_engine(alchemy_url: str, schema: str, *, pool_size: int | None = None) -> AsyncEngine:
     # search_path scopes this context to its schema; unqualified table names resolve there.
+    extra: dict[str, int] = {} if pool_size is None else {"pool_size": pool_size}
     return create_async_engine(
         alchemy_url,
         connect_args={"server_settings": {"search_path": schema}},
+        **extra,
     )
 
 

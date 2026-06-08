@@ -37,7 +37,7 @@ class MediaInfraProvider(Provider):
 
     @provide
     def db(self, pg: PostgresConfig, config: MediaConfig) -> MediaDb:
-        engine = build_engine(pg.alchemy_url, config.schema_name)
+        engine = build_engine(pg.alchemy_url, config.schema_name, pool_size=config.pool_size)
         return MediaDb(engine=engine, sessionmaker=build_sessionmaker(engine))
 
     @provide
