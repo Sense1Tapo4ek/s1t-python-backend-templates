@@ -1,5 +1,5 @@
 # 0011 - db_example_sddd: two connection-scope variants (pool vs per-request)
-Status: accepted
+Status: superseded by 0024
 Date: 2026-06-01
 
 ## Context

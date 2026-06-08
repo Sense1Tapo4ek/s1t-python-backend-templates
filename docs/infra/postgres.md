@@ -9,14 +9,14 @@ Audience: contributor / operator.
 ```
             one Postgres database (litestar_base)
             +-----------------------------------+
-  asyncpg ->| schema db_example_sddd  (raw)     |  search_path = db_example_sddd
+  asyncpg ->| schema media (raw, media_example) |  search_path = media
   alchemy ->| schema db_example_litestar (ORM)  |  search_path = db_example_litestar
             +-----------------------------------+
 ```
 
 One database, one schema per bounded context. Each connection sets its own
 `search_path` to its context schema, so unqualified table names resolve there
-and the two contexts never collide. No cross-schema queries.
+and contexts never collide. No cross-schema queries.
 
 ## Version
 
@@ -30,11 +30,11 @@ DSNs from the same host/port/user/password/db, one per driver:
 
 | Property | Scheme | Used by |
 |:---|:---|:---|
-| `asyncpg_dsn` | `postgresql://` | db_example_sddd runtime (raw asyncpg pool + per-request connection) |
-| `alchemy_url` | `postgresql+asyncpg://` | db_example_litestar runtime (advanced-alchemy / SQLAlchemy async engine) |
-| `yoyo_url` | `postgresql+psycopg://` | db_example_sddd migrations (yoyo, psycopg3 sync backend) |
+| `asyncpg_dsn` | `postgresql://` | `media_example` runtime (raw asyncpg pool) |
+| `alchemy_url` | `postgresql+asyncpg://` | `db_example_litestar` runtime (advanced-alchemy / SQLAlchemy async engine) |
+| `yoyo_url` | `postgresql+psycopg://` | `media_example` migrations (yoyo, psycopg3 sync backend) |
 
-`db_example_sddd` speaks raw asyncpg for queries and psycopg3 (via yoyo) for
+`media_example` speaks raw asyncpg for queries and psycopg3 (via yoyo) for
 migrations. `db_example_litestar` uses only advanced-alchemy over asyncpg.
 
 ## Environment
@@ -46,8 +46,8 @@ migrations. `db_example_litestar` uses only advanced-alchemy over asyncpg.
 | `POSTGRES_USER` | `postgres` | role |
 | `POSTGRES_PASSWORD` | `postgres` | password |
 | `POSTGRES_DB` | `litestar_base` | database name |
-| `DB_EXAMPLE_SDDD_SCHEMA_NAME` | `db_example_sddd` | sddd context schema |
-| `DB_EXAMPLE_SDDD_POOL_SIZE` | `4` | asyncpg pool `max_size` |
+| `MEDIA_SCHEMA_NAME` | `media` | media_example context schema |
+| `MEDIA_POOL_SIZE` | `4` | asyncpg pool max connections |
 | `DB_EXAMPLE_LITESTAR_SCHEMA_NAME` | `db_example_litestar` | litestar context schema |
 
 `.env.example` is the contract. No env vars in business logic -- config flows
@@ -57,7 +57,7 @@ through Pydantic Settings into Dishka providers.
 
 Each context opens connections with `server_settings={"search_path": <schema>}`:
 
-- asyncpg contexts (sddd, orders): shared `shared/adapters/driven/postgres/`
+- asyncpg contexts (`media_example`): shared `shared/adapters/driven/postgres/`
   (`build_pool`, `open_connection`). Each context builds its OWN pool instance
   (its schema) from the shared builder, so one pool == one search_path holds.
 - litestar: `adapters/driven/engine.py` (`build_engine` via `connect_args`).
@@ -73,22 +73,22 @@ so `shared` never imports a bounded context.
 
 | Context | Tool | Where |
 |:---|:---|:---|
-| db_example_sddd | yoyo (psycopg3 sync backend, run in a thread) | `migrations/db_example_sddd/*.sql`, runner `adapters/driven/migrations_runner.py` |
+| media_example | yoyo (psycopg3 sync backend, run in a thread) | `migrations/media/*.sql`, runner `adapters/driven/migrations_runner.py` |
 | db_example_litestar | `create_all` at lifespan startup | none (schema built from ORM metadata) |
 
-The sddd migration DDL is **schema-qualified on purpose**
-(`CREATE SCHEMA IF NOT EXISTS ...; CREATE TABLE <schema>.items (...)`): yoyo's
+The media_example migration DDL is **schema-qualified on purpose**
+(`CREATE SCHEMA IF NOT EXISTS ...; CREATE TABLE <schema>.videos (...)`): yoyo's
 own connection sets its own search_path, so the migration cannot rely on the
 runtime one.
 
 ## File pointers
 
 - `shared/config.py::PostgresConfig` -- the three DSNs.
-- `db_example_sddd/config.py` -- `schema_name`, `pool_size`.
+- `media_example/config.py` -- `schema_name`, `pool_size`.
 - `shared/adapters/driven/postgres/` -- shared `build_pool` + `open_connection`
   + `SqlUoW`, reused by every asyncpg context.
-- `db_example_sddd/ports/driven/pg_item_repo.py` -- raw asyncpg repo.
-- `db_example_sddd/adapters/driven/migrations_runner.py` -- yoyo apply.
+- `media_example/ports/driven/sql_video_repo.py` -- raw asyncpg repo.
+- `media_example/adapters/driven/migrations_runner.py` -- yoyo apply.
 - `db_example_litestar/adapters/driven/engine.py` -- async engine + sessionmaker.
 
 ## Gotchas

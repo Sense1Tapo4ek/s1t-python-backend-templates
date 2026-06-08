@@ -1,5 +1,5 @@
 # 0017 - Metrics as a standalone context; first ACL example
-Status: accepted
+Status: superseded by 0023
 Date: 2026-06-02
 
 ## Context

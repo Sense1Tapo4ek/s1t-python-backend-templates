@@ -23,8 +23,9 @@ writes), role-based auth, and a Prometheus metrics endpoint via
 Logs go to stdout and to `LOG_FILE_PATH`; the admin UI tails that file.
 
 Two always-on example contexts ship in the template:
-- `db_example_sddd/` — raw asyncpg, pool vs per-request variants, yoyo migrations
-  (psycopg3 backend), `MsgspecDTO`. See [docs/contexts/db_example_sddd.md](docs/contexts/db_example_sddd.md).
+- `media_example/` — the golden context: raw asyncpg, transactional outbox +
+  relay draining to a Valkey Stream, Litestar SSE feed, full S-DDD layering and
+  test pyramid. See [docs/contexts/media_example.md](docs/contexts/media_example.md).
 - `db_example_litestar/` — SQLAlchemy 2.0 + advanced-alchemy 1.11 on Postgres,
   hybrid layering, `SQLAlchemyDTO`, `create_all`. The **only** SQLAlchemy user in
   the template. See [docs/contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md).
@@ -78,7 +79,7 @@ without it the app 500s on every rendered page.
 - **Migrations live in `migrations/<context>/`.** The project-root
   `migrations/` folder mirrors `src/`, `static/`, `docs/`, `tests/`. Each
   context that uses yoyo gets its own subfolder (e.g.
-  `migrations/db_example_sddd/`); yoyo now targets Postgres via the psycopg3
+  `migrations/media/`); yoyo targets Postgres via the psycopg3
   sync backend (`yoyo_url` = `postgresql+psycopg://...`). `db_example_litestar`
   uses `create_all` and has no migration files. See
   [docs/infra/postgres.md](docs/infra/postgres.md).
@@ -102,10 +103,11 @@ without it the app 500s on every rendered page.
 - **Metrics are multi-worker safe via multiprocess mode.** The master sets
   `PROMETHEUS_MULTIPROC_DIR` and wipes stale shards before `uvicorn.run`.
   Each worker writes mmap shards; `MultiProcessCollector` merges on scrape.
-  `APP_WORKERS` scales freely. `/metrics` always-on when the context is
-  composed; no admin metrics UI. e2e modules that build their own app must
-  snapshot/restore `REGISTRY` to avoid collector collisions — see
-  `tests/e2e/metrics/conftest.py`. Details:
+  `APP_WORKERS` scales freely. `/metrics` lives in `shared` and is always on
+  (no metrics context, no metrics UI). Custom metrics are module-level
+  `prometheus_client` constants in the owning adapter (e.g. `videos_uploaded_total`
+  in `media_example`); registered once on import, they survive repeated
+  `create_app()` in tests without a duplicate-registration error. Details:
   [docs/subsystems/metrics.md](docs/subsystems/metrics.md).
 
 ## Editing rules

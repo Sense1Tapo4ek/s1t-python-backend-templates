@@ -1,5 +1,5 @@
 # 0020 — Use Litestar's in-process event bus + Channels for the realtime context
-Status: accepted
+Status: superseded by 0024
 Date: 2026-06-04
 
 ## Context

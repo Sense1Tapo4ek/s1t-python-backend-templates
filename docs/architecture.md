@@ -19,16 +19,15 @@ API.
 | `auth` | `src/auth/` | Bearer/cookie auth: token resolution, `AuthMiddleware`, `require_role` guards. See [contexts/auth.md](contexts/auth.md). |
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
 | `admin/log` | `src/admin/log/` | Sub-context: file-tail log viewer over the rotating JSONL file the app writes; SSE live tail, NDJSON/CSV export. See [contexts/admin-log.md](contexts/admin-log.md). |
-| `metrics` | `src/metrics/` | Example infra context: Prometheus `/metrics` endpoint via multiprocess mode, plus a generic by-name custom-metrics facade. See [contexts/metrics.md](contexts/metrics.md). |
-| `db_example_sddd` | `src/db_example_sddd/` | Example context: raw asyncpg (Postgres), pool vs per-request connection variants, yoyo migrations, cross-context ACL example. See [contexts/db_example_sddd.md](contexts/db_example_sddd.md). |
 | `db_example_litestar` | `src/db_example_litestar/` | Example context: SQLAlchemy 2.0 + advanced-alchemy, hybrid layering, `SQLAlchemyDTO`. The only SQLAlchemy user in the template. See [contexts/db_example_litestar.md](contexts/db_example_litestar.md). |
-| `orders` | `src/orders/` | Example context (realtime_litestar): event-driven showcase. `POST /orders` raises a domain event that fans out via Litestar's in-process bus (`litestar.events`) to audit/metrics + a `litestar.channels` SSE feed (Redis-backed). At-most-once, in-process. See [contexts/orders.md](contexts/orders.md). |
+| `media_example` | `src/media_example/` | Golden context: video ingest pipeline. `POST /videos` (202) writes a video row + outbox message in one asyncpg tx; a lifespan background relay drains the outbox to a Valkey Stream (`video_uploaded`); `GET /videos/feed` is an SSE subscription (broadcast lands in a later phase). See [contexts/media_example.md](contexts/media_example.md). |
 
 Adding a context: see §8 below.
 
-Redis (`redis[hiredis]`) backs `litestar.channels` for the `orders` feed and is
-the shared infra for the planned event-driven Phases 2-3; configured once via
-`RedisConfig` (`REDIS_` prefix). See [infra/redis.md](infra/redis.md).
+Valkey (`valkey/valkey:8`) backs `litestar.channels` for the video feed and is
+the shared transport for the event-driven pipeline; configured via `ValkeyConfig`
+(`VALKEY_` prefix). The `redis.asyncio` client is retained (wire-compatible).
+See [infra/valkey.md](infra/valkey.md).
 
 ---
 
@@ -121,7 +120,9 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 | `root/config.py::RootConfig` | `APP_` (extends Base) | server bind/port/workers, security CSP/HSTS, prod invariants. |
 | `auth/config.py::AuthConfig` | `AUTH_` | `admin_token` (`SecretStr`). |
 | `admin/log/config.py::AdminLogConfig` | `LOG_` | `file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
-| `metrics/config.py::MetricsConfig` | `METRICS_` | Prometheus endpoint path + public flag, HTTP buckets, multiproc dir. |
+| `shared/config.py::MetricsConfig` | `METRICS_` | Prometheus endpoint path + public flag, HTTP buckets, multiproc dir. |
+| `shared/config.py::ValkeyConfig` | `VALKEY_` | Valkey host/port/db/password/max_connections, `url` property. |
+| `media_example/config.py::MediaConfig` | `MEDIA_` | schema_name, pool_size, recent_limit, relay_batch, relay_idle_sleep. |
 
 Rules:
 - Business logic never reads `os.environ`. Config flows through providers.
@@ -170,9 +171,7 @@ Things that, if you change them, will break the app silently or in production.
   browser over loaded rows; "load more" pulls deeper into the file.
 - **Cross-worker metrics use multiprocess mode.** `prometheus_client` writes
   mmap shards to `PROMETHEUS_MULTIPROC_DIR`; no external store required.
-- **Cross-context calls go through an ACL.** See the worked example
-  (`db_example_sddd -> metrics`) in
-  [contexts/metrics.md](contexts/metrics.md#how-to-emit-a-metric-cross-context-acl).
+- **Cross-context calls go through an ACL.** Sibling context imports go via `ports/driven/acl/`; see the S-DDD ruleset (`~/.claude/rules/s-ddd_python/ports.md §4`).
 - **APP-scope DI is lazy.** The graph resolves on the first HTTP request, so
   tests must warm DI before any env-isolation fixture runs (see
   `tests/e2e/conftest.py::e2e_client`).
@@ -206,7 +205,7 @@ Things that, if you change them, will break the app silently or in production.
 ### Add a migration
 
 Postgres 18, schema-per-context via `search_path` ([infra/postgres.md](infra/postgres.md), [adr/0019](adr/0019-sqlite-to-postgres.md)).
-`db_example_sddd` ships yoyo SQL under `migrations/<context>/`; `db_example_litestar` uses `create_all` -- follow whichever matches your driver.
+`media_example` ships yoyo SQL under `migrations/media/`; `db_example_litestar` uses `create_all` -- follow whichever matches your driver.
 
 ### Add an ADR
 

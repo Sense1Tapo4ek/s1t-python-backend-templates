@@ -1,7 +1,7 @@
 # db_example_litestar context
 
 This is an **example context** shipped in the template (alongside
-`db_example_sddd` and `metrics`); delete it once you have real contexts.
+`media_example`); delete it once you have real contexts.
 
 For contributors learning how to wire SQLAlchemy 2.0 + advanced-alchemy
 under Dishka in an S-DDD context, and how `SQLAlchemyDTO` replaces the
@@ -151,7 +151,7 @@ context's Postgres schema is created (`build_engine(alchemy_url, schema)` sets
 `search_path`, so tables land in `db_example_litestar`). There are no migration
 files for this context — this is deliberate. `create_all` is appropriate for
 demo/prototype contexts where schema drift is not a concern. Production contexts
-should use yoyo (see `db_example_sddd`) or Alembic.
+should use yoyo (see `media_example`) or Alembic.
 
 The ORM models must be imported before `create_all` so they register with
 `UUIDAuditBase.metadata`. The lifespan manager
@@ -161,7 +161,7 @@ at module level for that side effect.
 ## SQLAlchemy scope in the template
 
 `db_example_litestar` is the **only** SQLAlchemy / advanced-alchemy user in the
-template, now running on Postgres. `db_example_sddd` talks to the same Postgres
+template, now running on Postgres. `media_example` talks to the same Postgres
 database with raw asyncpg; `admin/log` reads JSONL log files and touches no DB.
 Do not pull SQLAlchemy into other contexts; if needed, write a new context
 following this one as a reference.
@@ -189,6 +189,6 @@ following this one as a reference.
 - [docs/adr/0016-db-example-litestar-orm-model-in-ports-root.md](../adr/0016-db-example-litestar-orm-model-in-ports-root.md) — ORM model at `ports/` root (used by both branches); supersedes 0015
 - [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](../adr/0015-db-example-litestar-orm-model-in-domain.md) — (superseded by 0016) ORM model in domain/
 - [docs/adr/0013-litestar-2.23-floor.md](../adr/0013-litestar-2.23-floor.md) — version bump rationale
-- [docs/contexts/db_example_sddd.md](db_example_sddd.md) — raw asyncpg counterpart
+- [docs/contexts/media_example.md](media_example.md) — raw asyncpg counterpart (golden context)
 - [docs/infra/postgres.md](../infra/postgres.md) — Postgres wiring (schemas, DSNs, search_path)
 - [docs/architecture.md](../architecture.md) — S-DDD layers and DI scopes

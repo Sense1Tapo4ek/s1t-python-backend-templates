@@ -7,13 +7,12 @@
 
 `GET /metrics` — Prometheus-formatted scrape endpoint. Aggregates per-worker
 counters / gauges / histograms via `prometheus_client` native multiprocess
-mode. Always on when the metrics context is composed; gated by an admin guard
-unless `METRICS_PROM_ENDPOINT_PUBLIC=true`.
+mode. Gated by an admin guard unless `METRICS_PROM_ENDPOINT_PUBLIC=true`.
 
-A generic by-name custom-metrics facade (`MetricsFacade.{increment,set_gauge,
-observe}`) lets any context emit Counters/Gauges/Histograms without per-metric
-plumbing. An unguarded `GET /metrics-demo` endpoint exercises the three demo
-metrics. There is no metrics UI. No external store.
+There is no longer a standalone `metrics` bounded context. The endpoint,
+multiprocess bootstrap, and `MetricsConfig` live in `shared`. Custom metrics
+are plain `prometheus_client` module-level constants declared in the adapter
+that owns the measurement (e.g. `videos_uploaded_total` in `media_example`).
 
 ## Mental model — multiprocess mode
 
@@ -45,11 +44,31 @@ without extra configuration.
 
 | Item | Where | Notes |
 |:---|:---|:---|
-| `MetricsConfig` | `metrics/config.py` | env prefix `METRICS_` |
-| `MetricsFacade` | `metrics/ports/driving/` | by-name `increment`/`set_gauge`/`observe` |
-| `GET /metrics` | `prom_controller.py` | path configurable |
-| `GET /metrics-demo` | `demo_controller.py` | unguarded demo of all 3 types |
+| `MetricsConfig` | `shared/config.py` | env prefix `METRICS_` |
+| `build_prom_controller(config)` | `shared/adapters/metrics.py` | returns a typed `PrometheusController` subclass |
+| `bootstrap_multiproc(config)` | `shared/adapters/metrics.py` | sets `PROMETHEUS_MULTIPROC_DIR`, wipes stale shards |
+| `mark_dead()` | `shared/adapters/metrics.py` | calls `mark_process_dead` on shutdown |
+| `GET /metrics` | `build_prom_controller` result | path = `METRICS_PROM_ENDPOINT_PATH` |
 | `multiproc_dir` | `METRICS_MULTIPROC_DIR` | master sets + wipes at start |
+
+## Adding a custom metric
+
+Declare the collector at module level in the adapter that owns the
+measurement. `prometheus_client` registers it on import; `MultiProcessCollector`
+picks it up on the next scrape.
+
+```python
+from prometheus_client import Counter
+
+VIDEOS_UPLOADED = Counter("videos_uploaded", "Total videos uploaded")
+
+# in the handler:
+VIDEOS_UPLOADED.inc()
+```
+
+Module-level declaration avoids duplicate-registration errors when
+`create_app()` is called more than once in tests (the same object is returned
+by the already-imported module).
 
 ## Invariants & gotchas
 
@@ -60,34 +79,18 @@ without extra configuration.
 - **Shard wipe at master start.** Stale `.db` files from a prior run would
   double-count metrics. The master wipes `<multiproc_dir>` before
   `uvicorn.run`. Workers must not pre-import `prometheus_client` before that.
-- **`mark_process_dead` on worker stop.** Each worker calls this in its
-  lifespan shutdown. Failure is non-fatal; stale shards otherwise persist
-  until the next master restart.
-- **No Valkey, no external store.** All aggregation is via filesystem shards
-  in `<multiproc_dir>`. If the directory is on a tmpfs that survives process
+- **`mark_dead()` on worker stop.** Each worker calls this in its lifespan
+  shutdown. Failure is non-fatal; stale shards otherwise persist until the
+  next master restart.
+- **No external store.** All aggregation is via filesystem shards in
+  `<multiproc_dir>`. If the directory is on a tmpfs that survives process
   restart, old shards accumulate; wipe logic in the master guards this.
 - **`APP_WORKERS` is unconstrained.** Multiprocess mode scales to any worker
   count without configuration changes.
-- **Gauge uses `multiprocess_mode="livesum"`.** A Gauge is otherwise undefined
-  across workers; `livesum` sums live workers' values on scrape.
-- **`PrometheusSink` caches metric objects at class level.** Repeated
-  `create_app()` (tests) reuse the same series, avoiding `prometheus_client`'s
-  duplicate-registration error.
-
-## How to: expose a custom metric
-
-Preferred: call the by-name facade from your context. It creates the underlying
-`prometheus_client` object on first use and caches it (see metrics context).
-
-```python
-facade.increment("my_events_total", label="x")
-facade.observe("my_op_seconds", elapsed)
-```
-
-Cross-context, wrap the facade in an ACL — `db_example_sddd` is the worked
-example. To register a raw collector directly instead, do it at module import
-or in a lifespan manager (not in the lazy DI provider); the
-`MultiProcessCollector` picks it up on the next scrape.
+- **Module-level collectors survive repeated `create_app()`.** A
+  `prometheus_client` collector registers once on import; tests that build
+  several apps reuse the same series instead of hitting a duplicate-registration
+  error. No `REGISTRY` snapshot/restore is needed.
 
 ## How to: make the endpoint public
 
@@ -97,7 +100,9 @@ over plain HTTP unless you add TLS termination upstream.
 
 ## Pointers
 
-- Context reference: [docs/contexts/metrics.md](../contexts/metrics.md)
-- ADR: [docs/adr/0010-prometheus-multiprocess.md](../adr/0010-prometheus-multiprocess.md)
+- `src/shared/adapters/metrics.py` — `build_prom_controller`, `bootstrap_multiproc`, `mark_dead`
+- `src/shared/config.py::MetricsConfig` — all `METRICS_` settings
+- [docs/adr/0010-prometheus-multiprocess.md](../adr/0010-prometheus-multiprocess.md) — multiprocess mode decision
+- [docs/adr/0023-delete-metrics-context.md](../adr/0023-delete-metrics-context.md) — why the metrics context was dissolved
 - Litestar Prometheus plugin: upstream `litestar.plugins.prometheus` docs
 - `prometheus_client` multiprocess guide: upstream docs
