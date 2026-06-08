@@ -102,7 +102,7 @@ over plain HTTP unless you add TLS termination upstream.
 
 - `src/shared/adapters/metrics.py` — `build_prom_controller`, `bootstrap_multiproc`, `mark_dead`
 - `src/shared/config.py::MetricsConfig` — all `METRICS_` settings
-- [docs/adr/0010-prometheus-multiprocess.md](../adr/0010-prometheus-multiprocess.md) — multiprocess mode decision
-- [docs/adr/0023-delete-metrics-context.md](../adr/0023-delete-metrics-context.md) — why the metrics context was dissolved
+- [docs/adr/0010-prometheus-multiprocess.md](../../adr/0010-prometheus-multiprocess.md) — multiprocess mode decision
+- [docs/adr/0023-delete-metrics-context.md](../../adr/0023-delete-metrics-context.md) — why the metrics context was dissolved
 - Litestar Prometheus plugin: upstream `litestar.plugins.prometheus` docs
 - `prometheus_client` multiprocess guide: upstream docs

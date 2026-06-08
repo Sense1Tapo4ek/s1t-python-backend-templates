@@ -22,13 +22,17 @@ writes), role-based auth, and a Prometheus metrics endpoint via
 `prometheus_client` multiprocess mode. Python 3.12+, managed with `uv`.
 Logs go to stdout and to `LOG_FILE_PATH`; the admin UI tails that file.
 
+The repo is a 2-service monorepo -- `src/litestar_backend/` (this app) and
+`src/event_microservice/` (FastStream+SAQ worker, slice 2). They share only
+the `video_uploaded` Valkey-Stream contract.
+
 Two always-on example contexts ship in the template:
 - `media_example/` — the golden context: plain SQLAlchemy 2.0, transactional
   outbox + relay draining to a Valkey Stream, Litestar SSE feed, full S-DDD
-  layering and test pyramid. See [docs/contexts/media_example.md](docs/contexts/media_example.md).
+  layering and test pyramid. See [docs/litestar_backend/contexts/media_example.md](docs/litestar_backend/contexts/media_example.md).
 - `db_example_litestar/` — SQLAlchemy 2.0 + advanced-alchemy 1.11 on Postgres,
   hybrid layering, `SQLAlchemyDTO`, `create_all`. The **only** advanced-alchemy
-  user. See [docs/contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md).
+  user. See [docs/litestar_backend/contexts/db_example_litestar.md](docs/litestar_backend/contexts/db_example_litestar.md).
 
 ## Quick verifications
 
@@ -36,13 +40,14 @@ Canonical (Docker Compose — `tester` stage layers the `dev` group + `tests/`
 onto the app's uv venv; full gate = `ruff check . && mypy && pytest -q`):
 
 ```bash
-docker compose run --rm test                       # full gate
-docker compose run --rm test pytest tests/unit -q  # any subset
+docker compose run --rm litestar_backend_test                       # full gate
+docker compose run --rm litestar_backend_test pytest tests/unit -q  # any subset
 ```
 
 Local `uv` for the fast inner loop. Integration + e2e need a Postgres
 testcontainer, so **Docker must be running** (or point at an external DB via
-`POSTGRES_HOST` + the other `POSTGRES_*` vars):
+`POSTGRES_HOST` + the other `POSTGRES_*` vars). Run from `src/litestar_backend/`
+(the backend service root):
 
 ```bash
 uv run pytest                     # full suite (needs Docker)
@@ -53,7 +58,7 @@ uv run pytest tests/e2e/          # full app via AsyncTestClient + Postgres
 uv run ruff check . && uv run mypy
 ```
 
-Test layout mirrors `src/`. Don't mix layers in one file. The `test` service
+Test layout mirrors `src/`. Don't mix layers in one file. The `litestar_backend_test` service
 is profile-gated (`profiles: ["test"]`) so `docker compose up` never starts it.
 The `tester`/runtime images both copy `static/` (Jinja templates + assets);
 without it the app 500s on every rendered page.
@@ -75,7 +80,7 @@ without it the app 500s on every rendered page.
   that mirrors the context tree. Single Litestar mount `/static/...`;
   single `TemplateConfig(directory="static", engine=JinjaTemplateEngine)`.
   Rule §1.3 in `~/.claude/rules/s-ddd_python/structure.md`; see
-  [docs/infra/jinja.md](docs/infra/jinja.md).
+  [docs/litestar_backend/infra/jinja.md](docs/litestar_backend/infra/jinja.md).
 - **Migrations live in `migrations/<context>/`.** The project-root
   `migrations/` folder mirrors `src/`, `static/`, `docs/`, `tests/`. Each
   context that uses yoyo gets its own subfolder (e.g.
@@ -84,7 +89,7 @@ without it the app 500s on every rendered page.
   yoyo targets Postgres via the psycopg3 sync backend
   (`yoyo_url` = `postgresql+psycopg://...`). `db_example_litestar`
   uses `create_all` and has no migration files. See
-  [docs/infra/postgres.md](docs/infra/postgres.md).
+  [docs/litestar_backend/infra/postgres.md](docs/litestar_backend/infra/postgres.md).
 - **Both DB contexts run on SQLAlchemy** (`postgresql+asyncpg`).
   `media_example` uses plain SQLAlchemy 2.0; `db_example_litestar` is the only
   advanced-alchemy user. The shared engine/session builder lives in
@@ -112,7 +117,7 @@ without it the app 500s on every rendered page.
   `prometheus_client` constants in the owning adapter (e.g. `videos_uploaded_total`
   in `media_example`); registered once on import, they survive repeated
   `create_app()` in tests without a duplicate-registration error. Details:
-  [docs/subsystems/metrics.md](docs/subsystems/metrics.md).
+  [docs/litestar_backend/subsystems/metrics.md](docs/litestar_backend/subsystems/metrics.md).
 
 ## Editing rules
 

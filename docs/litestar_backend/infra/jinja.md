@@ -3,7 +3,7 @@
 Version: `jinja2` 3.1+ bundled via `litestar[jinja]`. Documentation:
 <https://jinja.palletsprojects.com/>.
 
-For the *why*, see [adr/0008-jinja-server-side-rendering.md](../adr/0008-jinja-server-side-rendering.md).
+For the *why*, see [adr/0008-jinja-server-side-rendering.md](../../adr/0008-jinja-server-side-rendering.md).
 
 ## Where it's used
 

@@ -3,7 +3,7 @@
 Bearer/cookie authentication for admin surfaces. Single static token,
 role-based authorization, redirect-vs-401 selection by `Accept` header.
 
-For the *why*, see [adr/0004-static-bearer-cookie-auth.md](../adr/0004-static-bearer-cookie-auth.md).
+For the *why*, see [adr/0004-static-bearer-cookie-auth.md](../../adr/0004-static-bearer-cookie-auth.md).
 
 ## Mental model
 
@@ -119,6 +119,6 @@ The middleware, facade, and use case stay unchanged.
 
 ## Pointers
 
-- ADR: [0004-static-bearer-cookie-auth.md](../adr/0004-static-bearer-cookie-auth.md)
+- ADR: [0004-static-bearer-cookie-auth.md](../../adr/0004-static-bearer-cookie-auth.md)
 - Code: `src/auth/`, `src/admin/adapters/driving/api/login_controller.py`
 - Related: [contexts/admin.md](admin.md)

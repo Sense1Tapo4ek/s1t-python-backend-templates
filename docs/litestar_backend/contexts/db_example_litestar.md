@@ -186,11 +186,11 @@ See ADR 0025.
 ## Pointers
 
 - `src/db_example_litestar/` — full context source
-- [docs/adr/0012-db-example-litestar-advanced-alchemy-dishka.md](../adr/0012-db-example-litestar-advanced-alchemy-dishka.md) — advanced-alchemy + hybrid layering + create_all decision
-- [docs/adr/0014-db-example-litestar-facade-as-public-api.md](../adr/0014-db-example-litestar-facade-as-public-api.md) — facade as single public API for HTTP + code
-- [docs/adr/0016-db-example-litestar-orm-model-in-ports-root.md](../adr/0016-db-example-litestar-orm-model-in-ports-root.md) — ORM model at `ports/` root (used by both branches); supersedes 0015
-- [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](../adr/0015-db-example-litestar-orm-model-in-domain.md) — (superseded by 0016) ORM model in domain/
-- [docs/adr/0013-litestar-2.23-floor.md](../adr/0013-litestar-2.23-floor.md) — version bump rationale
+- [docs/adr/0012-db-example-litestar-advanced-alchemy-dishka.md](../../adr/0012-db-example-litestar-advanced-alchemy-dishka.md) — advanced-alchemy + hybrid layering + create_all decision
+- [docs/adr/0014-db-example-litestar-facade-as-public-api.md](../../adr/0014-db-example-litestar-facade-as-public-api.md) — facade as single public API for HTTP + code
+- [docs/adr/0016-db-example-litestar-orm-model-in-ports-root.md](../../adr/0016-db-example-litestar-orm-model-in-ports-root.md) — ORM model at `ports/` root (used by both branches); supersedes 0015
+- [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](../../adr/0015-db-example-litestar-orm-model-in-domain.md) — (superseded by 0016) ORM model in domain/
+- [docs/adr/0013-litestar-2.23-floor.md](../../adr/0013-litestar-2.23-floor.md) — version bump rationale
 - [docs/contexts/media_example.md](media_example.md) — plain-SQLAlchemy counterpart (golden context)
 - [docs/infra/postgres.md](../infra/postgres.md) — Postgres wiring (schemas, DSNs, search_path)
-- [docs/architecture.md](../architecture.md) — S-DDD layers and DI scopes
+- [docs/architecture.md](../../architecture.md) — S-DDD layers and DI scopes

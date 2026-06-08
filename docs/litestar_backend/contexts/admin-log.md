@@ -3,7 +3,7 @@
 File-tail log viewer: read the rotating JSONL file the app writes, show it
 live and historically in the admin UI. Sub-context of [admin](admin.md).
 
-For the *why*, see [adr/0009-file-tail-log-viewer.md](../adr/0009-file-tail-log-viewer.md).
+For the *why*, see [adr/0009-file-tail-log-viewer.md](../../adr/0009-file-tail-log-viewer.md).
 
 ## Mental model
 
@@ -146,7 +146,7 @@ served from the single `/static/` mount. The controller returns
 
 ## Pointers
 
-- ADR: [adr/0009-file-tail-log-viewer.md](../adr/0009-file-tail-log-viewer.md)
+- ADR: [adr/0009-file-tail-log-viewer.md](../../adr/0009-file-tail-log-viewer.md)
 - Code: `src/admin/log/`
 - structlog pipeline: [infra/structlog.md](../infra/structlog.md)
 - Cross-cutting: [subsystems/observability.md](../subsystems/observability.md)

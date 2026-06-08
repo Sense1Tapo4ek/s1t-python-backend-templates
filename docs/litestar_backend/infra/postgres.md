@@ -1,7 +1,7 @@
 # infra: PostgreSQL
 
 How Postgres is configured and wired in this template, and the gotchas that
-bite. For *why* Postgres replaced SQLite, see [ADR 0019](../adr/0019-sqlite-to-postgres.md).
+bite. For *why* Postgres replaced SQLite, see [ADR 0019](../../adr/0019-sqlite-to-postgres.md).
 Audience: contributor / operator.
 
 ## Mental model
@@ -118,8 +118,8 @@ runtime one.
 
 ## Pointers
 
-- [ADR 0019](../adr/0019-sqlite-to-postgres.md) -- Postgres over SQLite.
-- [ADR 0025](../adr/0025-standardize-on-sqlalchemy.md) -- single SQLAlchemy stack.
+- [ADR 0019](../../adr/0019-sqlite-to-postgres.md) -- Postgres over SQLite.
+- [ADR 0025](../../adr/0025-standardize-on-sqlalchemy.md) -- single SQLAlchemy stack.
 - SQLAlchemy 2.0 async: https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html
 - asyncpg (driver): https://magicstack.github.io/asyncpg/current/
 - advanced-alchemy: https://docs.advanced-alchemy.litestar.dev/
