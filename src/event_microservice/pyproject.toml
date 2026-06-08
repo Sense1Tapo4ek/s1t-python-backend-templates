@@ -1,0 +1,78 @@
+[project]
+name = "event_microservice"
+version = "1.0.0"
+description = "FastStream consumer + SAQ worker for the media-processing pipeline"
+requires-python = ">=3.12"
+dependencies = [
+    "dishka>=1.10.1",
+    "faststream[redis]>=0.5",
+    "msgspec>=0.18",
+    "pydantic-settings>=2.12.0",
+    "redis[hiredis]>=5.0",
+    "saq>=0.12",
+    "structlog>=25.5.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=0.24",
+    "polyfactory>=2.18",
+    "ruff>=0.8",
+    "testcontainers>=4.9",
+]
+
+[tool.pytest_asyncio]
+mode = "auto"
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+addopts = "--import-mode=importlib"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["B011", "SIM117"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["media_processing", "root", "shared"]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "src"
+files = ["src"]
+namespace_packages = true
+explicit_package_bases = true
+strict = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["saq.*"]
+ignore_missing_imports = true
