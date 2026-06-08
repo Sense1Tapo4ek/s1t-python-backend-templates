@@ -23,12 +23,12 @@ writes), role-based auth, and a Prometheus metrics endpoint via
 Logs go to stdout and to `LOG_FILE_PATH`; the admin UI tails that file.
 
 Two always-on example contexts ship in the template:
-- `media_example/` — the golden context: raw asyncpg, transactional outbox +
-  relay draining to a Valkey Stream, Litestar SSE feed, full S-DDD layering and
-  test pyramid. See [docs/contexts/media_example.md](docs/contexts/media_example.md).
+- `media_example/` — the golden context: plain SQLAlchemy 2.0, transactional
+  outbox + relay draining to a Valkey Stream, Litestar SSE feed, full S-DDD
+  layering and test pyramid. See [docs/contexts/media_example.md](docs/contexts/media_example.md).
 - `db_example_litestar/` — SQLAlchemy 2.0 + advanced-alchemy 1.11 on Postgres,
-  hybrid layering, `SQLAlchemyDTO`, `create_all`. The **only** SQLAlchemy user in
-  the template. See [docs/contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md).
+  hybrid layering, `SQLAlchemyDTO`, `create_all`. The **only** advanced-alchemy
+  user. See [docs/contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md).
 
 ## Quick verifications
 
@@ -79,12 +79,16 @@ without it the app 500s on every rendered page.
 - **Migrations live in `migrations/<context>/`.** The project-root
   `migrations/` folder mirrors `src/`, `static/`, `docs/`, `tests/`. Each
   context that uses yoyo gets its own subfolder (e.g.
-  `migrations/media/`); yoyo targets Postgres via the psycopg3
-  sync backend (`yoyo_url` = `postgresql+psycopg://...`). `db_example_litestar`
+  `migrations/media/`), applied by the shared
+  `shared/adapters/driven/postgres/run_migrations` in that context's lifespan;
+  yoyo targets Postgres via the psycopg3 sync backend
+  (`yoyo_url` = `postgresql+psycopg://...`). `db_example_litestar`
   uses `create_all` and has no migration files. See
   [docs/infra/postgres.md](docs/infra/postgres.md).
-- **SQLAlchemy is used only in `db_example_litestar/`.** Do not import
-  SQLAlchemy into other contexts. Litestar >= 2.23.0 is required because
+- **Both DB contexts run on SQLAlchemy** (`postgresql+asyncpg`).
+  `media_example` uses plain SQLAlchemy 2.0; `db_example_litestar` is the only
+  advanced-alchemy user. The shared engine/session builder lives in
+  `shared/adapters/driven/postgres/`. Litestar >= 2.23.0 is required because
   advanced-alchemy 1.11 needs `litestar.di.NamedDependency`.
 
 ## Gotchas the agent will trip on

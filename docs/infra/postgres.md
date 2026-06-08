@@ -9,14 +9,15 @@ Audience: contributor / operator.
 ```
             one Postgres database (litestar_base)
             +-----------------------------------+
-  asyncpg ->| schema media (raw, media_example) |  search_path = media
-  alchemy ->| schema db_example_litestar (ORM)  |  search_path = db_example_litestar
+  media --->| schema media                      |  search_path = media
+  dbex ---->| schema db_example_litestar        |  search_path = db_example_litestar
             +-----------------------------------+
 ```
 
-One database, one schema per bounded context. Each connection sets its own
-`search_path` to its context schema, so unqualified table names resolve there
-and contexts never collide. No cross-schema queries.
+Both contexts speak SQLAlchemy over the asyncpg driver. One database, one
+schema per bounded context. Each engine sets its own `search_path` to its
+context schema, so unqualified table names resolve there and contexts never
+collide. No cross-schema queries.
 
 ## Version
 
@@ -30,12 +31,13 @@ DSNs from the same host/port/user/password/db, one per driver:
 
 | Property | Scheme | Used by |
 |:---|:---|:---|
-| `asyncpg_dsn` | `postgresql://` | `media_example` runtime (raw asyncpg pool) |
-| `alchemy_url` | `postgresql+asyncpg://` | `db_example_litestar` runtime (advanced-alchemy / SQLAlchemy async engine) |
+| `alchemy_url` | `postgresql+asyncpg://` | both contexts' runtime (SQLAlchemy async engine) |
 | `yoyo_url` | `postgresql+psycopg://` | `media_example` migrations (yoyo, psycopg3 sync backend) |
+| `asyncpg_dsn` | `postgresql://` | no runtime user; kept for raw-asyncpg tooling (e.g. the container smoke test) |
 
-`media_example` speaks raw asyncpg for queries and psycopg3 (via yoyo) for
-migrations. `db_example_litestar` uses only advanced-alchemy over asyncpg.
+Both contexts run on the SQLAlchemy async engine (`postgresql+asyncpg`).
+`media_example` uses plain SQLAlchemy 2.0; `db_example_litestar` uses
+advanced-alchemy. Migrations go through psycopg3 (via yoyo).
 
 ## Environment
 
@@ -47,7 +49,7 @@ migrations. `db_example_litestar` uses only advanced-alchemy over asyncpg.
 | `POSTGRES_PASSWORD` | `postgres` | password |
 | `POSTGRES_DB` | `litestar_base` | database name |
 | `MEDIA_SCHEMA_NAME` | `media` | media_example context schema |
-| `MEDIA_POOL_SIZE` | `4` | asyncpg pool max connections |
+| `MEDIA_POOL_SIZE` | `4` | SQLAlchemy engine pool size |
 | `DB_EXAMPLE_LITESTAR_SCHEMA_NAME` | `db_example_litestar` | litestar context schema |
 
 `.env.example` is the contract. No env vars in business logic -- config flows
@@ -55,28 +57,30 @@ through Pydantic Settings into Dishka providers.
 
 ## Schema isolation via search_path
 
-Each context opens connections with `server_settings={"search_path": <schema>}`:
+Each context builds its engine with
+`connect_args={"server_settings": {"search_path": <schema>}}` via the shared
+`build_engine` (`shared/adapters/driven/postgres/engine.py`). Each context owns
+its OWN engine instance (its schema), so one engine == one search_path holds.
 
-- asyncpg contexts (`media_example`): shared `shared/adapters/driven/postgres/`
-  (`build_pool`, `open_connection`). Each context builds its OWN pool instance
-  (its schema) from the shared builder, so one pool == one search_path holds.
-- litestar: `adapters/driven/engine.py` (`build_engine` via `connect_args`).
+`search_path` is a connection startup-packet parameter, so it survives
+connection-pool reset/recycle. Unqualified runtime queries are safe.
 
-`search_path` is a connection startup-packet parameter, so it survives asyncpg
-pool connection reset/recycle. Unqualified runtime queries are safe.
-
-The shared `SqlUoW` (same package) wraps `conn.transaction()` and is reused by
-any asyncpg context; it satisfies each context's `IUoW` Protocol structurally,
-so `shared` never imports a bounded context.
+The shared session-based `SqlUoW` (same package) commits or rolls back the
+request `AsyncSession` and is reused by any context; it satisfies each
+context's `IUoW` Protocol structurally, so `shared` never imports a bounded
+context.
 
 ## Migrations
 
 | Context | Tool | Where |
 |:---|:---|:---|
-| media_example | yoyo (psycopg3 sync backend, run in a thread) | `migrations/media/*.sql`, runner `adapters/driven/migrations_runner.py` |
+| media_example | yoyo (psycopg3 sync backend, run in a thread) | `migrations/media/*.sql`, applied by the shared `run_migrations` at lifespan start |
 | db_example_litestar | `create_all` at lifespan startup | none (schema built from ORM metadata) |
 
-The media_example migration DDL is **schema-qualified on purpose**
+One shared runner (`shared/adapters/driven/postgres/migrations.py::run_migrations`)
+applies any context's folder; each context's lifespan passes its own
+`migrations/<context>/`. The media_example migration DDL is **schema-qualified
+on purpose**
 (`CREATE SCHEMA IF NOT EXISTS ...; CREATE TABLE <schema>.videos (...)`): yoyo's
 own connection sets its own search_path, so the migration cannot rely on the
 runtime one.
@@ -85,17 +89,20 @@ runtime one.
 
 - `shared/config.py::PostgresConfig` -- the three DSNs.
 - `media_example/config.py` -- `schema_name`, `pool_size`.
-- `shared/adapters/driven/postgres/` -- shared `build_pool` + `open_connection`
-  + `SqlUoW`, reused by every asyncpg context.
-- `media_example/ports/driven/sql_video_repo.py` -- raw asyncpg repo.
-- `media_example/adapters/driven/migrations_runner.py` -- yoyo apply.
-- `db_example_litestar/adapters/driven/engine.py` -- async engine + sessionmaker.
+- `shared/adapters/driven/postgres/` -- shared `build_engine`,
+  `build_sessionmaker`, `run_migrations`, session `SqlUoW`; reused by every
+  context.
+- `media_example/ports/driven/sql_video_repo.py` -- SQLAlchemy repo (session,
+  `pg_insert` upsert).
+- `media_example/ports/driven/orm_models.py` -- `VideoRow` / `OutboxRow`.
+- `db_example_litestar/provider.py` -- builds its engine via the shared builder.
 
 ## Gotchas
 
-- **asyncpg autocommits per statement.** Each `execute`/`fetch` is its own
-  transaction. For multi-statement consistency wrap the work:
-  `async with conn.transaction(): ...`.
+- **One session per request, shared by the repos.** A context's repos and its
+  `SqlUoW` take the same REQUEST-scoped `AsyncSession`, so multi-statement work
+  (video row + outbox row) commits in one transaction. Resolve the session from
+  the request-scoped container, never build a second one.
 - **Docker required for the local test suite.** Integration and e2e tests spin
   a Postgres testcontainer. No Docker -> point the suite at an external DB via
   `POSTGRES_HOST` (and the other `POSTGRES_*` vars).
@@ -103,16 +110,18 @@ runtime one.
   break unqualified queries; the design relies on the startup-packet value
   surviving pool reset (migration DDL is schema-qualified, runtime queries are
   not).
-- **Integration and e2e share one DB/schema.** The integration repo test
-  (`test_pg_item_repo.py::test_list_and_delete`) asserts row-count **deltas**
-  against a captured baseline, not absolute counts, because the e2e suite
-  commits rows into the same schema. Never write absolute-count assertions
-  against this schema.
+- **Integration and e2e share one DB/schema.** media integration tests stay
+  isolated by rolling back their session (`test_sql_video_repo.py`) or deleting
+  their own rows after a real commit (`test_outbox_relay.py`). The e2e suite
+  commits into the same schema, so never write absolute row-count assertions
+  against it.
 
 ## Pointers
 
-- [ADR 0019](../adr/0019-sqlite-to-postgres.md) -- the decision.
-- asyncpg: https://magicstack.github.io/asyncpg/current/
+- [ADR 0019](../adr/0019-sqlite-to-postgres.md) -- Postgres over SQLite.
+- [ADR 0025](../adr/0025-standardize-on-sqlalchemy.md) -- single SQLAlchemy stack.
+- SQLAlchemy 2.0 async: https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html
+- asyncpg (driver): https://magicstack.github.io/asyncpg/current/
 - advanced-alchemy: https://docs.advanced-alchemy.litestar.dev/
 - yoyo-migrations: https://ollycope.com/software/yoyo/latest/
 - Postgres `search_path`: https://www.postgresql.org/docs/18/ddl-schemas.html#DDL-SCHEMAS-PATH

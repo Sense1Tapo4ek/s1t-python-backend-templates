@@ -158,13 +158,15 @@ The ORM models must be imported before `create_all` so they register with
 (`adapters/lifespan_manager.py`) imports `ports.orm_models`
 at module level for that side effect.
 
-## SQLAlchemy scope in the template
+## advanced-alchemy scope in the template
 
-`db_example_litestar` is the **only** SQLAlchemy / advanced-alchemy user in the
-template, now running on Postgres. `media_example` talks to the same Postgres
-database with raw asyncpg; `admin/log` reads JSONL log files and touches no DB.
-Do not pull SQLAlchemy into other contexts; if needed, write a new context
-following this one as a reference.
+`db_example_litestar` is the **only** advanced-alchemy user. Both DB contexts
+run on SQLAlchemy (`postgresql+asyncpg`): `media_example` uses plain
+SQLAlchemy 2.0 (it has domain logic + a transactional outbox), this context
+uses advanced-alchemy's Repository/Service for domain-less CRUD. `admin/log`
+reads JSONL log files and touches no DB. Reach for advanced-alchemy when a
+context is thin CRUD; reach for plain SQLAlchemy when it has real domain logic.
+See ADR 0025.
 
 ## Invariants and gotchas
 
@@ -189,6 +191,6 @@ following this one as a reference.
 - [docs/adr/0016-db-example-litestar-orm-model-in-ports-root.md](../adr/0016-db-example-litestar-orm-model-in-ports-root.md) — ORM model at `ports/` root (used by both branches); supersedes 0015
 - [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](../adr/0015-db-example-litestar-orm-model-in-domain.md) — (superseded by 0016) ORM model in domain/
 - [docs/adr/0013-litestar-2.23-floor.md](../adr/0013-litestar-2.23-floor.md) — version bump rationale
-- [docs/contexts/media_example.md](media_example.md) — raw asyncpg counterpart (golden context)
+- [docs/contexts/media_example.md](media_example.md) — plain-SQLAlchemy counterpart (golden context)
 - [docs/infra/postgres.md](../infra/postgres.md) — Postgres wiring (schemas, DSNs, search_path)
 - [docs/architecture.md](../architecture.md) — S-DDD layers and DI scopes

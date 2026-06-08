@@ -1,19 +1,20 @@
 # media_example context
 
 The golden example context in this template. For contributors learning how
-to wire a full S-DDD context with a transactional outbox, asyncpg, Valkey
+to wire a full S-DDD context with a transactional outbox, SQLAlchemy, Valkey
 Streams, and a Litestar SSE feed.
 
 Replaces the deleted `orders` and `db_example_sddd` examples as the primary
 worked reference. Delete it when adapting the template; keep `db_example_litestar`
-only if you also need the SQLAlchemy / advanced-alchemy pattern.
+only if you also need the advanced-alchemy (Repository/Service) pattern. Both
+contexts run on SQLAlchemy; media uses plain SQLAlchemy 2.0 (see ADR 0025).
 
 ## Mental model
 
 ```
 POST /videos (202)
   |
-  +-- asyncpg tx:
+  +-- SQLAlchemy session (one tx):
   |     INSERT media.videos (status=PENDING)
   |     INSERT media.outbox_messages
   |
@@ -21,7 +22,7 @@ POST /videos (202)
 
 OutboxRelay (lifespan background task, runs forever)
   |
-  +-- asyncpg tx:  SELECT ... FOR UPDATE SKIP LOCKED
+  +-- SQLAlchemy session:  SELECT ... FOR UPDATE SKIP LOCKED
   |     XADD video_uploaded (Valkey Stream)
   |     UPDATE outbox_messages SET sent_at
   |
@@ -58,8 +59,7 @@ No events are published to it in Phase A; consumers can subscribe and wait.
 | Env var | Default | Notes |
 |:---|:---|:---|
 | `MEDIA_SCHEMA_NAME` | `media` | Postgres schema |
-| `MEDIA_POOL_SIZE` | `4` | asyncpg pool max connections |
-| `MEDIA_RECENT_LIMIT` | `50` | default cap on `GET /videos` |
+| `MEDIA_POOL_SIZE` | `4` | SQLAlchemy engine pool size |
 | `MEDIA_RELAY_BATCH` | `100` | outbox rows per drain cycle |
 | `MEDIA_RELAY_IDLE_SLEEP` | `0.5` | seconds to sleep when outbox is empty |
 
@@ -86,6 +86,10 @@ schema media
     ix_outbox_pending (created_at WHERE sent_at IS NULL)
 ```
 
+ORM models `VideoRow` / `OutboxRow` (`ports/driven/orm_models.py`) mirror this
+DDL. yoyo owns schema creation; the ORM only maps rows for queries (no
+`create_all`).
+
 ### Domain
 
 `Video` aggregate: status machine PENDING -> PROCESSING -> DONE/FAILED;
@@ -96,17 +100,20 @@ guarded `mark_processing()` / `mark_done()` / `mark_failed()` raise
 
 | Provider | Scope | Contents |
 |:---|:---|:---|
-| `MediaInfraProvider` | APP | `MediaConfig`, `MediaPool`, `OutboxRelay`, `MediaLifespanManager` |
-| `MediaWebProvider` | REQUEST | `MediaFacade` (acquires asyncpg connection per request) |
+| `MediaInfraProvider` | APP | `MediaConfig`, `MediaDb`, `OutboxRelay`, `MediaLifespanManager` |
+| `MediaWebProvider` | REQUEST | `MediaFacade` (opens an `AsyncSession` per request) |
 
-`MediaPool` is a named wrapper around `asyncpg.Pool` with its own DI key,
-distinct from any pool another context might hold.
+`MediaDb` is a named wrapper around the SQLAlchemy `AsyncEngine` +
+`async_sessionmaker` with its own DI key, distinct from the bare `AsyncEngine`
+`db_example_litestar` provides (same type, different context -- avoids a Dishka
+key collision).
 
 ## Invariants & gotchas
 
-- **Outbox is written in the same transaction as the video row.** If the tx
-  rolls back, the outbox row disappears too. The relay delivers at-least-once;
-  consumers must be idempotent.
+- **Outbox is written in the same transaction as the video row.** The repos and
+  the UoW share one `AsyncSession`, so the video INSERT and the outbox INSERT
+  commit together; if the tx rolls back, both vanish. The relay delivers
+  at-least-once; consumers must be idempotent.
 - **`SELECT ... FOR UPDATE SKIP LOCKED`.** Multiple `APP_WORKERS` relay tasks
   can run concurrently without duplicating delivery: each grabs its own batch
   of un-sent rows and holds row-level locks until the batch is marked sent.
@@ -127,7 +134,8 @@ distinct from any pool another context might hold.
 - `src/media_example/` — full context source
 - `migrations/media/001-create-videos.sql` — schema DDL
 - [docs/infra/valkey.md](../infra/valkey.md) — Valkey wiring (outbox relay + Channels backend)
-- [docs/infra/postgres.md](../infra/postgres.md) — asyncpg pool, search_path, migrations
+- [docs/infra/postgres.md](../infra/postgres.md) — SQLAlchemy engine, search_path, migrations
 - [docs/adr/0022-video-pipeline-transport-roles.md](../adr/0022-video-pipeline-transport-roles.md) — transport role decision
 - [docs/adr/0024-media-example-golden-context.md](../adr/0024-media-example-golden-context.md) — why this replaced orders + db_example_sddd
+- [docs/adr/0025-standardize-on-sqlalchemy.md](../adr/0025-standardize-on-sqlalchemy.md) — single DB stack; plain SQLAlchemy here
 - [docs/architecture.md](../architecture.md) — S-DDD layers, DI scopes, how to add a context

@@ -20,7 +20,7 @@ API.
 | `admin` | `src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [contexts/admin.md](contexts/admin.md). |
 | `admin/log` | `src/admin/log/` | Sub-context: file-tail log viewer over the rotating JSONL file the app writes; SSE live tail, NDJSON/CSV export. See [contexts/admin-log.md](contexts/admin-log.md). |
 | `db_example_litestar` | `src/db_example_litestar/` | Example context: SQLAlchemy 2.0 + advanced-alchemy, hybrid layering, `SQLAlchemyDTO`. The only SQLAlchemy user in the template. See [contexts/db_example_litestar.md](contexts/db_example_litestar.md). |
-| `media_example` | `src/media_example/` | Golden context: video ingest pipeline. `POST /videos` (202) writes a video row + outbox message in one asyncpg tx; a lifespan background relay drains the outbox to a Valkey Stream (`video_uploaded`); `GET /videos/feed` is an SSE subscription (broadcast lands in a later phase). See [contexts/media_example.md](contexts/media_example.md). |
+| `media_example` | `src/media_example/` | Golden context: video ingest pipeline. `POST /videos` (202) writes a video row + outbox message in one SQLAlchemy session/tx; a lifespan background relay drains the outbox to a Valkey Stream (`video_uploaded`); `GET /videos/feed` is an SSE subscription (broadcast lands in a later phase). See [contexts/media_example.md](contexts/media_example.md). |
 
 Adding a context: see §8 below.
 
@@ -122,7 +122,7 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 | `admin/log/config.py::AdminLogConfig` | `LOG_` | `file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
 | `shared/config.py::MetricsConfig` | `METRICS_` | Prometheus endpoint path + public flag, HTTP buckets, multiproc dir. |
 | `shared/config.py::ValkeyConfig` | `VALKEY_` | Valkey host/port/db/password/max_connections, `url` property. |
-| `media_example/config.py::MediaConfig` | `MEDIA_` | schema_name, pool_size, recent_limit, relay_batch, relay_idle_sleep. |
+| `media_example/config.py::MediaConfig` | `MEDIA_` | schema_name, pool_size, relay_batch, relay_idle_sleep. |
 
 Rules:
 - Business logic never reads `os.environ`. Config flows through providers.
