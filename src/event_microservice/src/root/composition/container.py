@@ -1,6 +1,7 @@
 import redis.asyncio as aioredis
 from dishka import AsyncContainer, Provider, Scope, make_async_container, provide
 
+from media_processing.provider import MediaProcessingProvider
 from root.config import RootConfig
 from shared.adapters.driven.valkey import build_valkey
 
@@ -18,4 +19,4 @@ class RootProvider(Provider):
 
 
 def build_container() -> AsyncContainer:
-    return make_async_container(RootProvider())
+    return make_async_container(RootProvider(), MediaProcessingProvider())
