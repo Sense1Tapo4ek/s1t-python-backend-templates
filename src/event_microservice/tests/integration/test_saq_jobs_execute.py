@@ -3,9 +3,9 @@ from uuid import uuid4
 import pytest
 from saq import Queue, Worker
 
-from media_processing.adapters.driven.saq_setup import shutdown, startup
 from media_processing.adapters.driving import plagiarism, stt, transcode
 from media_processing.domain import JobKind
+from root.entrypoints.saq_worker import shutdown, startup
 
 
 class TestSaqJobsExecute:

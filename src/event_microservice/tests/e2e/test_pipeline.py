@@ -6,10 +6,10 @@ import pytest
 import redis.asyncio as aioredis
 from saq import Queue, Worker
 
-from media_processing.adapters.driven.saq_setup import shutdown, startup
 from media_processing.adapters.driving import handle_uploaded, plagiarism, stt, transcode
 from media_processing.ports.driving import MediaProcessingFacade
 from root.composition.container import build_container
+from root.entrypoints.saq_worker import shutdown, startup
 
 
 def _wire_payload(video_id) -> bytes:
@@ -38,6 +38,10 @@ class TestPipeline:
         monkeypatch.setenv("VALKEY_URL", valkey_url)
         monkeypatch.setenv("MEDIA_PROCESSING_FAKE_WORK_SECONDS", "0.0")
         monkeypatch.setenv("MEDIA_PROCESSING_TRANSCODE_ITERATIONS", "1000")
+        # retries=0 keeps the assertion deterministic: with at-least-once retries a
+        # redelivered job re-touches the join after it cleared (benign, TTL-bounded
+        # in prod), which would leave the key present and fail the strict check.
+        monkeypatch.setenv("MEDIA_PROCESSING_JOB_RETRIES", "0")
         video_id = uuid4()
 
         container = build_container()
