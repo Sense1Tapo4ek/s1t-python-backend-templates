@@ -5,7 +5,7 @@ description = "FastStream consumer + SAQ worker for the media-processing pipelin
 requires-python = ">=3.12"
 dependencies = [
     "dishka>=1.10.1",
-    "faststream[redis]>=0.5",
+    "faststream[redis,cli]>=0.5",
     "msgspec>=0.18",
     "pydantic-settings>=2.12.0",
     "redis[hiredis]>=5.0",
