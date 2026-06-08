@@ -155,7 +155,7 @@ should use yoyo (see `media_example`) or Alembic.
 
 The ORM models must be imported before `create_all` so they register with
 `UUIDAuditBase.metadata`. The lifespan manager
-(`adapters/db_example_litestar_lifespan_manager.py`) imports `ports.orm_models`
+(`adapters/lifespan_manager.py`) imports `ports.orm_models`
 at module level for that side effect.
 
 ## SQLAlchemy scope in the template

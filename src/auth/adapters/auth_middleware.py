@@ -6,8 +6,8 @@ from litestar.middleware import AbstractAuthenticationMiddleware, Authentication
 
 from shared.domain.auth import Principal, Role
 
-from ...config import ADMIN_COOKIE_NAME, MAX_TOKEN_LEN
-from ...ports.driving import AuthFacade
+from ..config import ADMIN_COOKIE_NAME, MAX_TOKEN_LEN
+from ..ports.driving import AuthFacade
 
 _log = structlog.get_logger(__name__)
 _BEARER_RE = re.compile(r"^Bearer\s+(.+)$", re.IGNORECASE)

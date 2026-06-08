@@ -9,7 +9,7 @@ from litestar import Litestar
 
 from admin.log.config import AdminLogConfig
 from auth.ports.driving import AuthFacade
-from db_example_litestar.adapters.db_example_litestar_lifespan_manager import (
+from db_example_litestar.adapters.lifespan_manager import (
     DbExampleLitestarLifespanManager,
 )
 from media_example.adapters.media_example_lifespan_manager import MediaLifespanManager

@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from shared.config import PostgresConfig
 
-from .adapters.db_example_litestar_lifespan_manager import DbExampleLitestarLifespanManager
 from .adapters.driven.engine import build_engine, build_sessionmaker
+from .adapters.lifespan_manager import DbExampleLitestarLifespanManager
 from .config import DbExampleLitestarConfig
 from .ports.driven.services.author_service import AuthorService
 from .ports.driven.services.book_service import BookService
