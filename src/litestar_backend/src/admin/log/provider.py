@@ -32,14 +32,6 @@ class AdminLogWebProvider(Provider):
     def log_follower(self, reader: FileLogReader) -> ILogFollower:
         return reader
 
-    @provide
-    def log_queries(
-        self, reader: ILogReader, follower: ILogFollower
-    ) -> LogQueries:
-        return LogQueries(_reader=reader, _follower=follower)
-
-    @provide
-    def export_logs_uc(self, reader: ILogReader) -> ExportLogsUc:
-        return ExportLogsUc(_reader=reader)
-
+    log_queries = provide(LogQueries)
+    export_logs_uc = provide(ExportLogsUc)
     logs_facade = provide(LogsFacade)

@@ -43,6 +43,14 @@ def _to_entry_schema(ent: LogEntryEnt) -> LogEntrySchema:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class LogsFacade:
+    """Driving port for the admin operator: the log-viewer surface.
+
+    Public entry point of the `admin/log` context, called by the log
+    controller and SSE handler. Maps domain LogEntryEnt to the wire
+    LogEntrySchema (promoting known keys to columns, packing the rest into
+    context_json) and delegates reads to the query/use-case layer.
+    """
+
     _log_queries: LogQueries
     _export_logs_uc: ExportLogsUc
 
@@ -50,6 +58,12 @@ class LogsFacade:
         self,
         limit: int,
     ) -> tuple[list[LogEntrySchema], Cursor | None]:
+        """Return the newest `limit` log rows, oldest-first, plus a back-cursor.
+
+        Called on the initial log-page load. The cursor points at the oldest
+        returned row; pass it to load_older_logs to page further back.
+        Propagates LogReadError if the log file cannot be read.
+        """
         entries, cursor = await self._log_queries.render_page(limit)
         return [_to_entry_schema(e) for e in entries], cursor
 
@@ -58,6 +72,13 @@ class LogsFacade:
         cursor: Cursor,
         limit: int,
     ) -> tuple[list[LogEntrySchema], Cursor | None]:
+        """Return up to `limit` rows older than `cursor`, oldest-first.
+
+        Called on a "load more" request. Returns the next back-cursor for
+        continued paging. If the history behind the cursor was rotated away,
+        returns no rows with the unchanged cursor (the caller stops paging).
+        Propagates LogReadError if the log file cannot be read.
+        """
         entries, next_cursor = await self._log_queries.load_older(cursor, limit)
         return [_to_entry_schema(e) for e in entries], next_cursor
 
@@ -65,13 +86,34 @@ class LogsFacade:
         self,
         poll_ms: int,
     ) -> AsyncGenerator[LogEntrySchema, None]:
+        """Yield newly-appended log rows as they arrive (live SSE tail).
+
+        Called by the SSE endpoint. Starts at the current EOF (no history
+        replay), polls every `poll_ms` ms, and never completes on its own --
+        the caller stops it by closing the generator on client disconnect.
+        Survives rotation best-effort (at-most-once across the gap).
+        """
         async for entry in self._log_queries.stream_tail(poll_ms):
             yield _to_entry_schema(entry)
 
     async def export_ndjson(self) -> AsyncGenerator[str, None]:
+        """Stream the whole file as NDJSON (raw JSONL lines, newline-terminated).
+
+        Called by the NDJSON download endpoint. Backed by a point-in-time
+        snapshot opened once; O(1) memory. Lines are emitted verbatim.
+        Propagates LogReadError if the file cannot be opened.
+        """
         async for chunk in self._export_logs_uc.export_ndjson():
             yield chunk
 
     async def export_csv(self) -> AsyncGenerator[str, None]:
+        """Stream the whole file as CSV (timestamp, level, logger, event).
+
+        Called by the CSV download endpoint. Emits a header row, then one row
+        per parseable entry from a point-in-time snapshot (O(1) memory);
+        malformed lines are skipped and cells are defused against spreadsheet
+        formula injection. Propagates LogReadError if the file cannot be
+        opened.
+        """
         async for chunk in self._export_logs_uc.export_csv():
             yield chunk
