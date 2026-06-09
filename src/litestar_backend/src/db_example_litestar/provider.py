@@ -37,6 +37,9 @@ class DbExampleLitestarProvider(Provider):
         async with sm() as s:
             yield s
 
+    # Services keep explicit factories: advanced-alchemy's service ctor annotates
+    # its session param as AsyncSession | async_scoped_session[AsyncSession], which
+    # the bare AsyncSession provided here does not satisfy by type alone.
     @provide(scope=Scope.REQUEST)
     def author_service(self, session: AsyncSession) -> AuthorService:
         return AuthorService(session=session)
@@ -45,10 +48,5 @@ class DbExampleLitestarProvider(Provider):
     def book_service(self, session: AsyncSession) -> BookService:
         return BookService(session=session)
 
-    @provide(scope=Scope.REQUEST)
-    def author_facade(self, author_service: AuthorService) -> AuthorFacade:
-        return AuthorFacade(_service=author_service)
-
-    @provide(scope=Scope.REQUEST)
-    def book_facade(self, book_service: BookService) -> BookFacade:
-        return BookFacade(_service=book_service)
+    author_facade = provide(AuthorFacade, scope=Scope.REQUEST)
+    book_facade = provide(BookFacade, scope=Scope.REQUEST)
