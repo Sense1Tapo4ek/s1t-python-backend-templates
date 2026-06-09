@@ -62,7 +62,7 @@ class LogsApiController(Controller):
         _log.info("logs page served", entry_count=len(entries))
         return LogPageResponseSchema(
             entries=entries,
-            cursor=encode_cursor(cursor) if cursor is not None else None,
+            cursor=encode_cursor(cursor),
         )
 
     @get("/older", status_code=HTTP_200_OK,
@@ -86,7 +86,7 @@ class LogsApiController(Controller):
         _log.info("logs older served", entry_count=len(entries))
         return LogPageResponseSchema(
             entries=entries,
-            cursor=encode_cursor(next_cursor) if next_cursor is not None else None,
+            cursor=encode_cursor(next_cursor),
         )
 
     @get("/stream", status_code=HTTP_200_OK,

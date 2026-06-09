@@ -40,20 +40,20 @@ class LogPageResponseSchema(BaseModel):
 
     `cursor` is an opaque base64("inode:offset") token marking the byte
     offset of the OLDEST line in this page; pass it to `/older?cursor=`
-    to read further back. `cursor=None` means no older history is
-    available (start of file or rotation boundary).
+    to read further back. End of history is reached when `/older` returns
+    an empty `entries` list.
     """
 
     model_config = ConfigDict(frozen=True)
 
     entries: list[LogEntrySchema] = Field(
-        description="Log lines in the page, newest-first within the slice."
+        description="Log lines in the page, oldest-first (chronological order)."
     )
     cursor: str | None = Field(
         default=None,
         description=(
             "Opaque base64('inode:offset') token marking the byte offset of "
-            "the oldest line in this page; null when no older history exists."
+            "the oldest line in this page."
         ),
         examples=["MTIzNDU2Nzg6NDA5Ng=="],
     )

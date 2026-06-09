@@ -55,12 +55,12 @@ class LogsFacade:
     async def render_log_page(
         self,
         limit: int,
-    ) -> tuple[list[LogEntrySchema], Cursor | None]:
+    ) -> tuple[list[LogEntrySchema], Cursor]:
         """Return the newest `limit` log rows, oldest-first, plus a back-cursor.
 
-        Called on the initial log-page load. The cursor points at the oldest
-        returned row; pass it to load_older_logs to page further back.
-        Propagates LogReadError if the log file cannot be read.
+        The cursor points at the oldest returned row; pass it to
+        load_older_logs to page further back. Propagates LogReadError if the
+        log file cannot be read.
         """
         entries, cursor = await self._log_queries.render_page(limit)
         return [_to_entry_schema(e) for e in entries], cursor
@@ -69,13 +69,13 @@ class LogsFacade:
         self,
         cursor: Cursor,
         limit: int,
-    ) -> tuple[list[LogEntrySchema], Cursor | None]:
+    ) -> tuple[list[LogEntrySchema], Cursor]:
         """Return up to `limit` rows older than `cursor`, oldest-first.
 
-        Called on a "load more" request. Returns the next back-cursor for
-        continued paging. If the history behind the cursor was rotated away,
-        returns no rows with the unchanged cursor (the caller stops paging).
-        Propagates LogReadError if the log file cannot be read.
+        Returns the next back-cursor for continued paging. If the history
+        behind the cursor was rotated away, returns no rows with the unchanged
+        cursor (the caller stops paging). Propagates LogReadError if the log
+        file cannot be read.
         """
         entries, next_cursor = await self._log_queries.load_older(cursor, limit)
         return [_to_entry_schema(e) for e in entries], next_cursor
@@ -86,9 +86,9 @@ class LogsFacade:
     ) -> AsyncGenerator[LogEntrySchema, None]:
         """Yield newly-appended log rows as they arrive (live SSE tail).
 
-        Called by the SSE endpoint. Starts at the current EOF (no history
-        replay), polls every `poll_ms` ms, and never completes on its own --
-        the caller stops it by closing the generator on client disconnect.
+        Starts at the current EOF (no history replay), polls every `poll_ms`
+        ms, and never completes on its own -- the caller stops it by closing
+        the generator on client disconnect.
         Survives rotation best-effort (at-most-once across the gap).
         """
         async for entry in self._log_queries.stream_tail(poll_ms):
@@ -97,8 +97,8 @@ class LogsFacade:
     async def export_ndjson(self) -> AsyncGenerator[str, None]:
         """Stream the whole file as NDJSON (raw JSONL lines, newline-terminated).
 
-        Called by the NDJSON download endpoint. Backed by a point-in-time
-        snapshot opened once; O(1) memory. Lines are emitted verbatim.
+        Backed by a point-in-time snapshot opened once; O(1) memory. Lines
+        are emitted verbatim.
         Propagates LogReadError if the file cannot be opened.
         """
         async for chunk in self._export_logs_uc.export_ndjson():
@@ -107,8 +107,8 @@ class LogsFacade:
     async def export_csv(self) -> AsyncGenerator[str, None]:
         """Stream the whole file as CSV (timestamp, level, logger, event).
 
-        Called by the CSV download endpoint. Emits a header row, then one row
-        per parseable entry from a point-in-time snapshot (O(1) memory);
+        Emits a header row, then one row per parseable entry from a
+        point-in-time snapshot (O(1) memory);
         malformed lines are skipped and cells are defused against spreadsheet
         formula injection. Propagates LogReadError if the file cannot be
         opened.

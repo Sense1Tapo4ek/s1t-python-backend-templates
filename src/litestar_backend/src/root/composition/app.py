@@ -41,8 +41,8 @@ from admin.log.adapters.driving.api import (
 from auth.adapters import AuthMiddleware
 from auth.ports.driving import SECURITY_COMPONENTS
 from db_example_litestar.adapters.driving import AuthorController, BookController
+from media_example import VIDEOS_CHANNEL
 from media_example.adapters.driving import VideoController, VideoFeedController
-from media_example.ports.driving import VIDEOS_CHANNEL
 from root.composition.lifespan import lifespan
 from root.config import RootConfig
 from shared.adapters.driven.valkey import build_valkey_client

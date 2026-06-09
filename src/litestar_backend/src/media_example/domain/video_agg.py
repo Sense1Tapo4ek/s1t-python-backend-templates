@@ -20,7 +20,7 @@ class Video:
     source_key: str
     status: VideoStatus = VideoStatus.PENDING
     uploaded_at: datetime
-    _events: list[object] = field(default_factory=list, repr=False)
+    _events: list[VideoUploaded] = field(default_factory=list, repr=False)
 
     @classmethod
     def upload(cls, *, source_key: str, uploaded_at: datetime | None = None) -> "Video":
@@ -58,7 +58,7 @@ class Video:
     def mark_failed(self) -> None:
         self._transition(VideoStatus.FAILED)
 
-    def collect_events(self) -> list[object]:
+    def collect_events(self) -> list[VideoUploaded]:
         events = self._events.copy()
         self._events.clear()
         return events

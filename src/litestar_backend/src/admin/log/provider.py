@@ -1,4 +1,4 @@
-from dishka import Provider, Scope, provide
+from dishka import AnyOf, Provider, Scope, provide
 
 from .adapters.driven.log_file_source import LogFileSource
 from .app import ExportLogsUc, ILogFollower, ILogReader, LogQueries
@@ -21,16 +21,8 @@ class AdminLogWebProvider(Provider):
         return LogFileSource(path=config.file_path)
 
     @provide
-    def file_log_reader(self, source: LogFileSource) -> FileLogReader:
+    def log_reader(self, source: LogFileSource) -> AnyOf[ILogReader, ILogFollower]:
         return FileLogReader(_source=source)
-
-    @provide
-    def log_reader(self, reader: FileLogReader) -> ILogReader:
-        return reader
-
-    @provide
-    def log_follower(self, reader: FileLogReader) -> ILogFollower:
-        return reader
 
     log_queries = provide(LogQueries)
     export_logs_uc = provide(ExportLogsUc)

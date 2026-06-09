@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from shared.app import IClock
 
-from ..domain import Video, VideoUploaded
+from ..domain import Video
 from .interfaces import IOutboxRepo, IUoW, IVideoRepo
 
 
@@ -23,6 +23,5 @@ class UploadVideoUC:
         async with self._uow:
             await self._repo.save(video)
             for event in video.collect_events():
-                if isinstance(event, VideoUploaded):
-                    await self._outbox.add(event)
+                await self._outbox.add(event)
         return video
