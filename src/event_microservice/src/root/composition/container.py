@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 import redis.asyncio as aioredis
 from dishka import AsyncContainer, Provider, Scope, make_async_container, provide
 
-from media_processing.provider import MediaProcessingProvider
+from media_processing import MediaProcessingProvider
 from root.config import RootConfig
 from shared.adapters.driven.valkey import build_valkey
 
