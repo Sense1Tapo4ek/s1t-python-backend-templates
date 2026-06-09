@@ -17,14 +17,7 @@ class ILogFileSource(Protocol):
 
 @dataclass(slots=True, kw_only=True)
 class FileLogReader:
-    """ILogReader + ILogFollower over a JSONL file via an injected source.
-
-    Maps raw lines to LogEntryEnt and owns Cursor semantics. Malformed
-    lines are skipped and counted (the count is discarded here; the
-    optional warning is the adapter's job -- ports do not log). read_before
-    returns the unchanged cursor with an empty page when the cursor inode
-    no longer matches the live file (rotation-truncation sentinel).
-    """
+    """Implements ILogReader and ILogFollower over an injected ILogFileSource."""
 
     _source: ILogFileSource
 

@@ -14,8 +14,6 @@ def _token_id(token: str) -> str:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class StaticTokenResolver(ITokenResolver):
-    """Constant-time comparison defends against timing attacks."""
-
     _config: AuthConfig
 
     async def resolve(self, token: str) -> Principal | None:

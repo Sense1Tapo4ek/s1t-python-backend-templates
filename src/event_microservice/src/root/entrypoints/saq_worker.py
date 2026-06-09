@@ -40,7 +40,7 @@ async def after_process(ctx: dict[str, Any]) -> None:
     exc = ctx.get("exception")
     if exc is not None:
         job = ctx.get("job")
-        _log.error("job failed", job=getattr(job, "function", None), error=str(exc))
+        _log.error("job failed", job=getattr(job, "function", None), exc_info=exc)
 
 
 settings: dict[str, Any] = {

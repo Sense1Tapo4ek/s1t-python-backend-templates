@@ -46,7 +46,7 @@ class AdminController(Controller):
                 "now": view.now.strftime("%Y-%m-%d %H:%M:%S UTC"),
                 "uptime": _format_uptime(view.uptime),
                 "commit_short": _short_sha(view.build.commit_sha),
-                "branch": view.build.branch or "—",
+                "branch": view.build.branch or "--",
                 "dirty": "yes" if view.build.dirty else "no",
             },
         )

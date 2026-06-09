@@ -17,6 +17,5 @@ class CompleteJobUC:
     async def __call__(self, video_id: UUID, kind: JobKind) -> None:
         done = await self._store.add(video_id, kind)
         if JoinPolicy.is_complete(done_count=done, fan_out=self._fan_out):
-            # Phase C swaps this milestone log for publishing `video_processed`.
             _log.info("video processed", video_id=str(video_id), jobs_done=done)
             await self._store.clear(video_id)

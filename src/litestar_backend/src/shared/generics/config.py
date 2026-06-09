@@ -10,11 +10,10 @@ PROJECT_ROOT = SRC_DIR.parent
 def _resolve_env_file() -> Path | None:
     """Locate `.env` at instance creation, not class definition.
 
-    Why: child configs (`AuthConfig`, `AdminLogConfig`) snapshot
-    `model_config` from the base when they declare their own -- so a test-time
-    `monkeypatch.setitem(BaseAppConfig.model_config, ...)` can't reach them.
-    Resolving via a function keeps a single point that tests override with
-    `monkeypatch.setattr`.
+    Why: a subclass that declares its own `model_config` snapshots the base's
+    at class-definition time, so a test-time
+    `monkeypatch.setitem(BaseAppConfig.model_config, ...)` cannot reach it.
+    Resolving via a function gives tests a single `monkeypatch.setattr` target.
     """
     for directory in [PROJECT_ROOT, *PROJECT_ROOT.parents]:
         env_path = directory / ".env"

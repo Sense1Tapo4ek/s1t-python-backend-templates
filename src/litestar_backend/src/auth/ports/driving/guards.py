@@ -8,8 +8,12 @@ from shared.domain.auth import Principal, Role
 
 
 def require_role(*roles: Role) -> Callable[[ASGIConnection, BaseRouteHandler], None]:
-    """UNKNOWN role -> 401 (login redirect expected upstream); authenticated
-    but wrong role -> 403."""
+    """Return a guard enforcing role membership on a connection.
+
+    Raises NotAuthorizedException (401) when the principal is missing or
+    UNKNOWN; raises PermissionDeniedException (403) when the role is not in
+    `roles`.
+    """
     role_set = frozenset(roles)
     role_names = tuple(r.value for r in roles)
 

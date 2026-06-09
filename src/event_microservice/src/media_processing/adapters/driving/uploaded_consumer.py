@@ -34,6 +34,7 @@ async def on_video_uploaded(
     except msgspec.MsgspecError:
         # Poison pill: a malformed payload never decodes -- log and ack so it does
         # not redeliver forever. Transient failures (PortError) propagate and stay
-        # un-acked for redelivery. (event_id dedup is deferred; see spec.)
+        # un-acked for redelivery. (event_id dedup is deferred; see
+        # docs/contract/video_uploaded.md.)
         _log.warning("video_uploaded malformed payload dropped", raw=str(body)[:200])
     await msg.ack()

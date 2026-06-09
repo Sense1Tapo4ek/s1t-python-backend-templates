@@ -7,7 +7,7 @@ _GIT_TIMEOUT_S = 2.0
 def resolve_build_meta() -> tuple[str | None, str | None, bool]:
     """Resolve (commit_sha, branch, dirty) from env, falling back to git.
 
-    Primitives only — the `BuildInfoVo` is assembled in the provider, so this
+    Primitives only -- the `BuildInfoVo` is assembled in the provider, so this
     driven adapter stays domain-blind.
     """
     sha, branch, dirty = _from_env()

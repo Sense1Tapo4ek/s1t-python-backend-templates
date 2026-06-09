@@ -15,8 +15,9 @@ class BookFacade:
 
     Single internal actor: the HTTP controller. Each method wraps one
     advanced-alchemy service call, commits eagerly (auto_commit), and returns
-    the ORM model. Service-raised errors (e.g. a foreign-key violation on an
-    unknown author_id) propagate to the controller's exception handler.
+    the ORM model. A foreign-key violation on an unknown author_id surfaces as
+    SQLAlchemy IntegrityError, which is unmapped and reaches the fallback
+    handler as a 500 (a strict context would catch and translate it).
     """
 
     _service: BookService

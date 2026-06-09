@@ -18,8 +18,8 @@ class AuthorFacade:
 
     Single internal actor: the HTTP controller. Each method wraps one
     advanced-alchemy service call, commits eagerly (auto_commit), and returns
-    the ORM model. NotFoundError from the service (missing id) propagates to the
-    controller's exception handler; advanced-alchemy maps it to 404.
+    the ORM model. advanced-alchemy's NotFoundError (missing id) propagates
+    unchanged; the global exception handler maps it to 404.
     """
 
     _service: AuthorService

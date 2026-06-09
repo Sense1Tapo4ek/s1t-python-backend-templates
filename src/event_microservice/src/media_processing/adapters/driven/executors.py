@@ -25,6 +25,12 @@ def plagiarism_blocking(video_id: str, work_seconds: float) -> str:
 
 
 def transcode_cpu(video_id: str, iterations: int) -> int:
+    """Stand-in for CPU-bound work; dispatched to a process pool to bypass the GIL.
+
+    A thread would not help here: the GIL serializes Python bytecode, so true
+    parallelism needs a separate process. video_id is unused (a real encoder
+    would read the source) but kept for call-site symmetry with the others.
+    """
     total = 0
     for i in range(iterations):
         total += i * i

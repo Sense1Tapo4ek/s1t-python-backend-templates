@@ -19,9 +19,7 @@ class AuthFacade:
         """Verify a bearer token and return the associated Principal.
 
         The token is compared in constant time against the configured admin
-        credential, so authentication failure leaks no timing signal. This
-        method imposes no length limit of its own; the auth middleware caps
-        request token length at MAX_TOKEN_LEN before reaching the facade.
+        credential, so authentication failure leaks no timing signal.
 
         Returns:
             Principal carrying Role.ADMIN when the token matches, or None

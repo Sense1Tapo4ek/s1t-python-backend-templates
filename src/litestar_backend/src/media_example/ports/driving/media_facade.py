@@ -16,13 +16,10 @@ from .video_dto import UploadVideoRequest, VideoModel, to_model
 class MediaFacade:
     """Public API of the media_example context for the HTTP actor.
 
-    The single driving port: the video controller and SSE feed call its
-    methods, never the use cases directly. Holds no logic -- each method
-    maps one call to one use case and translates the domain result to a
-    wire model. AppError/DomainError/PortError raised downstream propagate
-    unchanged to the controller, which the global exception handler maps to
-    HTTP status codes. Request-scoped: one instance per request, bound to a
-    single session shared by its repositories and unit of work.
+    The single driving port; holds no logic -- each method maps one call to
+    one use case and translates the domain result to a wire model.
+    AppError/DomainError/PortError raised downstream propagate unchanged; the
+    global exception handler maps them to HTTP status codes.
     """
 
     _upload: UploadVideoUC

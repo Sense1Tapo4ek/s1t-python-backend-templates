@@ -28,10 +28,10 @@ class SharedProvider(Provider):
 
     @provide
     async def provide_valkey_client(self, cfg: ValkeyConfig) -> AsyncIterator[aioredis.Redis]:
-        # APP-scope, lazy: constructed only when first injected; Dishka closes
-        # the generator (aclose) on container teardown. No consumer in Phase 1 --
-        # the Channels backend builds its own client in build_app -- but the
-        # provider lands here as the canonical home for Phase 2/3 (SAQ, dedup).
+        # APP-scope, lazy: constructed on first injection, closed by Dishka
+        # (aclose) on container teardown. Injected into the media_example
+        # outbox relay; the Channels event-bus backend builds its own client
+        # in build_app and does not use this provider.
         client = build_valkey_client(cfg.url, max_connections=cfg.max_connections)
         yield client
         await client.aclose()

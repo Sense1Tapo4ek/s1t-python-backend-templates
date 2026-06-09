@@ -7,11 +7,9 @@ from ...domain import Cursor, LogEntryEnt
 class ILogReader(Protocol):
     """Historical, paginated read-side of the JSONL log file.
 
-    The concrete implementation (FileLogReader over a filesystem source)
-    maps raw lines to LogEntryEnt and owns Cursor semantics. A Cursor is a
-    (inode, byte-offset) pair: the inode pins the page to a specific file
-    incarnation so a rotation invalidates stale cursors, and the offset is
-    the byte position of the first entry of the page within that file.
+    A Cursor is a (inode, byte-offset) pair: the inode pins the page to a
+    specific file incarnation so a rotation invalidates stale cursors, and the
+    offset is the byte position of the first entry of the page within that file.
     """
 
     async def read_tail(

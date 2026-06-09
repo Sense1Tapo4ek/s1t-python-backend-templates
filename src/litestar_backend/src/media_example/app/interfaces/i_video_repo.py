@@ -8,11 +8,9 @@ class IVideoRepo(Protocol):
     async def save(self, video: Video) -> None:
         """Persist a Video as an upsert keyed on its id.
 
-        Insert when the id is new; on an existing id, update only the
-        status column (source_key and uploaded_at are immutable after
-        upload). Writes one row but does NOT commit -- the surrounding
-        IUoW owns the transaction boundary. Raises PortError on any
-        underlying storage failure.
+        Insert when the id is new, update when it already exists. Writes one
+        row but does NOT commit -- the surrounding IUoW owns the transaction
+        boundary. Raises PortError on any underlying storage failure.
         """
         ...
 

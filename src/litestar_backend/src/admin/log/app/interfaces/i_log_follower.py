@@ -14,7 +14,7 @@ class ILogFollower(Protocol):
         replayed) and polls every `poll_ms` milliseconds for new bytes,
         yielding each newly-completed line parsed into a LogEntryEnt. The
         generator never completes on its own; the caller stops it by closing
-        the async iterator (e.g. when the SSE client disconnects).
+        the async iterator.
 
         Survives rotation: on an inode change or size shrink it reopens at the
         new file's start. In truncate-mode rotation (the path keeps its inode)
