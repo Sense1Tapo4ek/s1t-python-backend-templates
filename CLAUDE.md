@@ -169,7 +169,3 @@ docker compose up --build         # db (postgres:18) + app:8000; app data on /da
 ### Adding a bounded context
 
 See [docs/architecture.md §8](docs/architecture.md#8-how-to-recipes).
-
-## Deferred work
-
-See `TODO` for items with rationale.
