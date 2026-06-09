@@ -6,6 +6,7 @@ from root.config import RootConfig
 
 from .app import CompleteJobUC, IJobQueue, IJoinStore, OnVideoUploadedUC
 from .config import MediaProcessingConfig
+from .domain import JobKind
 from .ports.driven import SaqJobQueue, ValkeyJoinStore
 from .ports.driving import MediaProcessingFacade
 
@@ -33,5 +34,5 @@ class MediaProcessingProvider(Provider):
         return ValkeyJoinStore(_valkey=valkey, _ttl_seconds=config.join_ttl_seconds)
 
     @provide
-    def complete_job(self, join_store: IJoinStore, config: MediaProcessingConfig) -> CompleteJobUC:
-        return CompleteJobUC(_store=join_store, _fan_out=config.fan_out)
+    def complete_job(self, join_store: IJoinStore) -> CompleteJobUC:
+        return CompleteJobUC(_store=join_store, _fan_out=len(JobKind))

@@ -1,7 +1,7 @@
 from dishka import AnyOf, Provider, Scope, provide
 
 from .adapters.driven.log_file_source import LogFileSource
-from .app import ExportLogsUc, ILogFollower, ILogReader, LogQueries
+from .app import ExportLogsUc, ILogFollower, ILogReader
 from .config import AdminLogConfig
 from .ports.driven import FileLogReader
 from .ports.driving import LogsFacade
@@ -24,6 +24,5 @@ class AdminLogWebProvider(Provider):
     def log_reader(self, source: LogFileSource) -> AnyOf[ILogReader, ILogFollower]:
         return FileLogReader(_source=source)
 
-    log_queries = provide(LogQueries)
     export_logs_uc = provide(ExportLogsUc)
     logs_facade = provide(LogsFacade)

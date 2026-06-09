@@ -1,9 +1,9 @@
 from collections.abc import AsyncIterator
-from unittest.mock import AsyncMock, create_autospec
+from unittest.mock import create_autospec
 
 import pytest
 
-from admin.log.app import ExportLogsUc, LogQueries
+from admin.log.app import ExportLogsUc
 from admin.log.domain import Cursor, LogEntryEnt
 from admin.log.ports.driving import LogsFacade
 
@@ -15,16 +15,31 @@ def _entry() -> LogEntryEnt:
     )
 
 
+class _FakeReader:
+    async def read_tail(self, limit: int) -> tuple[list[LogEntryEnt], Cursor]:
+        return [_entry()], Cursor(inode=1, offset=0)
+
+    async def read_before(
+        self, cursor: Cursor, limit: int
+    ) -> tuple[list[LogEntryEnt], Cursor]:
+        return [_entry()], cursor
+
+    def stream_all(self) -> AsyncIterator[str]:  # pragma: no cover
+        raise AssertionError("not used")
+
+
+class _FakeFollower:
+    async def follow(self, poll_ms: int) -> AsyncIterator[LogEntryEnt]:
+        if False:  # pragma: no cover - empty async generator
+            yield _entry()
+
+
 @pytest.fixture
 def facade() -> LogsFacade:
-    queries = create_autospec(LogQueries, instance=True)
-    queries.render_page = AsyncMock(
-        return_value=([_entry()], Cursor(inode=1, offset=0))
-    )
-    queries.load_older = AsyncMock(return_value=([_entry()], None))
     export = create_autospec(ExportLogsUc, instance=True)
     return LogsFacade(
-        _log_queries=queries,
+        _reader=_FakeReader(),
+        _follower=_FakeFollower(),
         _export_logs_uc=export,
     )
 

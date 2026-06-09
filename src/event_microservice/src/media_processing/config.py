@@ -1,7 +1,4 @@
-from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from .domain import JobKind
 
 
 class MediaProcessingConfig(BaseSettings):
@@ -12,7 +9,6 @@ class MediaProcessingConfig(BaseSettings):
         extra="ignore",
     )
 
-    fan_out: int = len(JobKind)
     worker_concurrency: int = 10
     thread_pool_size: int = 4
     process_pool_size: int = 2
@@ -22,11 +18,3 @@ class MediaProcessingConfig(BaseSettings):
     job_retries: int = 3
     job_timeout_seconds: int = 120
     metrics_port: int = 9100
-
-    @model_validator(mode="after")
-    def _fan_out_matches_job_kinds(self) -> "MediaProcessingConfig":
-        if self.fan_out != len(JobKind):
-            raise ValueError(
-                f"fan_out must equal the number of JobKinds ({len(JobKind)}), got {self.fan_out}"
-            )
-        return self

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import orjson
 
-from ...app import ExportLogsUc, LogQueries
+from ...app import ExportLogsUc, ILogFollower, ILogReader
 from ...domain import Cursor, LogEntryEnt
 from .log_schemas import LogEntrySchema
 
@@ -49,7 +49,8 @@ class LogsFacade:
     LogEntrySchema rows and delegates reads to the query/use-case layer.
     """
 
-    _log_queries: LogQueries
+    _reader: ILogReader
+    _follower: ILogFollower
     _export_logs_uc: ExportLogsUc
 
     async def render_log_page(
@@ -62,7 +63,7 @@ class LogsFacade:
         load_older_logs to page further back. Propagates LogReadError if the
         log file cannot be read.
         """
-        entries, cursor = await self._log_queries.render_page(limit)
+        entries, cursor = await self._reader.read_tail(limit)
         return [_to_entry_schema(e) for e in entries], cursor
 
     async def load_older_logs(
@@ -77,7 +78,7 @@ class LogsFacade:
         cursor (the caller stops paging). Propagates LogReadError if the log
         file cannot be read.
         """
-        entries, next_cursor = await self._log_queries.load_older(cursor, limit)
+        entries, next_cursor = await self._reader.read_before(cursor, limit)
         return [_to_entry_schema(e) for e in entries], next_cursor
 
     async def stream_tail(
@@ -91,7 +92,7 @@ class LogsFacade:
         the generator on client disconnect.
         Survives rotation best-effort (at-most-once across the gap).
         """
-        async for entry in self._log_queries.stream_tail(poll_ms):
+        async for entry in self._follower.follow(poll_ms):
             yield _to_entry_schema(entry)
 
     async def export_ndjson(self) -> AsyncGenerator[str, None]:

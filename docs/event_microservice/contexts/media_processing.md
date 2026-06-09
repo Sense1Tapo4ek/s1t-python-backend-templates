@@ -32,7 +32,7 @@ functions are module-level (picklable).
 - Inbound schema: `ports/driving/VideoUploadedSchema` (OWN; never imports the
   producer's integration event).
 - Facade: `MediaProcessingFacade.on_uploaded(video_id)` / `.complete_job(video_id, kind)`.
-- Config: `MEDIA_PROCESSING_` (`fan_out`, `worker_concurrency`,
+- Config: `MEDIA_PROCESSING_` (`worker_concurrency`,
   `thread_pool_size`, `process_pool_size`, `fake_work_seconds`,
   `transcode_iterations`, `join_ttl_seconds`, `job_retries`,
   `job_timeout_seconds`, `metrics_port`).
@@ -43,9 +43,9 @@ functions are module-level (picklable).
 
 ## Invariants & gotchas
 
-- **`fan_out` == `len(JobKind)`** is enforced by a Pydantic `model_validator` at
-  config load. Setting `MEDIA_PROCESSING_FAN_OUT` to anything other than the
-  current job count raises `ValueError` at startup.
+- **Fan-out is `len(JobKind)`**, wired directly in the provider -- it is derived
+  from the domain enum, not a config knob. Add a `JobKind` member and the join
+  threshold follows automatically.
 - The SADD join is idempotent under SAQ at-least-once redelivery; a job rerun
   re-adds the same kind and SCARD is unchanged. An `event_id` dedup table is
   deferred (Phase C) -- SADD already gives completion-level idempotency.
