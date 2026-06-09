@@ -63,6 +63,13 @@ is profile-gated (`profiles: ["test"]`) so `docker compose up` never starts it.
 The `tester`/runtime images both copy `static/` (Jinja templates + assets);
 without it the app 500s on every rendered page.
 
+**Dev is container-only.** `docker compose up` auto-merges
+`docker-compose.override.yml`, which bind-mounts host source over the image's
+copy — code changes need no rebuild and no host venv is ever created (the venv
+lives in the image at `/app/.venv`). Local `uv run` for the fast inner loop is
+optional; its `.venv`/`.egg-info`/`__pycache__` are gitignored. Production
+deploys ignore the override: `docker compose -f docker-compose.yml up`.
+
 ## Conventions worth remembering
 
 - **msgspec** for dataclass-shaped wire payloads. Don't reach for `json`
@@ -74,6 +81,18 @@ without it the app 500s on every rendered page.
 - **Single source of truth for shared literals.** `ADMIN_COOKIE_NAME` in
   `auth/config.py`. Re-import; never duplicate.
 - **No emoji.** Code, docs, log events. Pure signal.
+- **Import providers/facades from the context root.** Every
+  `<context>/__init__.py` re-exports its facade(s), `Config`, and `Provider`
+  via `__all__`. External consumers (`root/composition/container.py`, ACLs,
+  parent orchestration) write `from media_example import MediaInfraProvider` —
+  never `from media_example.provider`. Submodules still use relative imports.
+  Rule §2.3 in `~/.claude/rules/s-ddd_python/structure.md`.
+- **Interfaces carry the contract; implementations stay bare.** Every Protocol
+  method in `app/interfaces/` and every facade method gets a substantial
+  docstring (behaviour, invariants, side-effects, raises). This inverts the
+  global "no docstring by default" rule — the contract lives on the Protocol,
+  not duplicated on each `ports/driven/` implementor. Rules: `app.md` §5,
+  `ports.md` §1.
 - **HTML via Jinja, assets under `static/`.** Controllers return
   `Template(template_name="<context>/<file>.html", context={...})`. All
   templates and browser assets live in the project-root `static/` folder

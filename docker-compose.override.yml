@@ -1,0 +1,15 @@
+# Dev-only overrides (auto-merged by `docker compose`). Bind-mounts source onto
+# the in-container venv so code changes need no rebuild; the venv lives in the
+# image, so no host .venv/egg-info is ever created. Production deploys ignore
+# this file (use `docker compose -f docker-compose.yml ...`).
+services:
+  litestar_backend:
+    volumes:
+      - ./src/litestar_backend/src:/app/src
+      - ./src/litestar_backend/static:/app/static
+  event_microservice:
+    volumes:
+      - ./src/event_microservice/src:/app/src
+  event_microservice_worker:
+    volumes:
+      - ./src/event_microservice/src:/app/src
