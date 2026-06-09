@@ -16,10 +16,12 @@ class ILogFollower(Protocol):
         generator never completes on its own; the caller stops it by closing
         the async iterator (e.g. when the SSE client disconnects).
 
-        Survives rotation: on an inode change or size shrink it drains the
-        remainder of the old file, then reopens the new file at its start.
-        Delivery across the rotation gap is best-effort (at-most-once) -- a
-        line written to the old inode between polls may be lost. Malformed
+        Survives rotation: on an inode change or size shrink it reopens at the
+        new file's start. In truncate-mode rotation (the path keeps its inode)
+        the old tail is drained best-effort first; in rename-mode (the
+        logrotate default) the path already resolves to the new inode, so the
+        old tail between the last poll and the rename is lost. Delivery across
+        any rotation gap is therefore at-most-once. Malformed
         lines are skipped, not yielded. Transient stat/read errors during the
         poll loop are tolerated and retried on the next tick; they do not
         terminate the stream.

@@ -8,9 +8,10 @@ class ITokenResolver(Protocol):
         """Verify *token* and return the matching Principal, or None.
 
         Implementations MUST use constant-time comparison to prevent
-        timing-oracle attacks (see StaticTokenResolver). Tokens that exceed
-        MAX_TOKEN_LEN characters in auth.config should be rejected before
-        comparison to avoid CPU/memory amplification.
+        timing-oracle attacks (see StaticTokenResolver). Oversize-input
+        rejection is the caller's responsibility: the auth middleware caps
+        token length at MAX_TOKEN_LEN before this method is reached, so the
+        resolver itself imposes no length limit.
 
         Returns:
             Principal with the role granted by the token, or None when the

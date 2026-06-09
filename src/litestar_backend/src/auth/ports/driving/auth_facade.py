@@ -9,9 +9,8 @@ from ...app import AuthenticateUc
 class AuthFacade:
     """Driving port for the auth bounded context; serves the admin actor.
 
-    This is the only public entry point other contexts and driving adapters
-    (middleware, guards) use to verify bearer tokens. It enforces the
-    boundary between the HTTP layer and the authentication use-case logic.
+    The public entry point for verifying bearer tokens, guarding the boundary
+    between the HTTP layer and the authentication use-case logic.
     """
 
     _authenticate_uc: AuthenticateUc
@@ -19,10 +18,10 @@ class AuthFacade:
     async def authenticate(self, token: str) -> Principal | None:
         """Verify a bearer token and return the associated Principal.
 
-        Delegates to AuthenticateUc, which uses ITokenResolver (currently
-        StaticTokenResolver). The resolver performs constant-time comparison
-        against the configured admin token, so this method is safe to call
-        with untrusted input of arbitrary length up to MAX_TOKEN_LEN.
+        The token is compared in constant time against the configured admin
+        credential, so authentication failure leaks no timing signal. This
+        method imposes no length limit of its own; the auth middleware caps
+        request token length at MAX_TOKEN_LEN before reaching the facade.
 
         Returns:
             Principal carrying Role.ADMIN when the token matches, or None

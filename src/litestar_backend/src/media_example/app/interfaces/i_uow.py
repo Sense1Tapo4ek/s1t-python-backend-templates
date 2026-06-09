@@ -5,9 +5,9 @@ class IUoW(Protocol):
     async def __aenter__(self) -> "IUoW":
         """Open the unit-of-work scope; returns self for `async with`.
 
-        Opens no new transaction of its own -- it commits or rolls back
-        the session that the repositories already share, so every write
-        inside the block lands in one atomic transaction.
+        Opens no transaction of its own -- the repositories and this UoW
+        share one session, so every write inside the block lands in a single
+        atomic transaction committed by __aexit__.
         """
         ...
 

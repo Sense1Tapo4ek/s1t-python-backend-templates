@@ -45,10 +45,8 @@ def _to_entry_schema(ent: LogEntryEnt) -> LogEntrySchema:
 class LogsFacade:
     """Driving port for the admin operator: the log-viewer surface.
 
-    Public entry point of the `admin/log` context, called by the log
-    controller and SSE handler. Maps domain LogEntryEnt to the wire
-    LogEntrySchema (promoting known keys to columns, packing the rest into
-    context_json) and delegates reads to the query/use-case layer.
+    Public entry point of the `admin/log` context. Returns wire-ready
+    LogEntrySchema rows and delegates reads to the query/use-case layer.
     """
 
     _log_queries: LogQueries

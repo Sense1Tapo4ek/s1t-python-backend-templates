@@ -57,7 +57,7 @@ class ILogReader(Protocol):
         re-stat or reopen, so concurrent appends and rotation after the open
         are not observed. Lines are emitted verbatim (newline-stripped, not
         parsed); a trailing partial line without a newline is discarded.
-        Memory is O(1) regardless of file size. Used by the export use case.
-        Raises LogReadError if the file cannot be opened.
+        Memory is O(1) regardless of file size. Raises LogReadError if the
+        file cannot be opened.
         """
         ...

@@ -19,9 +19,17 @@ class MediaProcessingFacade:
     _complete_job: CompleteJobUC
 
     async def on_uploaded(self, video_id: UUID) -> None:
-        """Fan out the 3 processing jobs for a freshly uploaded video."""
+        """Fan out the three processing jobs for a freshly uploaded video.
+
+        Triggered by the FastStream consumer on a video_uploaded event.
+        Propagates PortError if the job-queue backend is unreachable.
+        """
         await self._on_uploaded(video_id)
 
     async def complete_job(self, video_id: UUID, kind: JobKind) -> None:
-        """Mark one job done; on the final kind, log completion and clear the join."""
+        """Record one finished job; clear the join once all three are done.
+
+        Triggered by each SAQ worker job on completion. Propagates PortError
+        if the join-store backend is unreachable.
+        """
         await self._complete_job(video_id, kind)
