@@ -15,6 +15,12 @@ JOB_DURATION = Histogram(
     ["kind"],
 )
 
+STATUS_EVENTS_PUBLISHED = Counter(
+    "media_processing_status_events_published_total",
+    "video_status return events published, by event type",
+    ["event_type"],
+)
+
 _started = False
 
 

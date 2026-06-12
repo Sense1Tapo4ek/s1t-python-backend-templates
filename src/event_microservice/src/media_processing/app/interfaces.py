@@ -43,3 +43,38 @@ class IJoinStore(Protocol):
             PortError: the store backend is unreachable.
         """
         ...
+
+
+class IEventPublisher(Protocol):
+    async def publish_started(self, video_id: UUID) -> None:
+        """Announce that processing jobs were fanned out for `video_id`.
+
+        Published once per consumed upload event. At-least-once: a redelivered
+        upload re-publishes; downstream consumers must tolerate duplicates.
+
+        Raises:
+            PortError: the stream backend is unreachable or rejected the write.
+        """
+        ...
+
+    async def publish_processed(self, video_id: UUID) -> None:
+        """Announce that ALL processing jobs for `video_id` completed.
+
+        Published once per completed join; a redelivered final job may
+        re-publish. Duplicates are resolved by the consumer's status machine.
+
+        Raises:
+            PortError: the stream backend is unreachable or rejected the write.
+        """
+        ...
+
+    async def publish_failed(self, video_id: UUID) -> None:
+        """Announce that processing for `video_id` failed terminally.
+
+        Published when a job exhausts its SAQ retries. Best-effort
+        (at-most-once): the caller logs and swallows a publish failure.
+
+        Raises:
+            PortError: the stream backend is unreachable or rejected the write.
+        """
+        ...

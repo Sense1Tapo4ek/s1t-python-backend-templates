@@ -1,5 +1,5 @@
 from .complete_job_uc import CompleteJobUC
-from .interfaces import IJobQueue, IJoinStore
+from .interfaces import IEventPublisher, IJobQueue, IJoinStore
 from .on_video_uploaded_uc import OnVideoUploadedUC
 
-__all__ = ["CompleteJobUC", "IJobQueue", "IJoinStore", "OnVideoUploadedUC"]
+__all__ = ["CompleteJobUC", "IEventPublisher", "IJobQueue", "IJoinStore", "OnVideoUploadedUC"]
