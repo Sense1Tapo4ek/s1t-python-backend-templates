@@ -1,172 +1,189 @@
 # litestar-base
 
-Production-shaped Litestar starter with strict-DDD layout, Dishka DI,
-a file-tail admin log viewer, role-based auth, structured logging, and a
-Prometheus metrics subsystem.
+Production-shaped template: a two-service, event-driven monorepo.
 
-Use it as a template, not a library — fork, rename, delete what you
-don't need.
+- **`litestar_backend`** — Litestar API with strict-DDD layout, Dishka DI,
+  role-based auth, an admin UI (dashboard + file-tail log viewer), Prometheus
+  metrics, and a transactional-outbox video pipeline.
+- **`event_microservice`** — FastStream consumer + SAQ worker. Consumes the
+  `video_uploaded` Valkey Stream and fans heavy work out to SAQ jobs.
+
+The services share **no code** — only the `video_uploaded` wire contract
+([docs/contract/video_uploaded.md](docs/contract/video_uploaded.md)). Each is
+a standalone uv project that could be extracted to its own repo unchanged.
+
+Use it as a template, not a library — fork, rename, delete what you don't need.
 
 ---
 
 ## Requirements
 
-- Python ≥ 3.12
-- [`uv`](https://docs.astral.sh/uv/) for dependency / virtualenv management
-
-Optional Telegram credentials for crash reporting via snitchbot.
+- Docker + Docker Compose (dev is container-only; source is bind-mounted, no
+  host venv needed)
+- [`uv`](https://docs.astral.sh/uv/) — optional, for the fast local inner loop
 
 ---
 
 ## First run
 
 ```bash
-# 1. Sync dependencies (creates .venv automatically)
-uv sync
-
-# 2. Copy env template and fill what you need
+# 1. Copy env template, generate an admin token
 cp .env.example .env
+openssl rand -hex 32        # paste into AUTH_ADMIN_TOKEN=...
 
-# 3. Generate an admin token and put it in .env (AUTH_ADMIN_TOKEN=...)
-openssl rand -hex 32
-
-# 4. Start in foreground
-uv run start_litestar
+# 2. Start everything: Postgres, Valkey, API, consumer, SAQ worker
+docker compose up --build
 ```
 
-App listens on `http://127.0.0.1:8000` (override via `APP_HOST` /
-`APP_PORT`). Logs are written to `${VOLUME_PATH}/logs/app.jsonl` and to
-stdout; the admin UI tails that file.
+`docker-compose.override.yml` is auto-merged: it bind-mounts `src/` over the
+image copy, so code changes need no rebuild. Production deploys ignore it:
+`docker compose -f docker-compose.yml up`.
 
+| What | URL |
+|---|---|
+| API | `http://localhost:8000` |
+| Admin login | `http://localhost:8000/admin/login` |
+| Admin dashboard + log viewer | `http://localhost:8000/admin` |
+| OpenAPI UI | `http://localhost:8000/schema/swagger` (needs the dev CSP from `.env.example`) |
+| Backend Prometheus metrics | `http://localhost:8000/metrics` |
+| SAQ admin panel (jobs, retry/abort) | `http://localhost:8081` |
+| Consumer / worker Prometheus metrics | `http://localhost:9101/metrics`, `http://localhost:9102/metrics` |
 
-### First login
+### Admin login
 
-1. Open `http://127.0.0.1:8000/admin/login`.
-2. Paste your `AUTH_ADMIN_TOKEN` value.
-3. Cookie is set (HttpOnly, SameSite=Strict). You land on `/admin`.
+1. Open `/admin/login`, paste your `AUTH_ADMIN_TOKEN` value.
+2. Cookie is set (HttpOnly, SameSite=Strict). You land on `/admin`.
 
-In dev with `AUTH_ADMIN_TOKEN=` empty, auth is disabled and a warning
-is logged at startup. `APP_ENV=prod` rejects an empty token at boot.
+With `AUTH_ADMIN_TOKEN=` empty, auth is disabled and a warning is logged at
+startup (dev only). `APP_ENV=prod` rejects an empty token at boot.
 
-### Background mode
+### SAQ admin panel
+
+The SAQ worker serves its monitoring UI (queue stats, per-job detail, retry
+and abort) on host port **8081** — enabled by the `--web` flag on the
+`event_microservice_worker` command. Set `SAQ_WEB_PASSWORD` in `.env` to put
+it behind HTTP Basic auth (user `admin`); empty = no auth, dev only. Details:
+[docs/event_microservice/infra/saq.md](docs/event_microservice/infra/saq.md).
+
+### Try the pipeline
 
 ```bash
-uv run start_litestar --nohup    # daemonize, tail the log
-uv run start_litestar --stop     # stop the daemon (uses pidfile)
+curl -X POST http://localhost:8000/videos \
+  -H "Content-Type: application/json" \
+  -d '{"source_key": "uploads/demo.mp4"}'
 ```
 
-`RUNTIME_PATH` controls where the pidfile lives (defaults to
-`/tmp/<APP_NAME>`).
+The API writes the video row + outbox message in one transaction; a relay
+publishes `video_uploaded` to a Valkey Stream; the consumer enqueues three SAQ
+jobs (stt, plagiarism, transcode); the worker joins their completion in
+Valkey. Watch it in the SAQ panel and the admin log viewer.
 
 ---
 
 ## Project layout
 
-Strict-DDD per-context. Top level:
-
 ```
 src/
-├── shared/               Cross-cutting: domain kernel, DI provider, middleware,
-│                         base config
-├── root/                 Entrypoints (api, cli) + container assembly
-├── auth/                 Bounded context: token validation, role guard, middleware
-├── admin/                Bounded context: dashboard + observability
-│   └── log/              Sub-context: file-tail log viewer (JSONL), SSE, export
-├── metrics/              Example infra context: Prometheus `/metrics` endpoint
-├── db_example_sddd/      Example context: raw asyncpg (Postgres), pool vs per-request DI
-└── db_example_litestar/  Example context: SQLAlchemy + advanced-alchemy on Postgres (only SQLAlchemy user)
+├── litestar_backend/         Litestar API (own pyproject.toml + uv.lock + Dockerfile)
+│   ├── src/
+│   │   ├── shared/           Cross-cutting kernel: config, errors, Postgres/Valkey/metrics infra
+│   │   ├── root/             Entrypoints + Dishka container assembly
+│   │   ├── auth/             Bearer/cookie auth, role guards, middleware
+│   │   ├── admin/            Admin dashboard; admin/log/ = file-tail log viewer (SSE, export)
+│   │   ├── media_example/    GOLDEN CONTEXT: outbox + relay + SSE, full S-DDD layering
+│   │   └── db_example_litestar/  Hybrid CRUD example: advanced-alchemy + SQLAlchemyDTO
+│   ├── migrations/           yoyo migrations, one folder per context
+│   ├── static/               Jinja templates + assets, mirrors the context tree
+│   └── tests/                unit / flow / integration / e2e — mirrors src/
+└── event_microservice/       FastStream consumer + SAQ worker (own pyproject + lock)
+    ├── src/
+    │   ├── shared/           Own Valkey client, logging, base errors
+    │   ├── root/             Container + two entrypoints: consumer, saq_worker
+    │   └── media_processing/ Bounded context: jobs, join policy, SAQ queue port
+    └── tests/
 ```
 
-Each context has its own `domain/`, `app/`, `ports/{driving,driven}/`,
-`adapters/{driving,driven}/`, `provider.py`, `config.py`. See
-[docs/architecture.md](docs/architecture.md) for the project's layers,
-error hierarchy, DI wiring, and invariants.
+Every context keeps the same S-DDD layers: `domain/`, `app/`,
+`ports/{driving,driven}/`, `adapters/`, `provider.py`, `config.py`. Layer
+rules, error hierarchy, DI and invariants:
+[docs/architecture.md](docs/architecture.md).
+
+---
+
+## Technology map — what to use where
+
+| Technology | Where it lives | Use it for |
+|---|---|---|
+| Litestar 2.23+ | `litestar_backend` adapters | HTTP controllers, SSE, guards, exception handlers |
+| Dishka | `provider.py` per context, `root/composition` | All wiring; business code never builds its dependencies |
+| Pydantic / pydantic-settings | `ports/driving` schemas, `config.py` | HTTP boundary validation and env config — nowhere else |
+| msgspec | outbox payloads, wire events | Dataclass-shaped wire payloads (faster than json/Pydantic) |
+| SQLAlchemy 2.0 (plain) | `media_example` | The default DB pattern to copy: explicit session, mappers, outbox |
+| advanced-alchemy | `db_example_litestar` only | Thin CRUD where a repository/service + `SQLAlchemyDTO` suffice |
+| yoyo-migrations | `migrations/<context>/` | Schema changes, applied in the context's lifespan |
+| Valkey | streams, `litestar.channels`, join store | Event transport between the services; SSE fan-out; job-join state |
+| FastStream | `event_microservice` consumer | Reacting to stream events (the "HTTP of the event world") |
+| SAQ | `event_microservice` worker | Heavy/retryable background jobs: CPU via process pool, blocking I/O via threads |
+| structlog | `shared/logging.py` in both services | Structured JSON logs; stdout + the JSONL file the admin UI tails (orjson renderer in the backend) |
+| prometheus_client | `shared` (backend), worker adapters | Counters/gauges; multiprocess mode makes `APP_WORKERS` a free knob |
+| Jinja | `static/` + admin controllers | Server-rendered admin pages; no SPA build step |
+
+Picking an example to copy: start from **`media_example`** for anything with
+real business logic (full layering, domain events, outbox, tests at all four
+levels). Use **`db_example_litestar`** only for thin CRUD with no invariants.
 
 ---
 
 ## Tests
 
-Canonical path is Docker Compose — same toolchain as the app image, no local
-setup:
+Canonical path is Docker Compose — same toolchain as the app images:
 
 ```bash
-docker compose run --rm test                       # full gate: ruff + mypy + pytest
-docker compose run --rm test pytest tests/unit -q  # any pytest subset
+docker compose run --rm litestar_backend_test                       # ruff + mypy + pytest
+docker compose run --rm litestar_backend_test pytest tests/unit -q  # any subset
+docker compose run --rm event_microservice_test
 ```
 
-Local `uv` works too for the inner loop:
+Local `uv` inner loop (run from the service root, e.g. `src/litestar_backend/`):
 
 ```bash
-uv run pytest                    # full suite (~10s)
-uv run pytest -q                 # quiet
-uv run pytest --cov=src          # with coverage
+uv run pytest tests/unit tests/flow   # instant, no DB
+uv run pytest                         # full suite — needs Docker (testcontainers)
+uv run ruff check . && uv run mypy
 ```
 
-Layered the same way as `src/`:
-
-- `tests/unit/` — domain, no I/O, no mocks
-- `tests/flow/` — app-level use cases with AsyncMock interfaces
-- `tests/integration/` — real file system (tmp_path JSONL)
-- `tests/e2e/` — full app via `AsyncTestClient`
+Test layout mirrors `src/`: `unit/` (domain, no mocks), `flow/` (use cases,
+mocked interfaces), `integration/` (real Postgres/Valkey), `e2e/` (full app).
 
 ---
 
 ## Documentation
 
-Start at [docs/architecture.md](docs/architecture.md) — the project's
-decisions, layers, invariants, and how-to recipes.
+Start at [docs/architecture.md](docs/architecture.md) — decisions, layers,
+invariants, how-to recipes.
 
 | Section | Contents |
 |---|---|
-| [docs/architecture.md](docs/architecture.md) | Project overview: contexts, layers, error hierarchy, DI, lifespan, invariants. |
-| [docs/contexts/](docs/contexts/) | Per-bounded-context references (auth, admin, admin/log, metrics, db_example_sddd, db_example_litestar). |
-| [docs/subsystems/](docs/subsystems/) | Cross-cutting: error hierarchy, observability, metrics. |
-| [docs/infra/](docs/infra/) | Per-technology references (dishka, structlog, jinja, openapi). |
-| [docs/adr/](docs/adr/) | Architecture Decision Records (MADR format). |
+| [docs/architecture.md](docs/architecture.md) | Both services: contexts, layers, error hierarchy, DI, lifespan, invariants. |
+| [docs/litestar_backend/](docs/litestar_backend/) | Backend references: `contexts/`, `subsystems/` (errors, observability, metrics), `infra/` (dishka, structlog, jinja, postgres, valkey, openapi). |
+| [docs/event_microservice/](docs/event_microservice/) | Worker references: `contexts/media_processing.md`, `infra/` (faststream, saq). |
+| [docs/contract/](docs/contract/) | The `video_uploaded` wire contract both services speak. |
+| [docs/adr/](docs/adr/) | Architecture Decision Records (MADR), one log for the whole repo. |
 
 ---
 
 ## Health & build info
 
 ```bash
-curl http://127.0.0.1:8000/health
+curl http://localhost:8000/health
 ```
 
-Returns app name, started_at, commit_sha, branch, dirty flag. In dev
-with a checked-out repo these resolve via `git` subprocess; in
-Docker/CI populate `GIT_COMMIT_SHA` / `GIT_BRANCH` / `GIT_DIRTY` env
-vars (see `.env.example`).
-
----
-
-## What's wired in
-
-- **Litestar 2.23.x** — ASGI app, exception handlers, lifespan. Minimum 2.23.0 (advanced-alchemy 1.11 dependency).
-- **Dishka** — DI container, APP scope.
-- **structlog** — JSON logging to stdout + a rotating JSONL file.
-- **msgspec** — wire-format encode/decode for events.
-- **prometheus_client + Litestar `/metrics`** — per-worker counters aggregated
-  via `prometheus_client` multiprocess mode (mmap shards, no external store).
-  `/metrics` always on when the context is composed. See
-  [docs/subsystems/metrics.md](docs/subsystems/metrics.md).
-- **snitchbot** — optional Telegram crash reporter (disabled by default).
-
----
-
-## Configuration reference
-
-All vars in `.env.example`. Highlights:
-
-- `APP_ENV` — `dev` or `prod` (lowercase). `prod` enforces non-empty `AUTH_ADMIN_TOKEN`.
-- `APP_WORKERS` — number of async workers (default `1`; a free knob, single-process logging).
-- `VOLUME_PATH` — persistent data root (log file, future state).
-- `LOG_*` — see [contexts/admin-log.md](docs/contexts/admin-log.md#configuration).
-- `METRICS_*` — see [contexts/metrics.md](docs/contexts/metrics.md#public-surface).
-- `DB_EXAMPLE_SDDD_*` — see [contexts/db_example_sddd.md](docs/contexts/db_example_sddd.md#config).
-- `DB_EXAMPLE_LITESTAR_*` — see [contexts/db_example_litestar.md](docs/contexts/db_example_litestar.md#config).
+Returns app name, started_at, commit_sha, branch, dirty flag. In dev with a
+checked-out repo these resolve via `git`; in Docker/CI populate
+`GIT_COMMIT_SHA` / `GIT_BRANCH` / `GIT_DIRTY` (see `.env.example`).
 
 ---
 
 ## License
 
-(unset — choose a license before publishing)
+[MIT](LICENSE)
