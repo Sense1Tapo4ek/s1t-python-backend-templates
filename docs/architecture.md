@@ -9,8 +9,9 @@ For first-run / install instructions, see [README.md](../README.md).
 
 ## Repository shape: two independent services
 
-This repo is a 2-service monorepo. The services share **no code** -- only the
-`video_uploaded` Valkey-Stream wire contract.
+This repo is a 2-service monorepo. The services share **no code** -- only two
+Valkey-Stream wire contracts: `video_uploaded` (forward path) and
+`video_status` (return path).
 
 | Service | Path | Role |
 |:--|:--|:--|
@@ -33,6 +34,16 @@ idempotency is by `event_id`.
 
 Full field-by-field contract: [contract/video_uploaded.md](contract/video_uploaded.md).
 
+### Wire contract: `video_status`
+
+Valkey Stream. Producer: `event_microservice` (direct XADD, no outbox).
+Consumer: `litestar_backend` media_example XREADGROUP lifespan task. Carries
+three event types: `video_processing_started`, `video_processed`,
+`video_processing_failed`. The consumer group is `media_example`; duplicate
+deliveries are absorbed by the Video status machine's `InvalidTransition`.
+
+Full field-by-field contract: [contract/video_status.md](contract/video_status.md).
+
 ---
 
 ## 1. Bounded contexts
@@ -48,7 +59,7 @@ API.
 | `admin` | `src/litestar_backend/src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [litestar_backend/contexts/admin.md](litestar_backend/contexts/admin.md). |
 | `admin/log` | `src/litestar_backend/src/admin/log/` | Sub-context: file-tail log viewer over the rotating JSONL file the app writes; SSE live tail, NDJSON/CSV export. See [litestar_backend/contexts/admin-log.md](litestar_backend/contexts/admin-log.md). |
 | `db_example_litestar` | `src/litestar_backend/src/db_example_litestar/` | Example context: SQLAlchemy 2.0 + advanced-alchemy, hybrid layering, `SQLAlchemyDTO`. The only advanced-alchemy user (both DB contexts run on SQLAlchemy). See [litestar_backend/contexts/db_example_litestar.md](litestar_backend/contexts/db_example_litestar.md). |
-| `media_example` | `src/litestar_backend/src/media_example/` | Golden context: video ingest pipeline. `POST /videos` (202) writes a video row + outbox message in one SQLAlchemy session/tx; a lifespan background relay drains the outbox to a Valkey Stream (`video_uploaded`); `GET /videos/feed` is an SSE subscription (broadcast lands in a later phase). See [litestar_backend/contexts/media_example.md](litestar_backend/contexts/media_example.md). |
+| `media_example` | `src/litestar_backend/src/media_example/` | Golden context: video ingest pipeline. `POST /videos` (202) writes a video row + outbox message in one SQLAlchemy session/tx; a lifespan background relay drains the outbox to a Valkey Stream (`video_uploaded`); a second lifespan task (XREADGROUP) consumes `video_status` and drives PENDING->PROCESSING->DONE/FAILED; `GET /videos/feed` is an SSE subscription fed by the status UCs post-commit. See [litestar_backend/contexts/media_example.md](litestar_backend/contexts/media_example.md). |
 
 Adding a context: see §8 below.
 

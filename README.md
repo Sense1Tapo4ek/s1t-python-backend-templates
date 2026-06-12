@@ -76,7 +76,10 @@ curl -X POST http://localhost:8000/videos \
 The API writes the video row + outbox message in one transaction; a relay
 publishes `video_uploaded` to a Valkey Stream; the consumer enqueues three SAQ
 jobs (stt, plagiarism, transcode); the worker joins their completion in
-Valkey. Watch it in the SAQ panel and the admin log viewer.
+Valkey and publishes `video_status` events back; the backend consumer drives
+the video through PENDING -> PROCESSING -> DONE/FAILED and broadcasts each
+transition to the SSE feed at `/videos/feed`. Watch it in the SAQ panel and
+the admin log viewer.
 
 ---
 

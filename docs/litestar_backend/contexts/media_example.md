@@ -28,16 +28,27 @@ OutboxRelay (lifespan background task, runs forever)
   |
   +--> at-least-once, APP_WORKERS-safe
 
+video_status stream (from event_microservice)
+  |
+  +-- VideoStatusConsumer (lifespan background task, XREADGROUP loop)
+  |     per-message: open session -> facade.mark_processing/done/failed
+  |     ack on success, DomainError, AppError, or unknown type
+  |     stay pending on PortError -> XAUTOCLAIM recovery (at-least-once)
+  |
+  +--> status machine transition -> XACK -> _publish_best_effort(VIDEOS_CHANNEL)
+
 GET /videos/feed (SSE)
   |
   +-- litestar.channels subscription on VIDEOS_CHANNEL
-      (nothing publishes here yet -- broadcast lands in a later phase)
+      status UCs broadcast {video_id, status} post-commit (best-effort)
 ```
 
 Status transitions PENDING -> PROCESSING -> DONE/FAILED are owned by
-`media_example` but triggered by a FastStream consumer in a later phase
-(Phase C). Today, `MarkProcessing/Done/FailedUC` exist and are wired in
-the facade; no HTTP route exposes them yet.
+`media_example` and triggered by `VideoStatusConsumer`, which reads the
+`video_status` Valkey Stream published by `event_microservice`.
+`MarkProcessing/Done/FailedUC` apply the transition, persist, then
+broadcast to the SSE channel best-effort (a lost broadcast only costs a
+live-browser update).
 
 ## Public surface
 
@@ -52,7 +63,8 @@ the facade; no HTTP route exposes them yet.
 `POST /videos` increments the `videos_uploaded_total` Prometheus counter.
 
 `GET /videos/feed` opens a subscription on the `videos` Litestar channel.
-No events are published to it in Phase A; consumers can subscribe and wait.
+Each status transition broadcasts `{"video_id": "...", "status": "..."}` to
+connected subscribers.
 
 ### Config (`MEDIA_` prefix)
 
@@ -62,6 +74,9 @@ No events are published to it in Phase A; consumers can subscribe and wait.
 | `MEDIA_POOL_SIZE` | `4` | SQLAlchemy engine pool size |
 | `MEDIA_RELAY_BATCH` | `100` | outbox rows per drain cycle |
 | `MEDIA_RELAY_IDLE_SLEEP` | `0.5` | seconds to sleep when outbox is empty |
+| `MEDIA_STATUS_BATCH` | `100` | entries per XREADGROUP read |
+| `MEDIA_STATUS_BLOCK_MS` | `1000` | XREADGROUP blocking timeout (ms) |
+| `MEDIA_STATUS_CLAIM_IDLE_MS` | `60000` | idle threshold for XAUTOCLAIM recovery |
 
 ### Schema and tables
 
@@ -100,7 +115,7 @@ guarded `mark_processing()` / `mark_done()` / `mark_failed()` raise
 
 | Provider | Scope | Contents |
 |:---|:---|:---|
-| `MediaInfraProvider` | APP | `MediaConfig`, `MediaDb`, `OutboxRelay`, `MediaLifespanManager` |
+| `MediaInfraProvider` | APP | `MediaConfig`, `MediaDb`, `VideoStatusConsumer`, `OutboxRelay`, `MediaLifespanManager` |
 | `MediaWebProvider` | REQUEST | `MediaFacade` (opens an `AsyncSession` per request) |
 
 `MediaDb` is a named wrapper around the SQLAlchemy `AsyncEngine` +
@@ -117,25 +132,34 @@ key collision).
 - **`SELECT ... FOR UPDATE SKIP LOCKED`.** Multiple `APP_WORKERS` relay tasks
   can run concurrently without duplicating delivery: each grabs its own batch
   of un-sent rows and holds row-level locks until the batch is marked sent.
-- **Status is owned here, transitions driven externally.** Only `media_example`
-  writes `videos.status`. Phase C adds a FastStream consumer that calls
+- **Status is owned here, transitions driven by the status stream.** Only
+  `media_example` writes `videos.status`. `VideoStatusConsumer` calls
   `mark_processing` / `mark_done` / `mark_failed` via the facade after
-  consuming the Valkey Stream. Do not write to `videos.status` from another
-  context directly.
+  reading the `video_status` Valkey Stream. Do not write to `videos.status`
+  from another context directly.
 - **`videos_uploaded_total` is a module-level `Counter`.** It is registered
   with `prometheus_client` on first import; repeated `create_app()` calls in
   tests reuse the same series (no duplicate-registration error).
-- **SSE feed is empty until Phase C.** `GET /videos/feed` establishes a
-  subscription but receives no events today; nothing calls
-  `channels.publish(VIDEOS_CHANNEL, ...)`.
+- **Duplicate status events are absorbed.** `InvalidTransition` on a repeated
+  transition is caught, logged at WARNING, and the stream entry is acked.
+  No dedup table is required.
+- **SSE broadcast is best-effort.** `_publish_best_effort` swallows `PortError`
+  after logging; a missed broadcast only costs a live-browser update and
+  never causes a status-UC rollback.
 
 ## Pointers
 
 - `src/media_example/` — full context source
+- `src/media_example/adapters/driving/status_consumer.py` — XREADGROUP consumer
+- `src/media_example/ports/driven/channels_feed_publisher.py` — SSE broadcast
+- `src/media_example/ports/driving/status_events.py` — inbound event schema
+- `src/media_example/ports/feed.py` — `VIDEOS_CHANNEL` constant
 - `migrations/media/001-create-videos.sql` — schema DDL
+- [docs/contract/video_status.md](../../contract/video_status.md) — wire contract for the return stream
 - [docs/infra/valkey.md](../infra/valkey.md) — Valkey wiring (outbox relay + Channels backend)
 - [docs/infra/postgres.md](../infra/postgres.md) — SQLAlchemy engine, search_path, migrations
 - [docs/adr/0022-video-pipeline-transport-roles.md](../../adr/0022-video-pipeline-transport-roles.md) — transport role decision
 - [docs/adr/0024-media-example-golden-context.md](../../adr/0024-media-example-golden-context.md) — why this replaced orders + db_example_sddd
 - [docs/adr/0025-standardize-on-sqlalchemy.md](../../adr/0025-standardize-on-sqlalchemy.md) — single DB stack; plain SQLAlchemy here
+- [docs/adr/0028-video-status-return-path.md](../../adr/0028-video-status-return-path.md) — why direct-publish over outbox for the return path
 - [docs/architecture.md](../../architecture.md) — S-DDD layers, DI scopes, how to add a context

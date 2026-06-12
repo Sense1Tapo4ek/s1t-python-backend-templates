@@ -14,8 +14,10 @@ startup, shutdown, after_process}`.
 - `shutdown`: shuts down both pools (`wait=True`) and closes the Dishka
   container.
 - `after_process`: inspects `ctx["exception"]`; if set, logs the failure at
-  ERROR level with `job.function` and the error string. This is the single
-  point for job-failure observability.
+  ERROR level with `job.function` and the error string. On terminal failure
+  (`attempts >= retries`) it calls `facade.on_job_failed` -> publishes
+  `video_processing_failed` (at-most-once) and clears the join store. This is
+  the single point for job-failure observability and cleanup.
 
 ## Job enqueueing
 

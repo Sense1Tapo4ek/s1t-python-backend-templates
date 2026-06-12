@@ -10,6 +10,7 @@ topic family:
 | Page | Transport | Producer -> Consumer |
 |:--|:--|:--|
 | [video_uploaded.md](video_uploaded.md) | Valkey Stream `video_uploaded` | `litestar_backend` -> `event_microservice` |
+| [video_status.md](video_status.md) | Valkey Stream `video_status` | `event_microservice` -> `litestar_backend` |
 
 Cross-cutting rules for stream contracts:
 

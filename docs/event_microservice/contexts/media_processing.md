@@ -47,9 +47,14 @@ functions are module-level (picklable).
   from the domain enum, not a config knob. Add a `JobKind` member and the join
   threshold follows automatically.
 - The SADD join is idempotent under SAQ at-least-once redelivery; a job rerun
-  re-adds the same kind and SCARD is unchanged. An `event_id` dedup table is
-  deferred (Phase C) -- SADD already gives completion-level idempotency.
+  re-adds the same kind and SCARD is unchanged. No dedup table is needed --
+  SADD already gives completion-level idempotency.
 - Jobs retry up to `job_retries` times with a `job_timeout_seconds` deadline per
   attempt. Both values flow from config into `SaqJobQueue.enqueue`.
 - A `join_ttl_seconds` TTL guards against a job that never completes.
-- Wire contract: see [../../architecture.md](../../architecture.md).
+- Status events published: `video_processing_started` after fan-out
+  (OnVideoUploadedUC), `video_processed` before join clear (CompleteJobUC),
+  `video_processing_failed` from the SAQ `after_process` hook on terminal
+  failure. See [../../contract/video_status.md](../../contract/video_status.md).
+- Wire contracts: [../../contract/video_uploaded.md](../../contract/video_uploaded.md) (inbound),
+  [../../contract/video_status.md](../../contract/video_status.md) (outbound).

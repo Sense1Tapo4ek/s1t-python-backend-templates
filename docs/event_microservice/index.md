@@ -7,10 +7,10 @@ Valkey Stream and fans heavy work out to SAQ jobs, joined in Valkey. Shares no
 code with `litestar_backend` -- only the wire contract (see
 [../architecture.md](../architecture.md)).
 
-Status: implemented (slice 2). The `media_processing` context, the three SAQ
-execution models, and the Valkey join are live. Not yet built (Phase C):
-return events (`video_processing_started` / `video_processed`), the
-`media_example` return-consumer, and the SSE broadcast.
+Status: fully implemented. The `media_processing` context, the three SAQ
+execution models, and the Valkey join are live. The full loop is closed:
+return events flow back to `litestar_backend` over the `video_status` stream
+(see [../contract/video_status.md](../contract/video_status.md)).
 
 ## Layout
 
