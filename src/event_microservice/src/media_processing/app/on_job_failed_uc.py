@@ -3,6 +3,8 @@ from uuid import UUID
 
 import structlog
 
+from shared.generics.errors import PortError
+
 from .interfaces import IEventPublisher, IJoinStore
 
 _log = structlog.get_logger("media_processing.on_job_failed")
@@ -15,5 +17,10 @@ class OnJobFailedUC:
 
     async def __call__(self, video_id: UUID) -> None:
         _log.info("video processing failed", video_id=str(video_id))
-        await self._publisher.publish_failed(video_id)
+        # AT-MOST-ONCE: a lost failed-event is cheaper than blocking cleanup;
+        # the backend's join TTL bounds any orphan this would otherwise leave.
+        try:
+            await self._publisher.publish_failed(video_id)
+        except PortError:
+            _log.exception("video_processing_failed publish failed", video_id=str(video_id))
         await self._store.clear(video_id)
