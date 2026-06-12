@@ -49,6 +49,13 @@ class TestPipeline:
         queue = Queue.from_url(valkey_url)
         await queue.connect()
         try:
+            # Pre-clean: remove any stale video_status entries from other tests
+            client_pre = aioredis.from_url(valkey_url, decode_responses=True)
+            try:
+                await client_pre.delete("video_status")
+            finally:
+                await client_pre.aclose()
+
             # Act 1 -- the FastStream handler seam: parse + enqueue 3 jobs
             await handle_uploaded(_wire_payload(video_id), facade)
             assert await queue.count("queued") == 3
