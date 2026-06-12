@@ -5,7 +5,7 @@ The consumer opens its own committed sessions, so we use a separate
 engine/sessionmaker that commits, then clean up explicitly in teardown.
 """
 import json
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -15,7 +15,6 @@ import redis.asyncio as aioredis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from media_example.adapters.driven.outbox_relay import VIDEO_UPLOADED_STREAM  # noqa: F401
 from media_example.adapters.driving.status_consumer import (
     VIDEO_STATUS_STREAM,
     VideoStatusConsumer,
@@ -34,9 +33,9 @@ from media_example.ports.driving import MediaFacade
 from shared.adapters.driven.clocks import SystemClock
 from shared.adapters.driven.postgres import SqlUoW, build_engine, build_sessionmaker
 from shared.adapters.driven.valkey import build_valkey_client
+from shared.generics.errors import PortError
 
 _SCHEMA = "media"
-_DELETE_VIDEOS = text("DELETE FROM media.videos WHERE id IN :ids").bindparams()
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -84,7 +83,7 @@ def _payload(video_id: UUID, event_type: str) -> str:
     )
 
 
-def _entry(video_id: UUID, event_type: str) -> dict[str, str]:
+def _entry(video_id: UUID, event_type: str) -> dict[str, bytes | str]:
     """Build the stream field dict (payload key only) for XADD."""
     return {"payload": _payload(video_id, event_type)}
 
@@ -136,7 +135,7 @@ async def _delete_video(sm: async_sessionmaker[AsyncSession], video_id: UUID) ->
         )
 
 
-def _make_facade_factory(feed: _RecordingFeed) -> object:
+def _make_facade_factory(feed: _RecordingFeed) -> Callable[[AsyncSession], MediaFacade]:
     """Return a callable(session) -> MediaFacade using the recording feed."""
     clock = SystemClock()
 
@@ -151,6 +150,21 @@ def _make_facade_factory(feed: _RecordingFeed) -> object:
             _mark_done=MarkDoneUC(_repo=repo, _uow=uow, _feed=feed),
             _mark_failed=MarkFailedUC(_repo=repo, _uow=uow, _feed=feed),
         )
+
+    return factory
+
+
+def _make_failing_factory() -> Callable[[AsyncSession], MediaFacade]:
+    """Return a factory whose every facade call raises PortError.
+
+    Simplest construction: the factory itself raises PortError rather than
+    building a facade with a broken repo, because the consumer calls the
+    factory inside the session block and the propagation path is identical.
+    This tests that _handle does NOT ack on PortError and re-raises.
+    """
+
+    def factory(session: AsyncSession) -> MediaFacade:
+        raise PortError("injected transient failure")
 
     return factory
 
@@ -271,7 +285,7 @@ async def test_malformed_payload_is_acked_and_dropped(
         _batch=10,
         _block_ms=200,
     )
-    await valkey_clean.xadd(VIDEO_STATUS_STREAM, {"payload": "not json"})
+    await valkey_clean.xadd(VIDEO_STATUS_STREAM, {"payload": b"not json"})
 
     # Act
     await consumer.ensure_group()
@@ -321,6 +335,71 @@ async def test_failed_event_marks_video_failed(
 
         statuses = [s for (_vid, s) in feed.calls]
         assert statuses == ["failed"]
+
+        pending_info = await valkey_clean.xpending(VIDEO_STATUS_STREAM, "media_example")
+        assert pending_info["pending"] == 0
+    finally:
+        await _delete_video(committed_sm, video_id)
+
+
+@pytest.mark.asyncio
+async def test_port_error_entry_stays_pending_then_recovers(
+    committed_sm: async_sessionmaker[AsyncSession],
+    valkey_clean: aioredis.Redis,
+    _migrated: None,
+) -> None:
+    """
+    Given a PENDING video and a started event,
+    When consumer_a (broken factory) processes the event and raises PortError,
+    Then the entry stays pending (not acked).
+
+    When consumer_b (healthy factory, _claim_idle_ms=0) runs drain_once(),
+    Then it claims the stale entry via XAUTOCLAIM, applies it successfully,
+    and the video transitions to PROCESSING with pending == 0.
+    """
+    # Arrange
+    video_id = uuid4()
+    feed = _RecordingFeed()
+
+    await _seed_video(committed_sm, video_id=video_id)
+    await valkey_clean.xadd(VIDEO_STATUS_STREAM, _entry(video_id, "video_processing_started"))
+
+    consumer_a = VideoStatusConsumer(
+        _valkey=valkey_clean,
+        _sessionmaker=committed_sm,
+        _facade_factory=_make_failing_factory(),
+        _batch=10,
+        _block_ms=200,
+    )
+
+    try:
+        # Act: consumer_a fails -- PortError propagates out of drain_once
+        await consumer_a.ensure_group()
+        with pytest.raises(PortError):
+            await consumer_a.drain_once()
+
+        # Assert: entry is still pending under consumer_a's name
+        pending_info = await valkey_clean.xpending(VIDEO_STATUS_STREAM, "media_example")
+        assert pending_info["pending"] == 1
+
+        # Act: consumer_b reclaims immediately (claim_idle_ms=0) and applies
+        consumer_b = VideoStatusConsumer(
+            _valkey=valkey_clean,
+            _sessionmaker=committed_sm,
+            _facade_factory=_make_facade_factory(feed),
+            _batch=10,
+            _block_ms=200,
+            _claim_idle_ms=0,
+        )
+        # consumer_b reuses the group created by consumer_a; ensure_group tolerates BUSYGROUP
+        await consumer_b.ensure_group()
+        handled = await consumer_b.drain_once()
+
+        # Assert: claimed entry was processed
+        assert handled >= 1
+
+        status = await _load_status(committed_sm, video_id)
+        assert status == VideoStatus.PROCESSING
 
         pending_info = await valkey_clean.xpending(VIDEO_STATUS_STREAM, "media_example")
         assert pending_info["pending"] == 0

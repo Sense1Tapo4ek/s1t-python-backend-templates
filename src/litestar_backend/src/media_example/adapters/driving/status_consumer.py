@@ -1,4 +1,5 @@
 import asyncio
+import os
 import socket
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -11,7 +12,7 @@ from prometheus_client import Counter
 from redis.exceptions import ResponseError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from shared.generics.errors import AppError, DomainError
+from shared.generics.errors import AppError, DomainError, PortError
 
 from ...ports.driving import MediaFacade, VideoStatusEventSchema
 
@@ -19,7 +20,7 @@ _log = structlog.get_logger("media_example.status_consumer")
 
 VIDEO_STATUS_STREAM = "video_status"
 CONSUMER_GROUP = "media_example"
-_CONSUMER = f"{CONSUMER_GROUP}-{socket.gethostname()}"
+_CONSUMER = f"{CONSUMER_GROUP}-{socket.gethostname()}-{os.getpid()}"
 
 STATUS_EVENTS_CONSUMED = Counter(
     "media_example_status_events_consumed_total",
@@ -30,11 +31,29 @@ STATUS_EVENTS_CONSUMED = Counter(
 
 @dataclass(slots=True, kw_only=True)
 class VideoStatusConsumer:
+    """Consumer group reader for the video_status Valkey stream.
+
+    Delivery semantics:
+    - DomainError / AppError (duplicate, unknown video): ack immediately
+      (permanently inapplicable).
+    - PortError or any unexpected exception: NOT acked; the entry stays in the
+      consumer's PEL as pending.
+    - Pending entries idle longer than _claim_idle_ms are adopted by any live
+      consumer via XAUTOCLAIM on the next cycle (at-least-once delivery).
+    - Consumer name is unique per process (_CONSUMER = group-host-pid), so a dead
+      worker's PEL entries are unclaimed and available for recovery by its
+      replacement or any live sibling.
+
+    Prerequisite: ensure_group() must be called before drain_once(); run_forever()
+    calls it automatically.
+    """
+
     _valkey: aioredis.Redis
     _sessionmaker: async_sessionmaker[AsyncSession]
     _facade_factory: Callable[[AsyncSession], MediaFacade]
     _batch: int = 100
     _block_ms: int = 1000
+    _claim_idle_ms: int = 60_000
 
     async def ensure_group(self) -> None:
         """Create the consumer group, tolerating BUSYGROUP if it already exists."""
@@ -57,11 +76,25 @@ class VideoStatusConsumer:
                 await asyncio.sleep(1.0)
 
     async def drain_once(self) -> int:
-        """Read up to _batch entries, apply each, ack on success/permanent failure.
+        """Read up to _batch entries, apply each, ack on success or permanent failure.
 
-        Returns the number of acked entries. Entries that trigger PortError or
-        unknown exceptions are NOT acked and will be redelivered on restart.
+        Returns the number of acked entries.
+
+        Semantics:
+        - Entries that decode or apply cleanly are acked.
+        - DomainError / AppError (duplicate delivery, unknown video): acked
+          immediately as permanently inapplicable.
+        - PortError or unknown exceptions: NOT acked; the entry stays pending
+          in this consumer's PEL.
+        - On the next cycle, _claim_stale() adopts pending entries idle past
+          _claim_idle_ms (from this or any other consumer), providing
+          at-least-once delivery across restarts and worker replacement.
+
+        Prerequisite: ensure_group() must have been called beforehand
+        (run_forever() does this automatically); calling drain_once() without
+        a prior ensure_group() will raise ResponseError NOGROUP from Valkey.
         """
+        handled = await self._claim_stale()
         resp: Any = await self._valkey.xreadgroup(
             CONSUMER_GROUP,
             _CONSUMER,
@@ -69,8 +102,36 @@ class VideoStatusConsumer:
             count=self._batch,
             block=self._block_ms,
         )
+        handled += await self._apply_entries(resp or [])
+        return handled
+
+    async def _claim_stale(self) -> int:
+        """Adopt pending entries idle past the threshold (crashed/replaced consumers).
+
+        XAUTOCLAIM atomically reassigns them to this consumer; combined with the
+        per-process consumer name this is what makes delivery at-least-once
+        across restarts and worker replacement.
+
+        Returns the number of successfully handled (and acked) claimed entries.
+        """
+        result: list[Any] = await self._valkey.xautoclaim(
+            VIDEO_STATUS_STREAM,
+            CONSUMER_GROUP,
+            _CONSUMER,
+            min_idle_time=self._claim_idle_ms,
+            start_id="0-0",
+            count=self._batch,
+        )
+        # redis-py 8.x parse_xautoclaim always returns a 3-element list:
+        # [next_start_id, [(id, fields), ...], [deleted_ids]]
+        _next, entries, _deleted = result
+        if not entries:
+            return 0
+        return await self._apply_entries([(VIDEO_STATUS_STREAM, entries)])
+
+    async def _apply_entries(self, streams: list[Any]) -> int:
         handled = 0
-        for _stream, entries in resp or []:
+        for _stream, entries in streams:
             for entry_id, fields in entries:
                 if await self._handle(fields):
                     await self._valkey.xack(VIDEO_STATUS_STREAM, CONSUMER_GROUP, entry_id)
@@ -108,6 +169,13 @@ class VideoStatusConsumer:
                 reason=str(exc),
             )
             return True
+        except PortError:
+            # Transient infrastructure failure -- do NOT ack; entry stays pending.
+            _log.warning(
+                "video_status entry left pending (transient failure)",
+                video_id=str(event.video_id),
+            )
+            raise
 
         STATUS_EVENTS_CONSUMED.labels(event_type=event.event_type).inc()
         _log.info(
