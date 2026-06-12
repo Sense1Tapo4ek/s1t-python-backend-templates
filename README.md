@@ -1,4 +1,4 @@
-# litestar-base
+# s1t-python-backend-templates
 
 Production-shaped template: a two-service, event-driven monorepo.
 
