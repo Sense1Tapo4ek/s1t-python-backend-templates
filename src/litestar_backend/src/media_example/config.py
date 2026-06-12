@@ -11,3 +11,5 @@ class MediaConfig(BaseAppConfig):
     pool_size: int = Field(default=4, ge=1, le=32)
     relay_batch: int = Field(default=100, ge=1, le=1000)
     relay_idle_sleep: float = Field(default=0.5, ge=0.05, le=10.0)
+    status_batch: int = Field(default=100, ge=1, le=1000)
+    status_block_ms: int = Field(default=1000, ge=100, le=30000)
