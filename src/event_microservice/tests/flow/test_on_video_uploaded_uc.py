@@ -4,6 +4,7 @@ import pytest
 
 from media_processing.app import OnVideoUploadedUC
 from media_processing.domain import JobKind
+from shared.generics.errors import PortError
 
 
 class _SpyQueue:
@@ -30,6 +31,13 @@ class _FakePublisher:
         self.failed.append(video_id)
 
 
+class _FailingPublisher(_FakePublisher):
+    """Publisher whose publish_started raises PortError."""
+
+    async def publish_started(self, video_id) -> None:
+        raise PortError("valkey unreachable")
+
+
 class TestOnVideoUploadedUC:
     @pytest.mark.asyncio
     async def test_enqueues_one_job_per_kind(self) -> None:
@@ -46,6 +54,27 @@ class TestOnVideoUploadedUC:
         # Assert
         assert {kind for _, kind in queue.calls} == set(JobKind)
         assert [vid for vid, _ in queue.calls] == [video_id] * 3
+
+    @pytest.mark.asyncio
+    async def test_port_error_from_publish_propagates(self) -> None:
+        """
+        Given a publisher that raises PortError on publish_started,
+        When OnVideoUploadedUC runs,
+        Then the PortError propagates to the caller AND all 3 jobs were already
+        enqueued (the inbound video_uploaded message stays unacked; on FastStream
+        redelivery the jobs are re-enqueued -- the documented design trade-off).
+        """
+        # Arrange
+        queue = _SpyQueue()
+        publisher = _FailingPublisher()
+        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher)
+        video_id = uuid4()
+
+        # Act / Assert
+        with pytest.raises(PortError):
+            await uc(video_id)
+
+        assert len(queue.calls) == 3
 
     @pytest.mark.asyncio
     async def test_publishes_started_after_enqueue(self) -> None:

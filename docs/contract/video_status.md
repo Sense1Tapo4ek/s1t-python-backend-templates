@@ -38,19 +38,40 @@ Each `XADD video_status * ...` entry carries three fields:
 
 ## Delivery semantics
 
-**`video_processing_started` and `video_processed` — at-least-once.**
-`ValkeyEventPublisher._publish` raises `PortError` on a Valkey error. The
-exception propagates out of the use case, which causes SAQ to keep the job
-unacked and retry it (for `started`) or leaves the XREADGROUP entry unacked for
-FastStream redelivery (for `processed`). Duplicate deliveries are handled by
-the consumer's status machine: an `InvalidTransition` error on a repeated
-transition is caught, logged at WARNING, and the entry is acked (dup absorbed).
+Two independent guarantee layers: producer-side retry and consumer-side
+redelivery.
+
+### Producer-side guarantees
+
+**`video_processing_started` — at-least-once via FastStream redelivery of the
+inbound message.**
+`OnVideoUploadedUC` runs inside the FastStream `video_uploaded` consumer
+(`adapters/driving/uploaded_consumer.py`). A `PortError` from `publish_started`
+propagates out of the use case and out of the handler; FastStream leaves the
+`video_uploaded` message unacked and redelivers it. On redelivery the jobs are
+re-enqueued (the join store tolerates duplicates) and `started` is re-published.
+
+**`video_processed` — at-least-once via SAQ job retry.**
+`CompleteJobUC` runs inside a SAQ job (`adapters/driving/saq_jobs.py`). A
+`PortError` from `publish_processed` propagates and fails the job; SAQ retries
+it (requires job retries >= 1; `MediaProcessingConfig.job_retries` defaults to
+3). On retry the idempotent join re-detects completion and re-publishes.
 
 **`video_processing_failed` — at-most-once.**
-The event is published from SAQ's `after_process` hook, which is not retried.
-If the `XADD` fails, `OnJobFailedUC` logs the exception and continues to clear
-the join store. A lost `failed` event leaves the video in PROCESSING status
-until manual action; the join TTL (`join_ttl_seconds`) bounds the orphan window.
+The event is published from SAQ's `after_process` hook
+(`root/entrypoints/saq_worker.py`), which is not retried. `OnJobFailedUC` logs
+a publish failure and continues to clear the join store. A lost `failed` event
+leaves the video in PROCESSING status until manual action; the join TTL
+(`join_ttl_seconds`) bounds the orphan window.
+
+### Consumer-side guarantee (independent of the above)
+
+The `litestar_backend` consumer (`media_example/adapters/driving/status_consumer.py`)
+uses XREADGROUP with a per-process consumer name. An unacked entry stays in the
+Pending Entry List (PEL); entries idle past `MEDIA_STATUS_CLAIM_IDLE_MS` (default
+60 s) are adopted by any live consumer via XAUTOCLAIM. Duplicate deliveries are
+handled by the status machine: an `InvalidTransition` on a repeated transition is
+caught, logged at WARNING, and the entry is acked (dup absorbed).
 
 **FIFO ordering per stream.** Valkey Streams guarantee FIFO within a single
 stream, so `video_processing_started` always precedes `video_processed` in

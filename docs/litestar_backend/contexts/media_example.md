@@ -35,7 +35,7 @@ video_status stream (from event_microservice)
   |     ack on success, DomainError, AppError, or unknown type
   |     stay pending on PortError -> XAUTOCLAIM recovery (at-least-once)
   |
-  +--> status machine transition -> XACK -> _publish_best_effort(VIDEOS_CHANNEL)
+  +--> status machine transition -> _publish_best_effort(VIDEOS_CHANNEL) -> XACK
 
 GET /videos/feed (SSE)
   |

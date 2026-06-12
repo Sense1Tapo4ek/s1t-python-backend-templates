@@ -4,6 +4,7 @@ import pytest
 
 from media_processing.app import CompleteJobUC
 from media_processing.domain import JobKind
+from shared.generics.errors import PortError
 
 
 class _Recorder:
@@ -43,6 +44,13 @@ class _FakePublisher:
 
     async def publish_failed(self, video_id) -> None:
         self.failed.append(video_id)
+
+
+class _FailingPublisher(_FakePublisher):
+    """Publisher whose publish_processed raises PortError."""
+
+    async def publish_processed(self, video_id) -> None:
+        raise PortError("valkey unreachable")
 
 
 class TestCompleteJobUC:
@@ -113,6 +121,26 @@ class TestCompleteJobUC:
 
         # Assert
         assert publisher.processed == []
+        assert store.cleared == []
+
+    @pytest.mark.asyncio
+    async def test_port_error_from_publish_propagates(self) -> None:
+        """
+        Given a publisher that raises PortError on publish_processed,
+        When CompleteJobUC runs with a complete join (count == fan_out),
+        Then the PortError propagates to the caller AND the join is NOT cleared
+        (the SAQ job fails and retries, finding the join intact).
+        """
+        # Arrange
+        store = _FakeStore(count_after_add=3)
+        publisher = _FailingPublisher()
+        uc = CompleteJobUC(_store=store, _fan_out=3, _publisher=publisher)
+        video_id = uuid4()
+
+        # Act / Assert
+        with pytest.raises(PortError):
+            await uc(video_id, JobKind.STT)
+
         assert store.cleared == []
 
     @pytest.mark.asyncio

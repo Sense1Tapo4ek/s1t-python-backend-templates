@@ -11,9 +11,11 @@ on the forward path is unavailable.
 ## Decision
 One Valkey Stream `video_status` carries all three event types (FIFO per
 stream preserves started -> processed order per video). The worker publishes
-with a direct XADD from a driven port; PortError propagates, so SAQ retry /
-unacked FastStream redelivery makes started/processed effectively
-at-least-once. The failed event fires from SAQ's after_process (not retried,
+with a direct XADD from a driven port; PortError propagates: a failed
+`started` leaves the inbound `video_uploaded` message unacked (FastStream
+redelivers it, re-running OnVideoUploadedUC), a failed `processed` fails the
+SAQ job (SAQ retries it, re-running CompleteJobUC) -- effectively at-least-once
+for both. The `failed` event fires from SAQ's after_process (not retried,
 at-most-once, explicitly logged). The backend consumes with a hand-rolled
 XREADGROUP lifespan task (per-process consumer name + XAUTOCLAIM adoption of
 stale pending entries); duplicate deliveries die on the status machine's
