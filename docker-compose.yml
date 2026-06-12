@@ -153,11 +153,16 @@ services:
       context: ./src/event_microservice
     image: event-microservice:local
     restart: unless-stopped
-    command: ["saq", "root.entrypoints.saq_worker.settings"]
+    # --web serves the SAQ monitoring panel (queues, jobs, retry/abort) on
+    # container port 8080 -> host 8081. Protected by HTTP Basic auth when
+    # SAQ_WEB_PASSWORD is set in .env (user "admin"); empty = no auth, dev only.
+    command: ["saq", "root.entrypoints.saq_worker.settings", "--web", "--port", "8080"]
     ports:
       - "9102:9100"
+      - "8081:8080"
     environment:
       VALKEY_URL: redis://valkey:6379/0
+      AUTH_PASSWORD: ${SAQ_WEB_PASSWORD:-}
     depends_on:
       valkey:
         condition: service_healthy

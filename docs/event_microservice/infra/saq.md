@@ -1,7 +1,7 @@
 # SAQ (async job queue)
 
-Version: saq (Valkey/Redis-backed). The worker runs via
-`saq root.entrypoints.saq_worker.settings`.
+Version: saq 0.26+ with the `web` extra (Valkey/Redis-backed). The worker runs
+via `saq root.entrypoints.saq_worker.settings --web --port 8080`.
 
 `settings` = `{queue, functions=[stt, plagiarism, transcode], concurrency,
 startup, shutdown, after_process}`.
@@ -39,6 +39,21 @@ The process pool uses the `spawn` start method explicitly
 (`mp_context=multiprocessing.get_context("spawn")`). Rationale: forking a
 multi-threaded async worker can inherit a held lock (redis pool, structlog)
 and deadlock the child process. `spawn` starts a clean interpreter.
+
+## Web panel (admin UI)
+
+SAQ ships an aiohttp monitoring UI: queue stats, per-job detail, retry and
+abort actions. Enabled by the `--web --port 8080` flags on the worker command;
+Docker Compose maps it to host port **8081** -> `http://localhost:8081`.
+
+- Requires the `saq[web]` dependency extra (aiohttp + aiohttp_basicauth) --
+  already in `pyproject.toml`.
+- Auth: HTTP Basic when the `AUTH_PASSWORD` env var is set (user defaults to
+  `admin`, override via `AUTH_USER`). Compose feeds it from `SAQ_WEB_PASSWORD`
+  in `.env`; empty means no auth -- dev only, never expose the port publicly
+  without a password.
+- The panel monitors the worker's own queue; to watch additional queues pass
+  `--extra-web-settings <module.settings>`.
 
 ## Metrics server
 
