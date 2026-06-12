@@ -4,7 +4,7 @@ from uuid import UUID
 import structlog
 
 from ..domain import JobKind, JoinPolicy
-from .interfaces import IJoinStore
+from .interfaces import IEventPublisher, IJoinStore
 
 _log = structlog.get_logger("media_processing.complete_job")
 
@@ -13,9 +13,11 @@ _log = structlog.get_logger("media_processing.complete_job")
 class CompleteJobUC:
     _store: IJoinStore
     _fan_out: int
+    _publisher: IEventPublisher
 
     async def __call__(self, video_id: UUID, kind: JobKind) -> None:
         done = await self._store.add(video_id, kind)
         if JoinPolicy.is_complete(done_count=done, fan_out=self._fan_out):
             _log.info("video processed", video_id=str(video_id), jobs_done=done)
+            await self._publisher.publish_processed(video_id)
             await self._store.clear(video_id)

@@ -18,13 +18,30 @@ class _FakeStore:
         self.cleared.append(video_id)
 
 
+class _FakePublisher:
+    def __init__(self) -> None:
+        self.started: list = []
+        self.processed: list = []
+        self.failed: list = []
+
+    async def publish_started(self, video_id) -> None:
+        self.started.append(video_id)
+
+    async def publish_processed(self, video_id) -> None:
+        self.processed.append(video_id)
+
+    async def publish_failed(self, video_id) -> None:
+        self.failed.append(video_id)
+
+
 class TestCompleteJobUC:
     @pytest.mark.asyncio
     async def test_clears_when_join_complete(self) -> None:
         """Given the add brings the count to fan_out, When the UC runs, Then it clears the join."""
         # Arrange
         store = _FakeStore(count_after_add=3)
-        uc = CompleteJobUC(_store=store, _fan_out=3)
+        publisher = _FakePublisher()
+        uc = CompleteJobUC(_store=store, _fan_out=3, _publisher=publisher)
         video_id = uuid4()
 
         # Act
@@ -38,10 +55,51 @@ class TestCompleteJobUC:
         """Given the add leaves the count below fan_out, When the UC runs, Then it does NOT clear."""
         # Arrange
         store = _FakeStore(count_after_add=2)
-        uc = CompleteJobUC(_store=store, _fan_out=3)
+        publisher = _FakePublisher()
+        uc = CompleteJobUC(_store=store, _fan_out=3, _publisher=publisher)
 
         # Act
         await uc(uuid4(), JobKind.TRANSCODE)
 
         # Assert
+        assert store.cleared == []
+
+    @pytest.mark.asyncio
+    async def test_publishes_processed_when_join_complete(self) -> None:
+        """
+        Given all jobs are done (count == fan_out),
+        When the UC runs,
+        Then video_processing_processed is published and the join record cleared.
+        """
+        # Arrange
+        store = _FakeStore(count_after_add=3)
+        publisher = _FakePublisher()
+        uc = CompleteJobUC(_store=store, _fan_out=3, _publisher=publisher)
+        video_id = uuid4()
+
+        # Act
+        await uc(video_id, JobKind.STT)
+
+        # Assert
+        assert publisher.processed == [video_id]
+        assert store.cleared == [video_id]
+
+    @pytest.mark.asyncio
+    async def test_does_not_publish_when_incomplete(self) -> None:
+        """
+        Given the join is not yet complete (count < fan_out),
+        When the UC runs,
+        Then video_processing_processed is NOT published and nothing is cleared.
+        """
+        # Arrange
+        store = _FakeStore(count_after_add=2)
+        publisher = _FakePublisher()
+        uc = CompleteJobUC(_store=store, _fan_out=3, _publisher=publisher)
+        video_id = uuid4()
+
+        # Act
+        await uc(video_id, JobKind.TRANSCODE)
+
+        # Assert
+        assert publisher.processed == []
         assert store.cleared == []
