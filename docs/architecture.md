@@ -92,9 +92,8 @@ them is what kills the template's ability to grow.
 └── config.py            # Pydantic Settings with a unique env_prefix.
 ```
 
-The full ruleset, including import direction and validation checklists,
-lives in `~/.claude/rules/s-ddd_python/`. This file is the project-level
-overview; that ruleset is the source of truth.
+This file is the project-level overview of those rules; the per-layer
+sections below are what contributors hold each change against.
 
 ---
 
@@ -137,12 +136,16 @@ registered from `build_app`.
 Order of operations on startup:
 1. `RootConfig()` — fail fast on misconfig (PROD without admin token).
 2. `snitchbot.init(...)` — crash reporter armed.
-3. `build_container()` — providers wired.
+3. `build_container(channels=...)` — providers wired; the `ChannelsPlugin`
+   instance enters the container as Dishka context.
 4. `configure_structlog()` — JSON logger, two stdlib handlers:
    `StreamHandler` (stdout) + `WatchedFileHandler(LOG_FILE_PATH)`. No queue.
 5. `app.state.auth_facade = await container.get(AuthFacade)` — middleware-bound
    singletons resolved once.
-6. `MetricsLifespanManager.start()` — ensures `multiproc_dir` exists.
+6. `DbExampleLitestarLifespanManager.start()` — `create_all` for the
+   advanced-alchemy example.
+7. `MediaLifespanManager.start()` — media migrations, then two background
+   tasks: the outbox relay and the `video_status` consumer.
 
 Shutdown unwinds in reverse, each in `try/finally` so one component's failure
 never blocks the rest.
@@ -161,7 +164,7 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 | `admin/log/config.py::AdminLogConfig` | `LOG_` | `file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
 | `shared/config.py::MetricsConfig` | `METRICS_` | Prometheus endpoint path + public flag, HTTP buckets, multiproc dir. |
 | `shared/config.py::ValkeyConfig` | `VALKEY_` | Valkey host/port/db/password/max_connections, `url` property. |
-| `media_example/config.py::MediaConfig` | `MEDIA_` | schema_name, pool_size, relay_batch, relay_idle_sleep. |
+| `media_example/config.py::MediaConfig` | `MEDIA_` | schema_name, pool_size, relay_batch, relay_idle_sleep, status_batch, status_block_ms, status_claim_idle_ms. |
 
 Rules:
 - Business logic never reads `os.environ`. Config flows through providers.
@@ -190,10 +193,8 @@ static/
 The folder mirrors the bounded-context tree. One Litestar mount
 `/static/...` serves the directory; one `TemplateConfig(directory="static",
 engine=JinjaTemplateEngine)` resolves templates. Controllers return
-`Template(template_name="<context>/<file>.html", context={...})`. The
-convention is captured as rule §1.3 in
-`~/.claude/rules/s-ddd_python/structure.md`; the *why* is in
-[adr/0008-jinja-server-side-rendering.md](adr/0008-jinja-server-side-rendering.md);
+`Template(template_name="<context>/<file>.html", context={...})`. The *why*
+is in [adr/0008-jinja-server-side-rendering.md](adr/0008-jinja-server-side-rendering.md);
 the *how* is in [litestar_backend/infra/jinja.md](litestar_backend/infra/jinja.md).
 
 ---
@@ -210,7 +211,9 @@ Things that, if you change them, will break the app silently or in production.
   browser over loaded rows; "load more" pulls deeper into the file.
 - **Cross-worker metrics use multiprocess mode.** `prometheus_client` writes
   mmap shards to `PROMETHEUS_MULTIPROC_DIR`; no external store required.
-- **Cross-context calls go through an ACL.** Sibling context imports go via `ports/driven/acl/`; see the S-DDD ruleset (`~/.claude/rules/s-ddd_python/ports.md §4`).
+- **Cross-context calls go through an ACL.** Sibling contexts never import
+  each other directly; the only allowed path is an ACL in `ports/driven/acl/`
+  that imports the target's `ports/driving/` facade.
 - **APP-scope DI is lazy.** The graph resolves on the first HTTP request, so
   tests must warm DI before any env-isolation fixture runs (see
   `tests/e2e/conftest.py::e2e_client`).
@@ -256,9 +259,8 @@ Postgres 18, schema-per-context via `search_path` ([litestar_backend/infra/postg
 ### Add a public-API symbol
 
 If the contract isn't visible from name+types (invariants, side effects,
-lifecycle constraints, failure modes), write a docstring per
-[~/.claude/rules/common/documentation.md §6](../../.claude/rules/common/documentation.md).
-Otherwise, no docstring.
+lifecycle constraints, failure modes), write a docstring. Otherwise, no
+docstring.
 
 ---
 
@@ -289,10 +291,11 @@ uv run pytest tests/integration/  # ports/adapters against tmp_path files
 
 ## 10. Writing docs
 
-This project's documentation rules live in
-[~/.claude/rules/common/documentation.md](../../.claude/rules/common/documentation.md).
-That file defines the eight kinds of writing, line budgets, anti-patterns,
-docstring/comment policy, and the MADR template.
+The documentation discipline in one paragraph: every page has exactly one
+job and one audience (README, architecture, context reference, subsystem,
+infra, contract, ADR, docstring); pages have hard line budgets; each fact
+has one home and other pages link to it; docstrings exist only for contracts
+invisible from name+types; ADRs use MADR, ≤40 lines, never renumbered.
 
 Project-specific overrides:
 
@@ -315,5 +318,3 @@ is a bug.
 - Cross-cutting subsystems: [litestar_backend/subsystems/](litestar_backend/subsystems/)
 - Infra/tool reference: [litestar_backend/infra/](litestar_backend/infra/)
 - Decisions: [adr/](adr/)
-- Project-side rules: `~/.claude/rules/s-ddd_python/`
-- Universal doc rules: `~/.claude/rules/common/documentation.md`

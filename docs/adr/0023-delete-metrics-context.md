@@ -2,10 +2,8 @@
 Status: accepted
 Date: 2026-06-08
 
-Supersedes 0017.
-
 ## Context
-ADR 0017 promoted metrics to a top-level context with a by-name facade
+An earlier decision (since removed from the log) promoted metrics to a top-level context with a by-name facade
 (`increment`/`set_gauge`/`observe`), three demo metrics, a `/metrics-demo`
 endpoint, and an ACL example (`db_example_sddd` -> metrics). In practice the
 by-name facade added indirection for no payoff: `/metrics` is always-on infra,

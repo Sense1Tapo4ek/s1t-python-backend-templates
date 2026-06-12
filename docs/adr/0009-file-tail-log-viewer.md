@@ -3,7 +3,7 @@ Status: accepted
 Date: 2026-06-01
 
 ## Context
-The log subsystem (ADR 0003 SQLite+FTS5, ADR 0006 Valkey-Streams sink) was
+The log subsystem (first SQLite+FTS5, then a Valkey-Streams sink) was
 ~4,300 lines across two processes to deliver one capability a starter
 template actually needs: view logs in the admin UI, live and historical.
 The durable store, indexed search, query DSL, cursor pagination, retention

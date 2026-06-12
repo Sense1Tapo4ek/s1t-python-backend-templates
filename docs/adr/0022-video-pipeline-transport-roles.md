@@ -5,9 +5,9 @@ Date: 2026-06-08
 ## Context
 `media_example` fans one video ingest out to two consumers: backend processing
 (later phases) and a live browser feed. We need to teach which transport gives
-which delivery guarantee, and why a single one will not do. ADR 0020 (orders)
-published straight from the handler -- at-most-once, lossy on a crash between
-commit and emit.
+which delivery guarantee, and why a single one will not do. An earlier prototype (the
+removed orders context) published straight from the handler -- at-most-once,
+lossy on a crash between commit and emit.
 
 ## Decision
 Three transports, each with one job:
@@ -31,4 +31,4 @@ Postgres is the system of record; Valkey is transport only.
 - One Valkey Stream for backend + browser - couples ephemeral SSE to durable
   delivery; rejected.
 - Publish to the Stream directly from the handler (no outbox) - loses
-  atomicity, risks phantom/lost events; this was 0020's weakness, rejected.
+  atomicity, risks phantom/lost events; this was the orders prototype's weakness, rejected.
