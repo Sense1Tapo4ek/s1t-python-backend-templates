@@ -6,6 +6,7 @@ import snitchbot
 import structlog
 from dishka.integrations.litestar import setup_dishka
 from litestar import Litestar
+from litestar.channels import ChannelsPlugin
 
 from admin.log.config import AdminLogConfig
 from auth.ports.driving import AuthFacade
@@ -25,7 +26,7 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     config = RootConfig()
     snitchbot.init(service=config.app_name)
 
-    container = build_container()
+    container = build_container(channels=app.plugins.get(ChannelsPlugin))
     app.state.container = container
     setup_dishka(container=container, app=app)
 
@@ -56,6 +57,11 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
 
         media_manager = await container.get(MediaLifespanManager)
         log.info("media_example starting")
+        # ChannelsPlugin enters its own lifespan AFTER this one (plugins append
+        # to the list), so a status event consumed in the first milliseconds may
+        # find the channel queue not yet started. The feed publish is best-effort
+        # (_publish_best_effort swallows PortError), so this window only costs a
+        # live browser push -- do not "fix" the swallow into a propagate.
         await media_manager.start()
         log.info("media_example started")
 

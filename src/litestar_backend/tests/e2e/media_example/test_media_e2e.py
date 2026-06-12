@@ -1,4 +1,7 @@
+import json
 import time
+from datetime import UTC, datetime
+from uuid import uuid4
 
 import pytest
 import redis.asyncio as aioredis
@@ -61,7 +64,7 @@ async def test_outbox_drained_to_stream(
     resp = e2e_client.post("/videos", json={"source_key": "s3://bucket/c.mp4"})
     assert resp.status_code == 202
 
-    # Act + Assert — poll until stream has at least one entry or timeout
+    # Act + Assert -- poll until stream has at least one entry or timeout
     deadline = 5.0
     interval = 0.2
     elapsed = 0.0
@@ -86,6 +89,58 @@ def test_feed_opens_stream(e2e_client: TestClient) -> None:
     """
     # Act
     with e2e_client.stream("GET", "/videos/feed") as resp:
-        # Assert — check headers immediately without consuming events
+        # Assert -- check headers immediately without consuming events
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("text/event-stream")
+
+
+@pytest.mark.asyncio
+async def test_status_events_drive_video_to_done(
+    e2e_client: TestClient, valkey: aioredis.Redis
+) -> None:
+    """
+    Given an uploaded video and worker-shaped status events on video_status,
+    When the lifespan consumer processes them,
+    Then GET /videos eventually reports the video as done.
+    """
+    # Arrange -- remove any leftover video_status entries from this session.
+    # Deleting the stream also drops its consumer group, so this test exercises
+    # the consumer's lazy NOGROUP re-create path in _claim_stale.
+    await valkey.delete("video_status")
+
+    resp = e2e_client.post("/videos", json={"source_key": "s3://bucket/d.mp4"})
+    assert resp.status_code == 202
+    video_id = resp.json()["id"]
+
+    def entry(event_type: str) -> dict[str, str]:
+        event_id = str(uuid4())
+        payload = json.dumps(
+            {
+                "event_id": event_id,
+                "event_type": event_type,
+                "version": 1,
+                "video_id": video_id,
+                "occurred_at": datetime.now(UTC).isoformat(),
+            }
+        )
+        return {"event_id": event_id, "event_type": event_type, "payload": payload}
+
+    # Act -- simulate the worker's return events
+    await valkey.xadd("video_status", entry("video_processing_started"))
+    await valkey.xadd("video_status", entry("video_processed"))
+
+    # Assert -- poll until the consumer applies both
+    deadline, interval, elapsed = 15.0, 0.25, 0.0
+    status = None
+    while elapsed < deadline:
+        videos = {
+            v["id"]: v["status"]
+            for v in e2e_client.get("/videos", params={"limit": 50}).json()
+        }
+        status = videos.get(video_id)
+        if status == "done":
+            break
+        time.sleep(interval)
+        elapsed += interval
+
+    assert status == "done", f"video stayed in status={status!r} after {deadline}s"

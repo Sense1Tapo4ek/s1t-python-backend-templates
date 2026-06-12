@@ -112,16 +112,26 @@ class VideoStatusConsumer:
         per-process consumer name this is what makes delivery at-least-once
         across restarts and worker replacement.
 
+        If the stream or consumer group was deleted externally (NOGROUP error),
+        the group is recreated so the next drain_once can proceed normally.
+
         Returns the number of successfully handled (and acked) claimed entries.
         """
-        result: list[Any] = await self._valkey.xautoclaim(
-            VIDEO_STATUS_STREAM,
-            CONSUMER_GROUP,
-            _CONSUMER,
-            min_idle_time=self._claim_idle_ms,
-            start_id="0-0",
-            count=self._batch,
-        )
+        try:
+            result: list[Any] = await self._valkey.xautoclaim(
+                VIDEO_STATUS_STREAM,
+                CONSUMER_GROUP,
+                _CONSUMER,
+                min_idle_time=self._claim_idle_ms,
+                start_id="0-0",
+                count=self._batch,
+            )
+        except ResponseError as exc:
+            if "NOGROUP" in str(exc):
+                _log.warning("video_status consumer group missing; recreating", error=str(exc))
+                await self.ensure_group()
+                return 0
+            raise
         # redis-py 8.x parse_xautoclaim always returns a 3-element list:
         # [next_start_id, [(id, fields), ...], [deleted_ids]]
         _next, entries, _deleted = result
