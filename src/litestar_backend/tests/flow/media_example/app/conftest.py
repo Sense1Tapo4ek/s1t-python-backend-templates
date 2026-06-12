@@ -75,3 +75,16 @@ def fake_uow() -> FakeUoW:
 @pytest.fixture
 def fake_clock() -> FakeClock:
     return FakeClock()
+
+
+class FakeFeed:
+    def __init__(self) -> None:
+        self.published: list[tuple] = []
+
+    async def publish(self, video_id: UUID, status: str) -> None:
+        self.published.append((video_id, status))
+
+
+@pytest.fixture
+def fake_feed() -> FakeFeed:
+    return FakeFeed()

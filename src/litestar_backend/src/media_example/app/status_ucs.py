@@ -2,13 +2,14 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from .errors import VideoNotFound
-from .interfaces import IUoW, IVideoRepo
+from .interfaces import IFeedPublisher, IUoW, IVideoRepo
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class MarkProcessingUC:
     _repo: IVideoRepo
     _uow: IUoW
+    _feed: IFeedPublisher
 
     async def __call__(self, video_id: UUID) -> None:
         video = await self._repo.get_by_id(video_id)
@@ -17,12 +18,14 @@ class MarkProcessingUC:
         video.mark_processing()
         async with self._uow:
             await self._repo.save(video)
+        await self._feed.publish(video_id, video.status.value)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class MarkDoneUC:
     _repo: IVideoRepo
     _uow: IUoW
+    _feed: IFeedPublisher
 
     async def __call__(self, video_id: UUID) -> None:
         video = await self._repo.get_by_id(video_id)
@@ -31,12 +34,14 @@ class MarkDoneUC:
         video.mark_done()
         async with self._uow:
             await self._repo.save(video)
+        await self._feed.publish(video_id, video.status.value)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class MarkFailedUC:
     _repo: IVideoRepo
     _uow: IUoW
+    _feed: IFeedPublisher
 
     async def __call__(self, video_id: UUID) -> None:
         video = await self._repo.get_by_id(video_id)
@@ -45,3 +50,4 @@ class MarkFailedUC:
         video.mark_failed()
         async with self._uow:
             await self._repo.save(video)
+        await self._feed.publish(video_id, video.status.value)

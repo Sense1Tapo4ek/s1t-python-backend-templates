@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from uuid import UUID
 
 import redis.asyncio as aioredis
 from dishka import Provider, Scope, provide
@@ -22,6 +23,12 @@ from .config import MediaConfig
 from .ports.driven.sql_outbox_repo import SqlOutboxRepo
 from .ports.driven.sql_video_repo import SqlVideoRepo
 from .ports.driving.media_facade import MediaFacade
+
+
+class _NoopFeed:
+    # Task 6 replaces this with ChannelsFeedPublisher via DI
+    async def publish(self, video_id: UUID, status: str) -> None:  # pragma: no cover
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,10 +71,11 @@ class MediaWebProvider(Provider):
             repo = SqlVideoRepo(_session=session)
             outbox = SqlOutboxRepo(_session=session)
             uow = SqlUoW(_session=session)
+            _feed = _NoopFeed()
             yield MediaFacade(
                 _upload=UploadVideoUC(_repo=repo, _uow=uow, _outbox=outbox, _clock=clock),
                 _recent=ListVideosQuery(_repo=repo),
-                _mark_processing=MarkProcessingUC(_repo=repo, _uow=uow),
-                _mark_done=MarkDoneUC(_repo=repo, _uow=uow),
-                _mark_failed=MarkFailedUC(_repo=repo, _uow=uow),
+                _mark_processing=MarkProcessingUC(_repo=repo, _uow=uow, _feed=_feed),
+                _mark_done=MarkDoneUC(_repo=repo, _uow=uow, _feed=_feed),
+                _mark_failed=MarkFailedUC(_repo=repo, _uow=uow, _feed=_feed),
             )
