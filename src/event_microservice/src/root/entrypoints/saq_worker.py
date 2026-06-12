@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 import structlog
 
@@ -38,9 +39,19 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 
 async def after_process(ctx: dict[str, Any]) -> None:
     exc = ctx.get("exception")
-    if exc is not None:
-        job = ctx.get("job")
-        _log.error("job failed", job=getattr(job, "function", None), exc_info=exc)
+    if exc is None:
+        return
+    job = ctx.get("job")
+    _log.error("job failed", job=getattr(job, "function", None), exc_info=exc)
+    if job is None or job.attempts < job.retries:
+        return  # SAQ will retry; not terminal yet
+    video_id = UUID(job.kwargs["video_id"])
+    # AT-MOST-ONCE: after_process is not retried; a missed failed-event is
+    # cheaper than blocking the worker, and the join TTL bounds the orphan.
+    try:
+        await ctx["facade"].on_job_failed(video_id)
+    except Exception:
+        _log.exception("on_job_failed hook failed", video_id=str(video_id))
 
 
 settings: dict[str, Any] = {

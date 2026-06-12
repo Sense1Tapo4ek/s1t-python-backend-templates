@@ -64,11 +64,16 @@ class TestPipeline:
             )
             await worker.start()
 
-            # Assert -- join completed and cleaned up
+            # Assert -- join completed and cleaned up; status events published
             client = aioredis.from_url(valkey_url, decode_responses=True)
             try:
                 assert await client.exists(f"join:{video_id}") == 0
                 assert await queue.count("queued") == 0
+                status_entries = await client.xrange("video_status")
+                types = [f["event_type"] for _, f in status_entries]
+                assert "video_processing_started" in types
+                assert "video_processed" in types
+                await client.delete("video_status")
             finally:
                 await client.aclose()
         finally:

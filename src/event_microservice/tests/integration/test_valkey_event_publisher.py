@@ -11,6 +11,7 @@ from shared.adapters.driven.valkey import build_valkey
 @pytest_asyncio.fixture
 async def valkey(valkey_url: str):
     client = build_valkey(valkey_url)
+    await client.delete("video_status")
     try:
         yield client
     finally:

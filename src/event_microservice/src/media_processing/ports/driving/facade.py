@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from ...app import CompleteJobUC, OnVideoUploadedUC
+from ...app import CompleteJobUC, OnJobFailedUC, OnVideoUploadedUC
 from ...domain import JobKind
 
 
@@ -15,6 +15,7 @@ class MediaProcessingFacade:
 
     _on_uploaded: OnVideoUploadedUC
     _complete_job: CompleteJobUC
+    _on_failed: OnJobFailedUC
 
     async def on_uploaded(self, video_id: UUID) -> None:
         """Fan out the three processing jobs for a freshly uploaded video.
@@ -29,3 +30,12 @@ class MediaProcessingFacade:
         Propagates PortError if the join-store backend is unreachable.
         """
         await self._complete_job(video_id, kind)
+
+    async def on_job_failed(self, video_id: UUID) -> None:
+        """Record a terminal job failure: publish video_processing_failed, clear the join.
+
+        Called by the SAQ after_process hook on the final retry attempt. The
+        failed event is best-effort (publish errors are logged and swallowed);
+        PortError still propagates if the join-store cleanup fails.
+        """
+        await self._on_failed(video_id)

@@ -4,7 +4,14 @@ from saq import Queue
 
 from root.config import RootConfig
 
-from .app import CompleteJobUC, IEventPublisher, IJobQueue, IJoinStore, OnVideoUploadedUC
+from .app import (
+    CompleteJobUC,
+    IEventPublisher,
+    IJobQueue,
+    IJoinStore,
+    OnJobFailedUC,
+    OnVideoUploadedUC,
+)
 from .config import MediaProcessingConfig
 from .domain import JobKind
 from .ports.driven import SaqJobQueue, ValkeyEventPublisher, ValkeyJoinStore
@@ -15,6 +22,7 @@ class MediaProcessingProvider(Provider):
     scope = Scope.APP
 
     on_uploaded = provide(OnVideoUploadedUC)
+    on_failed = provide(OnJobFailedUC)
     facade = provide(MediaProcessingFacade)
 
     @provide
