@@ -8,9 +8,9 @@ code with `litestar_backend` -- only the wire contract (see
 [../architecture.md](../architecture.md)).
 
 Status: implemented (slice 2). The `media_processing` context, the three SAQ
-execution models, and the Valkey join are live. Return events + SSE broadcast
-are Phase C -- see
-[../superpowers/specs/2026-06-08-event-microservice-2-service-monorepo-design.md](../superpowers/specs/2026-06-08-event-microservice-2-service-monorepo-design.md).
+execution models, and the Valkey join are live. Not yet built (Phase C):
+return events (`video_processing_started` / `video_processed`), the
+`media_example` return-consumer, and the SSE broadcast.
 
 ## Layout
 
