@@ -51,7 +51,9 @@ class MediaFacade:
 
         Triggered by a status callback. Raises VideoNotFound (app) when no
         such video exists, InvalidTransition (domain) when the current
-        status forbids the move, PortError on a storage failure.
+        status forbids the move, PortError on a storage failure. The
+        post-commit feed broadcast is best-effort: a publish failure is
+        logged and does not fail this call.
         """
         await self._mark_processing(video_id)
 
@@ -60,7 +62,9 @@ class MediaFacade:
 
         Triggered by a status callback. Raises VideoNotFound (app) when no
         such video exists, InvalidTransition (domain) when the current
-        status forbids the move, PortError on a storage failure.
+        status forbids the move, PortError on a storage failure. The
+        post-commit feed broadcast is best-effort: a publish failure is
+        logged and does not fail this call.
         """
         await self._mark_done(video_id)
 
@@ -69,6 +73,8 @@ class MediaFacade:
 
         Triggered by a status callback. Raises VideoNotFound (app) when no
         such video exists, InvalidTransition (domain) when the current
-        status forbids the move, PortError on a storage failure.
+        status forbids the move, PortError on a storage failure. The
+        post-commit feed broadcast is best-effort: a publish failure is
+        logged and does not fail this call.
         """
         await self._mark_failed(video_id)

@@ -6,7 +6,7 @@ import pytest
 from media_example.app import MarkDoneUC, MarkFailedUC, MarkProcessingUC, VideoNotFound
 from media_example.domain import Video, VideoStatus
 
-from .conftest import FakeFeed, FakeUoW, FakeVideoRepo
+from .conftest import FailingFeed, FakeFeed, FakeUoW, FakeVideoRepo
 
 
 def _pending_video() -> Video:
@@ -88,6 +88,35 @@ class TestMarkProcessingUC:
 
         # Assert
         assert fake_feed.published == [(video.id, "processing")]
+
+
+class TestBestEffortFeedPublish:
+    @pytest.mark.asyncio
+    async def test_uc_succeeds_when_feed_raises_port_error(
+        self,
+        fake_repo: FakeVideoRepo,
+        fake_uow: FakeUoW,
+        failing_feed: FailingFeed,
+    ) -> None:
+        """
+        Given a PENDING video and a feed that always raises PortError,
+        When MarkProcessingUC is called,
+        Then the UC does not raise and the video is persisted with PROCESSING status.
+        """
+        # Arrange
+        video = _pending_video()
+        video.collect_events()
+        fake_repo.seed(video)
+        uc = MarkProcessingUC(_repo=fake_repo, _uow=fake_uow, _feed=failing_feed)
+
+        # Act -- must not raise
+        await uc(video.id)
+
+        # Assert
+        saved = await fake_repo.get_by_id(video.id)
+        assert saved is not None
+        assert saved.status == VideoStatus.PROCESSING
+        assert failing_feed.calls == 1
 
 
 class TestMarkDoneUC:

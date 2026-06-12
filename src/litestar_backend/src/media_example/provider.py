@@ -26,7 +26,7 @@ from .ports.driving.media_facade import MediaFacade
 
 
 class _NoopFeed:
-    # Task 6 replaces this with ChannelsFeedPublisher via DI
+    # TODO(phase-c-task-6): replace with ChannelsFeedPublisher via DI
     async def publish(self, video_id: UUID, status: str) -> None:  # pragma: no cover
         return None
 

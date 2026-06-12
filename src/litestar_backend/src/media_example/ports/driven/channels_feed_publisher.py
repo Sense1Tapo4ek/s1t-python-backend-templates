@@ -4,7 +4,7 @@ from uuid import UUID
 
 from shared.generics.errors import PortError
 
-from ..driving.feed import VIDEOS_CHANNEL
+from ..feed import VIDEOS_CHANNEL
 
 
 class _IChannels(Protocol):

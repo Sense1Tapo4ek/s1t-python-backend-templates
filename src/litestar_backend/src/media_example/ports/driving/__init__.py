@@ -1,4 +1,4 @@
-from .feed import VIDEOS_CHANNEL
+from ..feed import VIDEOS_CHANNEL
 from .media_facade import MediaFacade
 from .video_dto import UploadVideoRequest, VideoModel, VideoReadDTO, to_model
 

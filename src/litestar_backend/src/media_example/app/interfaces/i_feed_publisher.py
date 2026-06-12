@@ -11,6 +11,8 @@ class IFeedPublisher(Protocol):
         Called only AFTER the status transition is committed.
 
         Raises:
-            PortError: the channel backend rejected the publish.
+            PortError: the channel plugin is not running or its queue
+                rejected the message. Callers treat this as best-effort:
+                log and continue -- the transition is already committed.
         """
         ...

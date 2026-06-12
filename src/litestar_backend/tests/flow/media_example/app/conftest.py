@@ -85,6 +85,24 @@ class FakeFeed:
         self.published.append((video_id, status))
 
 
+class FailingFeed:
+    """Feed whose publish always raises PortError; used to verify best-effort."""
+
+    def __init__(self) -> None:
+        self.calls: int = 0
+
+    async def publish(self, video_id: UUID, status: str) -> None:
+        self.calls += 1
+        from shared.generics.errors import PortError
+
+        raise PortError("channel unavailable")
+
+
 @pytest.fixture
 def fake_feed() -> FakeFeed:
     return FakeFeed()
+
+
+@pytest.fixture
+def failing_feed() -> FailingFeed:
+    return FailingFeed()
