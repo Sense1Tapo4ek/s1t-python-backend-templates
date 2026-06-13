@@ -46,7 +46,11 @@ class OutboxRelay:
             for r in rows:
                 await self._valkey.xadd(
                     VIDEO_UPLOADED_STREAM,
-                    {"event_id": str(r["id"]), "event_type": r["event_type"], "payload": r["payload"]},
+                    {
+                        "event_id": str(r["id"]),
+                        "event_type": r["event_type"],
+                        "payload": r["payload"],
+                    },
                 )
             await session.execute(_MARK, {"ids": [r["id"] for r in rows]})
             _log.info("relay published", count=len(rows))

@@ -24,9 +24,7 @@ def _build_app(
 
 
 class TestMetricsEndpointBasic:
-    def test_metrics_returns_200_with_auth(
-        self, tmp_path_factory: pytest.TempPathFactory
-    ) -> None:
+    def test_metrics_returns_200_with_auth(self, tmp_path_factory: pytest.TempPathFactory) -> None:
         """
         Given METRICS_PROM_ENDPOINT_PUBLIC=false (default),
         When GET /metrics is called with ADMIN auth,
@@ -115,6 +113,5 @@ class TestMetricsBodyContent:
         body = resp.text
         prefix = "test_service"
         assert any(
-            line.startswith(prefix) or f"# HELP {prefix}" in line
-            for line in body.splitlines()
+            line.startswith(prefix) or f"# HELP {prefix}" in line for line in body.splitlines()
         ), f"Expected prefix '{prefix}' in /metrics body; got:\n{body[:500]}"

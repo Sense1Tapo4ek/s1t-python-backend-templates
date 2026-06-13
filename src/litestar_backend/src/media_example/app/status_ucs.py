@@ -11,9 +11,7 @@ from .interfaces import IFeedPublisher, IUoW, IVideoRepo
 _log = structlog.get_logger("media_example.status_ucs")
 
 
-async def _publish_best_effort(
-    feed: IFeedPublisher, video_id: UUID, status: str
-) -> None:
+async def _publish_best_effort(feed: IFeedPublisher, video_id: UUID, status: str) -> None:
     # AT-MOST-ONCE: the transition is already committed; a lost feed event
     # only costs a live-browser update and must not fail the caller.
     try:

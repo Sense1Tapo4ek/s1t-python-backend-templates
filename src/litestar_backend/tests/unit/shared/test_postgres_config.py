@@ -20,7 +20,13 @@ def test_dsn_properties_compose_from_parts(monkeypatch: pytest.MonkeyPatch) -> N
 
 def test_defaults_are_localhost_postgres(monkeypatch: pytest.MonkeyPatch) -> None:
     """Given no env, When constructing, Then sensible localhost defaults apply."""
-    for k in ("POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB"):
+    for k in (
+        "POSTGRES_HOST",
+        "POSTGRES_PORT",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+    ):
         monkeypatch.delenv(k, raising=False)
     cfg = PostgresConfig()
     assert cfg.host == "localhost"

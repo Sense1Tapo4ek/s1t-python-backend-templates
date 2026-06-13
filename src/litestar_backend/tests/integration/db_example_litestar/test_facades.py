@@ -35,7 +35,9 @@ async def test_author_facade_full_crud_from_code(sm: async_sessionmaker) -> None
     async with sm() as session:
         facade = AuthorFacade(_service=AuthorService(session=session))
 
-        await facade.create_many([AuthorModel(name="Stephen King"), AuthorModel(name="Jane Austen")])
+        await facade.create_many(
+            [AuthorModel(name="Stephen King"), AuthorModel(name="Jane Austen")]
+        )
 
         results, total = await facade.list(search="king", limit=10, offset=0)
         assert total == 1

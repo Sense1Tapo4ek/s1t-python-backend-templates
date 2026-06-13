@@ -40,11 +40,13 @@ def configure_structlog(
         structlog.stdlib.add_logger_name,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
         structlog.processors.StackInfoRenderer(),
-        CallsiteParameterAdder([
-            CallsiteParameter.PATHNAME,
-            CallsiteParameter.LINENO,
-            CallsiteParameter.FUNC_NAME,
-        ]),
+        CallsiteParameterAdder(
+            [
+                CallsiteParameter.PATHNAME,
+                CallsiteParameter.LINENO,
+                CallsiteParameter.FUNC_NAME,
+            ]
+        ),
         structlog.processors.dict_tracebacks,
         make_structlog_processor(),
     ]
@@ -78,9 +80,7 @@ def configure_structlog(
     # detection).
     file_handler: logging.Handler
     try:
-        file_handler = logging.handlers.WatchedFileHandler(
-            str(log_file_path), encoding="utf-8"
-        )
+        file_handler = logging.handlers.WatchedFileHandler(str(log_file_path), encoding="utf-8")
     except OSError:
         file_handler = logging.FileHandler(str(log_file_path), encoding="utf-8")
     file_handler.setFormatter(formatter)

@@ -92,11 +92,11 @@ def test_login_open_redirect_protection() -> None:
 @pytest.mark.parametrize(
     "evil_next",
     [
-        "//evil.example/x",            # protocol-relative
-        "/\\\\evil.example",           # backslash netloc smuggle
-        "/admin/../etc/passwd",        # dot-segment escape
-        "javascript:alert(1)",         # script scheme
-        "https://evil/admin",          # absolute URL with /admin path
+        "//evil.example/x",  # protocol-relative
+        "/\\\\evil.example",  # backslash netloc smuggle
+        "/admin/../etc/passwd",  # dot-segment escape
+        "javascript:alert(1)",  # script scheme
+        "https://evil/admin",  # absolute URL with /admin path
     ],
 )
 def test_login_next_smuggle_attempts_coerce_to_dashboard(evil_next: str) -> None:

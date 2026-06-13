@@ -18,8 +18,13 @@ class BookController(Controller):
     tags = ["db_example (Alchemy)"]  # noqa: RUF012
     return_dto = BookReadDTO
 
-    @post("/", dto=BookWriteDTO, status_code=HTTP_201_CREATED,
-          summary="Create a book", responses=error_responses(400))
+    @post(
+        "/",
+        dto=BookWriteDTO,
+        status_code=HTTP_201_CREATED,
+        summary="Create a book",
+        responses=error_responses(400),
+    )
     @inject
     async def create(
         self,

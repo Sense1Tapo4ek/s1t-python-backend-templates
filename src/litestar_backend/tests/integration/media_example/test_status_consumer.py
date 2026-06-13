@@ -4,6 +4,7 @@ Real Postgres (testcontainer via pg_dsn fixture) + real Valkey.
 The consumer opens its own committed sessions, so we use a separate
 engine/sessionmaker that commits, then clean up explicitly in teardown.
 """
+
 import json
 from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime
@@ -43,7 +44,9 @@ _SCHEMA = "media"
 
 
 @pytest_asyncio.fixture
-async def committed_sm(pg_dsn: str, _migrated: None) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+async def committed_sm(
+    pg_dsn: str, _migrated: None
+) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
     """A sessionmaker whose sessions COMMIT (unlike the rolled-back `session`
     fixture). Needed because the consumer opens its own sessions internally."""
     alchemy_url = pg_dsn.replace("postgresql://", "postgresql+asyncpg://", 1)
@@ -130,9 +133,7 @@ async def _load_status(sm: async_sessionmaker[AsyncSession], video_id: UUID) -> 
 async def _delete_video(sm: async_sessionmaker[AsyncSession], video_id: UUID) -> None:
     """Hard-delete a video row (cleanup)."""
     async with sm() as session, session.begin():
-        await session.execute(
-            text("DELETE FROM media.videos WHERE id = :id"), {"id": video_id}
-        )
+        await session.execute(text("DELETE FROM media.videos WHERE id = :id"), {"id": video_id})
 
 
 def _make_facade_factory(feed: _RecordingFeed) -> Callable[[AsyncSession], MediaFacade]:

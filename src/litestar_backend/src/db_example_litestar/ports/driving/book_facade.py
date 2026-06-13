@@ -26,9 +26,7 @@ class BookFacade:
         """Persist one book and commit. Returns the stored model."""
         return await self._service.create(book, auto_commit=True)
 
-    async def list(
-        self, *, limit: int = 50, offset: int = 0
-    ) -> tuple[Sequence[BookModel], int]:
+    async def list(self, *, limit: int = 50, offset: int = 0) -> tuple[Sequence[BookModel], int]:
         """Page books ordered by title. Returns the page slice and the total count."""
         filters: list[Any] = [OrderBy("title", "asc"), LimitOffset(limit=limit, offset=offset)]
         return await self._service.get_many_and_count(*filters)

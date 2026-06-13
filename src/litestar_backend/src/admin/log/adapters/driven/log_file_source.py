@@ -28,9 +28,7 @@ class LogFileSource:
     async def read_last_lines(self, limit: int) -> tuple[list[str], int, int]:
         return await asyncio.to_thread(self._read_last_lines, limit)
 
-    async def read_lines_before(
-        self, offset: int, limit: int
-    ) -> tuple[list[str], int]:
+    async def read_lines_before(self, offset: int, limit: int) -> tuple[list[str], int]:
         return await asyncio.to_thread(self._read_lines_before, offset, limit)
 
     async def current_inode(self) -> int:
@@ -84,9 +82,7 @@ class LogFileSource:
                 carry = b""
 
             if st.st_size > pos:
-                data, pos, carry = await asyncio.to_thread(
-                    self._read_delta, pos, carry
-                )
+                data, pos, carry = await asyncio.to_thread(self._read_delta, pos, carry)
                 for raw in data:
                     yield raw
             await asyncio.sleep(delay)
@@ -131,9 +127,7 @@ class LogFileSource:
         except OSError as exc:
             raise LogReadError(path=str(self.path), reason=str(exc)) from exc
 
-    def _tail_from_buffer(
-        self, buf: bytes, buf_start: int, limit: int
-    ) -> tuple[list[str], int]:
+    def _tail_from_buffer(self, buf: bytes, buf_start: int, limit: int) -> tuple[list[str], int]:
         # Discard trailing partial line: everything after the final newline.
         last_nl = buf.rfind(b"\n")
         if last_nl == -1:
@@ -177,9 +171,7 @@ class LogFileSource:
         except OSError as exc:
             raise LogReadError(path=str(self.path), reason=str(exc)) from exc
 
-    def _read_delta(
-        self, pos: int, carry: bytes
-    ) -> tuple[list[str], int, bytes]:
+    def _read_delta(self, pos: int, carry: bytes) -> tuple[list[str], int, bytes]:
         # The file may vanish in the TOCTOU window between the caller's
         # os.stat and this read (rotation/deletion). Tolerate it the same
         # way the follow loop swallows OSError on stat: make no progress
@@ -197,9 +189,7 @@ class LogFileSource:
         consumed = len(data) - len(rest)
         return lines, pos + consumed, rest
 
-    async def _read_from(
-        self, *, inode_pos: int, prev_inode: int
-    ) -> AsyncIterator[str]:
+    async def _read_from(self, *, inode_pos: int, prev_inode: int) -> AsyncIterator[str]:
         # Best-effort drain of the soon-to-be-replaced inode. self.path may
         # already resolve to the NEW inode (rename-mode rotation); reading it
         # at the old offset would emit garbage from an unrelated file. Only

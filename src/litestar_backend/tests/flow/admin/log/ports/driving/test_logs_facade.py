@@ -10,8 +10,7 @@ from admin.log.ports.driving import LogsFacade
 
 def _entry() -> LogEntryEnt:
     return LogEntryEnt.parse(
-        '{"timestamp":"2026-06-01T00:00:00Z","level":"INFO",'
-        '"logger":"root","event":"hi","x":1}'
+        '{"timestamp":"2026-06-01T00:00:00Z","level":"INFO","logger":"root","event":"hi","x":1}'
     )
 
 
@@ -19,9 +18,7 @@ class _FakeReader:
     async def read_tail(self, limit: int) -> tuple[list[LogEntryEnt], Cursor]:
         return [_entry()], Cursor(inode=1, offset=0)
 
-    async def read_before(
-        self, cursor: Cursor, limit: int
-    ) -> tuple[list[LogEntryEnt], Cursor]:
+    async def read_before(self, cursor: Cursor, limit: int) -> tuple[list[LogEntryEnt], Cursor]:
         return [_entry()], cursor
 
     def stream_all(self) -> AsyncIterator[str]:  # pragma: no cover
@@ -70,6 +67,7 @@ class TestExport:
         When export_ndjson is iterated,
         Then chunks pass through unchanged.
         """
+
         # Arrange
         async def _gen() -> AsyncIterator[str]:
             yield '{"event":"a"}\n'

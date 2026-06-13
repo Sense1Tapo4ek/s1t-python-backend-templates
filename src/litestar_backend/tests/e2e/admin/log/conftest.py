@@ -12,9 +12,27 @@ from root.entrypoints.api import create_app
 E2E_APP_NAME = "test-service"
 
 _SEED_LINES = [
-    {"timestamp": "2026-05-31T10:00:00Z", "level": "info", "logger": "root", "event": "boot", "context": {"pid": 1}},
-    {"timestamp": "2026-05-31T10:00:01Z", "level": "warning", "logger": "auth", "event": "login slow", "context": {"ms": 900}},
-    {"timestamp": "2026-05-31T10:00:02Z", "level": "error", "logger": "auth", "event": "login failed", "context": {"user": "x"}},
+    {
+        "timestamp": "2026-05-31T10:00:00Z",
+        "level": "info",
+        "logger": "root",
+        "event": "boot",
+        "context": {"pid": 1},
+    },
+    {
+        "timestamp": "2026-05-31T10:00:01Z",
+        "level": "warning",
+        "logger": "auth",
+        "event": "login slow",
+        "context": {"ms": 900},
+    },
+    {
+        "timestamp": "2026-05-31T10:00:02Z",
+        "level": "error",
+        "logger": "auth",
+        "event": "login failed",
+        "context": {"user": "x"},
+    },
 ]
 
 
@@ -34,9 +52,7 @@ def e2e_app(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Litestar]:
     log_dir = volume / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file: Path = log_dir / "app.jsonl"
-    log_file.write_text(
-        "".join(json.dumps(line) + "\n" for line in _SEED_LINES), encoding="utf-8"
-    )
+    log_file.write_text("".join(json.dumps(line) + "\n" for line in _SEED_LINES), encoding="utf-8")
 
     mp.setenv("APP_NAME", E2E_APP_NAME)
     mp.setenv("VOLUME_PATH", str(volume))

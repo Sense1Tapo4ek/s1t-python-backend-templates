@@ -73,9 +73,7 @@ class RootConfig(BaseAppConfig):
             # directly would diverge from how the runtime actually loads it.
             token = AuthConfig().admin_token
             if token is None or not token.get_secret_value().strip():
-                raise ValueError(
-                    "AUTH_ADMIN_TOKEN must be set when APP_ENV=prod"
-                )
+                raise ValueError("AUTH_ADMIN_TOKEN must be set when APP_ENV=prod")
         return self
 
     @property

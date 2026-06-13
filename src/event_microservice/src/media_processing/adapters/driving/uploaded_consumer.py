@@ -23,7 +23,9 @@ async def handle_uploaded(payload: str | bytes, facade: MediaProcessingFacade) -
     await facade.on_uploaded(event.video_id)
 
 
-@router.subscriber(stream=StreamSub(VIDEO_UPLOADED_STREAM, group=CONSUMER_GROUP, consumer=_CONSUMER))
+@router.subscriber(
+    stream=StreamSub(VIDEO_UPLOADED_STREAM, group=CONSUMER_GROUP, consumer=_CONSUMER)
+)
 async def on_video_uploaded(
     body: dict[str, str],
     msg: RedisMessage,

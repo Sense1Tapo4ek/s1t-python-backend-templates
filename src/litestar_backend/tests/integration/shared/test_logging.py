@@ -28,9 +28,7 @@ class TestConfigureStructlog:
         Then the file contains exactly one JSON object on one line.
         """
         log_file = tmp_path / "app.jsonl"
-        configure_structlog(
-            app_name="test", log_file_path=log_file, max_line_bytes=10_000
-        )
+        configure_structlog(app_name="test", log_file_path=log_file, max_line_bytes=10_000)
 
         structlog.get_logger("t").info("hello", user_id=7)
 
@@ -50,9 +48,7 @@ class TestConfigureStructlog:
         Then the written line does not exceed the cap (plus the newline).
         """
         log_file = tmp_path / "app.jsonl"
-        configure_structlog(
-            app_name="test", log_file_path=log_file, max_line_bytes=200
-        )
+        configure_structlog(app_name="test", log_file_path=log_file, max_line_bytes=200)
 
         structlog.get_logger("t").info("big", blob="x" * 5000)
 

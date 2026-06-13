@@ -46,6 +46,7 @@ def mark_dead() -> None:
     """
     try:
         from prometheus_client import multiprocess
+
         multiprocess.mark_process_dead(os.getpid())
     except Exception:
         pass

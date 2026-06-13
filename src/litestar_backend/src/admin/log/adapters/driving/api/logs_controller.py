@@ -49,8 +49,9 @@ class LogsApiController(Controller):
     security = ADMIN_SECURITY
     tags = ["Admin Logs"]  # noqa: RUF012
 
-    @get("/", status_code=HTTP_200_OK,
-         summary="Latest log page", responses=error_responses(401, 403))
+    @get(
+        "/", status_code=HTTP_200_OK, summary="Latest log page", responses=error_responses(401, 403)
+    )
     @inject
     async def api_logs(
         self,
@@ -65,8 +66,12 @@ class LogsApiController(Controller):
             cursor=encode_cursor(cursor),
         )
 
-    @get("/older", status_code=HTTP_200_OK,
-         summary="Older log page (cursor)", responses=error_responses(400, 401, 403))
+    @get(
+        "/older",
+        status_code=HTTP_200_OK,
+        summary="Older log page (cursor)",
+        responses=error_responses(400, 401, 403),
+    )
     @inject
     async def api_older(
         self,
@@ -89,8 +94,12 @@ class LogsApiController(Controller):
             cursor=encode_cursor(next_cursor),
         )
 
-    @get("/stream", status_code=HTTP_200_OK,
-         summary="Live log tail (SSE)", responses=error_responses(401, 403))
+    @get(
+        "/stream",
+        status_code=HTTP_200_OK,
+        summary="Live log tail (SSE)",
+        responses=error_responses(401, 403),
+    )
     @inject
     async def api_stream(
         self,

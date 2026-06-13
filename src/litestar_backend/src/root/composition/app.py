@@ -156,11 +156,26 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
         components=SECURITY_COMPONENTS,
         tags=[
             Tag(name="Health", description="Liveness/readiness probes and build info."),
-            Tag(name="db_example (Alchemy)", description="Example CRUD via SQLAlchemy 2.0 + advanced-alchemy. Illustrative; delete when adapting."),
-            Tag(name="Admin Logs", description="JSON + SSE API backing the file-tail log viewer (admin role required)."),
-            Tag(name="Metrics", description="Prometheus scrape + a generic by-name custom-metrics demo. Illustrative."),
-            Tag(name="Admin UI", description="Server-rendered HTML pages and auth redirects - not a JSON API."),
-            Tag(name="media", description="Video ingest pipeline: upload (202 + outbox), list recent, live SSE feed. Golden example context."),
+            Tag(
+                name="db_example (Alchemy)",
+                description="Example CRUD via SQLAlchemy 2.0 + advanced-alchemy. Illustrative; delete when adapting.",
+            ),
+            Tag(
+                name="Admin Logs",
+                description="JSON + SSE API backing the file-tail log viewer (admin role required).",
+            ),
+            Tag(
+                name="Metrics",
+                description="Prometheus scrape + a generic by-name custom-metrics demo. Illustrative.",
+            ),
+            Tag(
+                name="Admin UI",
+                description="Server-rendered HTML pages and auth redirects - not a JSON API.",
+            ),
+            Tag(
+                name="media",
+                description="Video ingest pipeline: upload (202 + outbox), list recent, live SSE feed. Golden example context.",
+            ),
         ],
     )
 

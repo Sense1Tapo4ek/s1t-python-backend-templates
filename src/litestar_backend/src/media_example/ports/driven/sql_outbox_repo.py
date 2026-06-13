@@ -27,7 +27,9 @@ class SqlOutboxRepo(IOutboxRepo):
         payload = msgspec.json.encode(integration)
         try:
             self._session.add(
-                OutboxRow(id=integration.event_id, event_type=integration.event_type, payload=payload)
+                OutboxRow(
+                    id=integration.event_id, event_type=integration.event_type, payload=payload
+                )
             )
             await self._session.flush()
         except SQLAlchemyError as exc:

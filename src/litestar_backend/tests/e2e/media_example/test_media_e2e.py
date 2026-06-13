@@ -49,9 +49,7 @@ def test_list_includes_uploaded(e2e_client: TestClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_outbox_drained_to_stream(
-    e2e_client: TestClient, valkey: aioredis.Redis
-) -> None:
+async def test_outbox_drained_to_stream(e2e_client: TestClient, valkey: aioredis.Redis) -> None:
     """
     Given an uploaded video (outbox row written in the same tx),
     When the background relay drains the outbox,
@@ -134,8 +132,7 @@ async def test_status_events_drive_video_to_done(
     status = None
     while elapsed < deadline:
         videos = {
-            v["id"]: v["status"]
-            for v in e2e_client.get("/videos", params={"limit": 50}).json()
+            v["id"]: v["status"] for v in e2e_client.get("/videos", params={"limit": 50}).json()
         }
         status = videos.get(video_id)
         if status == "done":

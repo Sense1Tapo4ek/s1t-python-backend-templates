@@ -16,9 +16,27 @@ from _e2e_constants import E2E_ADMIN_TOKEN
 from root.entrypoints.api import create_app
 
 LINES = [
-    {"timestamp": "2026-05-31T10:00:00Z", "level": "info", "logger": "root", "event": "boot", "context": {"pid": 1}},
-    {"timestamp": "2026-05-31T10:00:01Z", "level": "warning", "logger": "auth", "event": "login slow", "context": {"ms": 900}},
-    {"timestamp": "2026-05-31T10:00:02Z", "level": "error", "logger": "auth", "event": "login failed", "context": {"user": "x"}},
+    {
+        "timestamp": "2026-05-31T10:00:00Z",
+        "level": "info",
+        "logger": "root",
+        "event": "boot",
+        "context": {"pid": 1},
+    },
+    {
+        "timestamp": "2026-05-31T10:00:01Z",
+        "level": "warning",
+        "logger": "auth",
+        "event": "login slow",
+        "context": {"ms": 900},
+    },
+    {
+        "timestamp": "2026-05-31T10:00:02Z",
+        "level": "error",
+        "logger": "auth",
+        "event": "login failed",
+        "context": {"user": "x"},
+    },
 ]
 
 
@@ -66,9 +84,7 @@ class TestLogTailPage:
         assert [e["event"] for e in body["entries"]] == ["login slow", "login failed"]
         assert body["cursor"] is not None
 
-    def test_tail_requires_admin(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_tail_requires_admin(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """
         Given no Authorization header,
         When GET /api/v1/admin/logs/,
@@ -132,9 +148,7 @@ async def _capture_response_start(
     async def lifespan_send(_message: dict[str, Any]) -> None:
         return None
 
-    lifespan_task = asyncio.create_task(
-        app({"type": "lifespan"}, lifespan_recv, lifespan_send)
-    )
+    lifespan_task = asyncio.create_task(app({"type": "lifespan"}, lifespan_recv, lifespan_send))
     # Let startup (DI graph, metrics) settle before issuing the request.
     await asyncio.sleep(0.5)
 
@@ -189,9 +203,7 @@ async def _capture_response_start(
         appender.cancel()
         request_task.cancel()
         lifespan_stop.set()
-        await asyncio.gather(
-            appender, request_task, lifespan_task, return_exceptions=True
-        )
+        await asyncio.gather(appender, request_task, lifespan_task, return_exceptions=True)
 
     return captured["status"], captured["headers"]
 
@@ -211,14 +223,10 @@ class TestLogStream:
         monkeypatch.setenv("VOLUME_PATH", str(tmp_path))
         monkeypatch.setenv("LOG_FILE_PATH", str(log_file))
         monkeypatch.setenv("LOG_FOLLOW_POLL_MS", "50")
-        monkeypatch.setattr(
-            "root.composition.lifespan.configure_structlog", lambda **_: None
-        )
+        monkeypatch.setattr("root.composition.lifespan.configure_structlog", lambda **_: None)
         app = create_app()
 
-        status, headers = await _capture_response_start(
-            app, log_file, E2E_ADMIN_TOKEN
-        )
+        status, headers = await _capture_response_start(app, log_file, E2E_ADMIN_TOKEN)
 
         assert status == HTTP_200_OK
         assert headers["content-type"].startswith("text/event-stream")

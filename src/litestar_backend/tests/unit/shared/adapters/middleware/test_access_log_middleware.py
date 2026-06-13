@@ -29,6 +29,7 @@ def _scope(
 
 async def _drain(mw: AccessLogMiddleware, scope: dict) -> dict:
     """Run the middleware and return the captured info call kwargs."""
+
     async def inner(scope, receive, send):
         await send({"type": "http.response.start", "status": 200, "headers": []})
         await send({"type": "http.response.body", "body": b""})

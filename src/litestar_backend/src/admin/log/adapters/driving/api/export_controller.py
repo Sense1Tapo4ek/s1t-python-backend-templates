@@ -23,8 +23,12 @@ class ExportController(Controller):
     security = ADMIN_SECURITY
     tags = ["Admin Logs"]  # noqa: RUF012
 
-    @get("/", status_code=HTTP_200_OK,
-         summary="Export logs", responses=error_responses(400, 401, 403))
+    @get(
+        "/",
+        status_code=HTTP_200_OK,
+        summary="Export logs",
+        responses=error_responses(400, 401, 403),
+    )
     @inject
     async def export(
         self,
@@ -34,8 +38,7 @@ class ExportController(Controller):
         """Stream the log file as a download in ``ndjson`` (default) or ``csv``."""
         if format not in _VALID_FORMATS:
             raise ValidationException(
-                f"unknown format {format!r}; expected one of: "
-                f"{', '.join(sorted(_VALID_FORMATS))}",
+                f"unknown format {format!r}; expected one of: {', '.join(sorted(_VALID_FORMATS))}",
             )
         _log.info("export started", format=format)
 

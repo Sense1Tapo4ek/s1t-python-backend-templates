@@ -19,7 +19,12 @@ class VideoController(Controller):
     tags = ["media"]  # noqa: RUF012
     return_dto = VideoReadDTO
 
-    @post("/", status_code=HTTP_202_ACCEPTED, summary="Upload a video", responses=error_responses(400, 503))
+    @post(
+        "/",
+        status_code=HTTP_202_ACCEPTED,
+        summary="Upload a video",
+        responses=error_responses(400, 503),
+    )
     @inject
     async def upload(self, data: UploadVideoRequest, facade: FromDishka[MediaFacade]) -> VideoModel:
         result = await facade.upload(data)

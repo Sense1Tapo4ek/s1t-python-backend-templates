@@ -38,10 +38,14 @@ async def test_drain_once_publishes_rows_to_stream(
     now = datetime.now(tz=UTC)
 
     payload_a = msgspec.json.encode(
-        VideoUploadedIntegration(event_id=id_a, video_id=video_id, source_key=source_key, uploaded_at=now)
+        VideoUploadedIntegration(
+            event_id=id_a, video_id=video_id, source_key=source_key, uploaded_at=now
+        )
     )
     payload_b = msgspec.json.encode(
-        VideoUploadedIntegration(event_id=id_b, video_id=video_id, source_key=source_key, uploaded_at=now)
+        VideoUploadedIntegration(
+            event_id=id_b, video_id=video_id, source_key=source_key, uploaded_at=now
+        )
     )
 
     alchemy_url = pg_dsn.replace("postgresql://", "postgresql+asyncpg://", 1)

@@ -76,7 +76,9 @@ class TestReadLastLines:
         Then the partial line is not returned.
         """
         path = tmp_path / "app.jsonl"
-        path.write_text(_line("a") + "\n" + _line("b") + "\n" + '{"event":"partial"', encoding="utf-8")
+        path.write_text(
+            _line("a") + "\n" + _line("b") + "\n" + '{"event":"partial"', encoding="utf-8"
+        )
         src = LogFileSource(path=path, chunk_bytes=8)
 
         lines, _, _ = await src.read_last_lines(5)
@@ -250,9 +252,7 @@ class TestFollow:
             if str(file) == str(path):
                 calls["n"] += 1
                 if calls["n"] == 1:
-                    raise FileNotFoundError(
-                        2, "No such file or directory", str(path)
-                    )
+                    raise FileNotFoundError(2, "No such file or directory", str(path))
             return real_open(file, *args, **kwargs)
 
         monkeypatch.setattr(mod, "open", flaky_open, raising=False)

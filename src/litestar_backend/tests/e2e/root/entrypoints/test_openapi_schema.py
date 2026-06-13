@@ -62,8 +62,11 @@ def test_api_operations_have_summary_or_description(e2e_client) -> None:
 
 def _author_by_id_key(spec) -> str:
     # find the authors by-id path key (Litestar renders the param placeholder)
-    return next(p for p in spec["paths"] if p.startswith("/db-example-litestar/authors/")
-                and "{" in p and "get" in spec["paths"][p])
+    return next(
+        p
+        for p in spec["paths"]
+        if p.startswith("/db-example-litestar/authors/") and "{" in p and "get" in spec["paths"][p]
+    )
 
 
 def test_error_envelope_documented_on_author_lookup(e2e_client) -> None:

@@ -10,8 +10,13 @@ class TestAdminLogConfig:
         When the config loads,
         Then file-tail defaults are present and DB/stream fields are gone.
         """
-        for var in ("LOG_TAIL_LINES", "LOG_LOAD_MORE_LINES", "LOG_FOLLOW_POLL_MS",
-                    "LOG_MAX_LINE_BYTES", "LOG_FILE_PATH"):
+        for var in (
+            "LOG_TAIL_LINES",
+            "LOG_LOAD_MORE_LINES",
+            "LOG_FOLLOW_POLL_MS",
+            "LOG_MAX_LINE_BYTES",
+            "LOG_FILE_PATH",
+        ):
             monkeypatch.delenv(var, raising=False)
 
         cfg = AdminLogConfig()
@@ -23,9 +28,15 @@ class TestAdminLogConfig:
         assert isinstance(cfg.file_path, Path)
 
         # removed fields must not exist
-        for gone in ("log_retention_days", "log_batch_size", "log_db_reader_count",
-                     "log_sse_queue_size", "log_stream_key",
-                     "log_consumer_group", "log_events_channel"):
+        for gone in (
+            "log_retention_days",
+            "log_batch_size",
+            "log_db_reader_count",
+            "log_sse_queue_size",
+            "log_stream_key",
+            "log_consumer_group",
+            "log_events_channel",
+        ):
             assert not hasattr(cfg, gone), gone
 
     def test_file_path_defaults_under_log_dir(self) -> None:

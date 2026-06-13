@@ -7,9 +7,7 @@ from ...domain import Cursor, LogEntryEnt, MalformedLogLine
 
 class ILogFileSource(Protocol):
     async def read_last_lines(self, limit: int) -> tuple[list[str], int, int]: ...
-    async def read_lines_before(
-        self, offset: int, limit: int
-    ) -> tuple[list[str], int]: ...
+    async def read_lines_before(self, offset: int, limit: int) -> tuple[list[str], int]: ...
     async def current_inode(self) -> int: ...
     def iter_all_lines(self) -> AsyncIterator[str]: ...
     def iter_new_lines(self, poll_ms: int) -> AsyncIterator[str]: ...
@@ -26,9 +24,7 @@ class FileLogReader:
         entries = self._map(lines)
         return entries, Cursor(inode=inode, offset=offset)
 
-    async def read_before(
-        self, cursor: Cursor, limit: int
-    ) -> tuple[list[LogEntryEnt], Cursor]:
+    async def read_before(self, cursor: Cursor, limit: int) -> tuple[list[LogEntryEnt], Cursor]:
         live_inode = await self._source.current_inode()
         if cursor.inode != live_inode:
             return [], cursor

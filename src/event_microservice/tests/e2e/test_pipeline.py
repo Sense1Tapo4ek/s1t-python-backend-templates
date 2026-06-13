@@ -28,7 +28,9 @@ def _wire_payload(video_id) -> bytes:
 
 class TestPipeline:
     @pytest.mark.asyncio
-    async def test_uploaded_event_drives_join_to_complete(self, valkey_url: str, monkeypatch) -> None:
+    async def test_uploaded_event_drives_join_to_complete(
+        self, valkey_url: str, monkeypatch
+    ) -> None:
         """
         Given a video_uploaded payload,
         When the consumer handler runs and the SAQ queue is burst-drained,

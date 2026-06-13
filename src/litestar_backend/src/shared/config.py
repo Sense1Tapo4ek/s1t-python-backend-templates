@@ -107,9 +107,7 @@ class MetricsConfig(BaseAppConfig):
     prom_endpoint_path: str = "/metrics"
     prom_endpoint_public: bool = False
     http_buckets: list[float] = Field(
-        default_factory=lambda: [
-            0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0
-        ]
+        default_factory=lambda: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
     )
     multiproc_dir: Path | None = Field(default=None)
 

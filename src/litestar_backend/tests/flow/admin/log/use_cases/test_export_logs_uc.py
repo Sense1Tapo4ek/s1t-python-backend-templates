@@ -26,18 +26,17 @@ class TestExportNdjson:
         When exporting NDJSON,
         Then each raw line is emitted verbatim with a trailing newline.
         """
-        reader = _FakeReader([
-            '{"event": "a", "level": "INFO"}',
-            '{"event": "b", "level": "WARNING"}',
-        ])
+        reader = _FakeReader(
+            [
+                '{"event": "a", "level": "INFO"}',
+                '{"event": "b", "level": "WARNING"}',
+            ]
+        )
         uc = ExportLogsUc(_reader=reader)
 
         out = "".join([chunk async for chunk in uc.export_ndjson()])
 
-        assert out == (
-            '{"event": "a", "level": "INFO"}\n'
-            '{"event": "b", "level": "WARNING"}\n'
-        )
+        assert out == ('{"event": "a", "level": "INFO"}\n{"event": "b", "level": "WARNING"}\n')
 
 
 class TestExportCsv:
@@ -48,9 +47,11 @@ class TestExportCsv:
         When exporting CSV,
         Then a header row plus one row per parsed line is produced.
         """
-        reader = _FakeReader([
-            '{"timestamp": "t1", "level": "INFO", "logger": "a", "event": "started"}',
-        ])
+        reader = _FakeReader(
+            [
+                '{"timestamp": "t1", "level": "INFO", "logger": "a", "event": "started"}',
+            ]
+        )
         uc = ExportLogsUc(_reader=reader)
 
         out = "".join([chunk async for chunk in uc.export_csv()])
@@ -66,10 +67,12 @@ class TestExportCsv:
         When exporting CSV,
         Then the malformed line is skipped (never raised).
         """
-        reader = _FakeReader([
-            "garbage",
-            '{"timestamp": "t", "level": "INFO", "logger": "l", "event": "ok"}',
-        ])
+        reader = _FakeReader(
+            [
+                "garbage",
+                '{"timestamp": "t", "level": "INFO", "logger": "l", "event": "ok"}',
+            ]
+        )
         uc = ExportLogsUc(_reader=reader)
 
         out = "".join([chunk async for chunk in uc.export_csv()])
@@ -85,9 +88,11 @@ class TestExportCsv:
         When exporting CSV,
         Then the cell is prefixed with a tab.
         """
-        reader = _FakeReader([
-            '{"timestamp": "t", "level": "INFO", "logger": "l", "event": "=SUM(A1)"}',
-        ])
+        reader = _FakeReader(
+            [
+                '{"timestamp": "t", "level": "INFO", "logger": "l", "event": "=SUM(A1)"}',
+            ]
+        )
         uc = ExportLogsUc(_reader=reader)
 
         out = "".join([chunk async for chunk in uc.export_csv()])

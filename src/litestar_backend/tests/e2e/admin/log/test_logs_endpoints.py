@@ -13,9 +13,7 @@ class TestLogReadEndpoints:
         assert resp.status_code == 200
         assert "text/html" in resp.headers["content-type"]
 
-    async def test_tail_page_returns_entries_and_cursor(
-        self, e2e_client, e2e_auth_headers
-    ) -> None:
+    async def test_tail_page_returns_entries_and_cursor(self, e2e_client, e2e_auth_headers) -> None:
         """
         Given a populated log file,
         When GET /api/v1/admin/logs/,
@@ -27,22 +25,16 @@ class TestLogReadEndpoints:
         assert "entries" in body
         assert "cursor" in body
 
-    async def test_older_rejects_bad_cursor(
-        self, e2e_client, e2e_auth_headers
-    ) -> None:
+    async def test_older_rejects_bad_cursor(self, e2e_client, e2e_auth_headers) -> None:
         """
         Given a malformed cursor,
         When GET /api/v1/admin/logs/older?cursor=!!!,
         Then 400 is returned (validation, not 500).
         """
-        resp = e2e_client.get(
-            "/api/v1/admin/logs/older?cursor=%21%21%21", headers=e2e_auth_headers
-        )
+        resp = e2e_client.get("/api/v1/admin/logs/older?cursor=%21%21%21", headers=e2e_auth_headers)
         assert resp.status_code == 400
 
-    async def test_clear_endpoint_is_gone(
-        self, e2e_client, e2e_auth_headers
-    ) -> None:
+    async def test_clear_endpoint_is_gone(self, e2e_client, e2e_auth_headers) -> None:
         """
         Given the simplified controller,
         When DELETE /api/v1/admin/logs/,
@@ -60,9 +52,7 @@ class TestExportEndpoint:
         When GET /api/v1/admin/logs/export/?format=ndjson,
         Then a downloadable NDJSON stream is returned.
         """
-        resp = e2e_client.get(
-            "/api/v1/admin/logs/export/?format=ndjson", headers=e2e_auth_headers
-        )
+        resp = e2e_client.get("/api/v1/admin/logs/export/?format=ndjson", headers=e2e_auth_headers)
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("application/x-ndjson")
         assert "attachment" in resp.headers["content-disposition"]
@@ -73,9 +63,7 @@ class TestExportEndpoint:
         When GET .../export/?format=xml,
         Then 400 is returned.
         """
-        resp = e2e_client.get(
-            "/api/v1/admin/logs/export/?format=xml", headers=e2e_auth_headers
-        )
+        resp = e2e_client.get("/api/v1/admin/logs/export/?format=xml", headers=e2e_auth_headers)
         assert resp.status_code == 400
 
 

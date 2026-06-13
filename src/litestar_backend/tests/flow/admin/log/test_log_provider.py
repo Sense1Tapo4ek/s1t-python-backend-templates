@@ -8,9 +8,7 @@ from admin.log.provider import AdminLogWebProvider
 
 class TestLogProviderGraph:
     @pytest.mark.asyncio
-    async def test_reader_and_follower_resolve_to_same_impl(
-        self, monkeypatch, tmp_path
-    ) -> None:
+    async def test_reader_and_follower_resolve_to_same_impl(self, monkeypatch, tmp_path) -> None:
         """
         Given the simplified log provider,
         When resolving ILogReader and ILogFollower,

@@ -29,8 +29,13 @@ class AuthorController(Controller):
     tags = ["db_example (Alchemy)"]  # noqa: RUF012
     return_dto = AuthorReadDTO
 
-    @post("/", dto=AuthorWriteDTO, status_code=HTTP_201_CREATED,
-          summary="Create an author", responses=error_responses(400))
+    @post(
+        "/",
+        dto=AuthorWriteDTO,
+        status_code=HTTP_201_CREATED,
+        summary="Create an author",
+        responses=error_responses(400),
+    )
     @inject
     async def create(
         self,
@@ -40,8 +45,13 @@ class AuthorController(Controller):
         """Create a single author."""
         return await facade.create(data.create_instance())
 
-    @post("/bulk", dto=AuthorWriteDTO, status_code=HTTP_201_CREATED,
-          summary="Bulk-create authors", responses=error_responses(400))
+    @post(
+        "/bulk",
+        dto=AuthorWriteDTO,
+        status_code=HTTP_201_CREATED,
+        summary="Bulk-create authors",
+        responses=error_responses(400),
+    )
     @inject
     async def bulk_create(
         self,
@@ -76,8 +86,12 @@ class AuthorController(Controller):
         """Fetch a single author by id."""
         return await facade.get(author_id)
 
-    @patch("/{author_id:uuid}", dto=AuthorPatchDTO,
-           summary="Update an author", responses=error_responses(400, 404))
+    @patch(
+        "/{author_id:uuid}",
+        dto=AuthorPatchDTO,
+        summary="Update an author",
+        responses=error_responses(400, 404),
+    )
     @inject
     async def update(
         self,
@@ -88,8 +102,12 @@ class AuthorController(Controller):
         """Partially update an author by id."""
         return await facade.update(author_id, data.as_builtins())
 
-    @delete("/{author_id:uuid}", status_code=HTTP_204_NO_CONTENT,
-            summary="Delete an author", responses=error_responses(404))
+    @delete(
+        "/{author_id:uuid}",
+        status_code=HTTP_204_NO_CONTENT,
+        summary="Delete an author",
+        responses=error_responses(404),
+    )
     @inject
     async def remove(
         self,
