@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 
 def build_engine(alchemy_url: str, schema: str, *, pool_size: int | None = None) -> AsyncEngine:
@@ -18,3 +19,11 @@ def build_engine(alchemy_url: str, schema: str, *, pool_size: int | None = None)
 
 def build_sessionmaker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(engine, expire_on_commit=False)
+
+
+def build_probe_engine(alchemy_url: str) -> AsyncEngine:
+    # Dedicated readiness engine: NullPool opens a connection on demand and
+    # closes it, so a readiness probe never holds an idle connection or
+    # competes with a context's request pool. No search_path -- SELECT 1
+    # is schema-agnostic.
+    return create_async_engine(alchemy_url, poolclass=NullPool)

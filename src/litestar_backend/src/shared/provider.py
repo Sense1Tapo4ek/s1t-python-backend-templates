@@ -4,6 +4,8 @@ import redis.asyncio as aioredis
 from dishka import Provider, Scope, provide
 
 from shared.adapters.driven.clocks import SystemClock
+from shared.adapters.driven.postgres import build_probe_engine
+from shared.adapters.driven.readiness import ReadinessProbe
 from shared.adapters.driven.valkey import build_valkey_client
 from shared.app import IClock
 from shared.config import BaseAppConfig, PostgresConfig, ValkeyConfig
@@ -35,3 +37,15 @@ class SharedProvider(Provider):
         client = build_valkey_client(cfg.url, max_connections=cfg.max_connections)
         yield client
         await client.aclose()
+
+    @provide
+    async def provide_readiness_probe(
+        self, pg: PostgresConfig, valkey: aioredis.Redis
+    ) -> AsyncIterator[ReadinessProbe]:
+        # Own NullPool engine so readiness never borrows a context's request
+        # pool; disposed on container teardown.
+        engine = build_probe_engine(pg.alchemy_url)
+        try:
+            yield ReadinessProbe(_engine=engine, _valkey=valkey)
+        finally:
+            await engine.dispose()
