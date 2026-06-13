@@ -25,6 +25,7 @@ start_litestar = "root.entrypoints.cli:main"
 
 [dependency-groups]
 dev = [
+    "import-linter>=2.1",
     "mypy>=1.13",
     "pytest>=9.0.2",
     "pytest-asyncio>=0.24",
@@ -101,3 +102,22 @@ check_untyped_defs = false
 [[tool.mypy.overrides]]
 module = ["snitchbot.*", "yoyo.*", "asyncpg.*"]
 ignore_missing_imports = true
+
+[tool.importlinter]
+root_packages = ["admin", "auth", "db_example_litestar", "media_example", "root", "shared"]
+
+# Single rule: leaf bounded contexts are mutually independent (no context imports
+# another's internals, directly or transitively). The only sanctioned cross-context
+# channels are: shared/ (open to all), an ACL
+# (<ctx>.ports.driven.acl -> <other>.ports.driving), and framework guards
+# (<other>.ports.driving.guards, ports.md 1.5). root/ (composition shell, imports
+# everything) and shared/ (kernel, imported by everyone) are intentionally excluded.
+[[tool.importlinter.contracts]]
+name = "leaf bounded contexts are mutually independent"
+type = "independence"
+modules = ["auth", "admin", "media_example", "db_example_litestar"]
+# Each legitimate cross-context seam is recorded here, reviewed, with a rule citation:
+# ignore_imports = [
+#     "admin.adapters.driving.api.* -> auth.ports.driving.guards",   # guard: ports.md 1.5
+#     "media_example.ports.driven.acl.* -> billing.ports.driving",   # ACL: structure.md 4
+# ]
