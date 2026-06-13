@@ -1,0 +1,81 @@
+version: "3"
+
+vars:
+  SVC: src/litestar_backend
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  test:
+    desc: Full gate in Docker (ruff + mypy + pytest)
+    cmds:
+      - docker compose run --rm litestar_backend_test
+
+  test:unit:
+    desc: Domain unit tests (no DB, instant)
+    dir: "{{.SVC}}"
+    cmds:
+      - uv run pytest tests/unit -q
+
+  test:flow:
+    desc: App-layer flow tests (mocked interfaces, no DB)
+    dir: "{{.SVC}}"
+    cmds:
+      - uv run pytest tests/flow -q
+
+  test:integration:
+    desc: Ports/adapters integration tests (needs Docker)
+    dir: "{{.SVC}}"
+    cmds:
+      - uv run pytest tests/integration -q
+
+  test:e2e:
+    desc: Full-app e2e tests (needs Docker)
+    dir: "{{.SVC}}"
+    cmds:
+      - uv run pytest tests/e2e -q
+
+  lint:
+    desc: Ruff lint
+    dir: "{{.SVC}}"
+    cmds:
+      - uv run ruff check .
+
+  fmt:
+    desc: Ruff format
+    dir: "{{.SVC}}"
+    cmds:
+      - uv run ruff format .
+
+  type:
+    desc: Mypy type-check
+    dir: "{{.SVC}}"
+    cmds:
+      - uv run mypy
+
+  arch:
+    desc: Architecture fitness (import-linter cross-context independence)
+    dir: "{{.SVC}}"
+    cmds:
+      - uv run lint-imports
+
+  check:
+    desc: Static gate — lint + type + arch (no DB)
+    cmds:
+      - task: lint
+      - task: type
+      - task: arch
+
+  dev:
+    desc: Run the stack locally (db + app, hot-reload via compose override)
+    cmds:
+      - docker compose up --build
+
+  prod:
+    desc: Run the stack without the dev override
+    cmds:
+      - docker compose -f docker-compose.yml up --build
