@@ -226,3 +226,7 @@ __marimo__/
 # Runtime data volume (VOLUME_PATH default). SQLite DBs, JSONL logs, mmap
 # metric shards — written at runtime, never tracked.
 /storage/
+
+# Template-evolution working notes (agent research reports, synthesis,
+# implementation plans). On-disk reference; never ships to a forker.
+/planning/
