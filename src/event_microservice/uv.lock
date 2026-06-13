@@ -388,11 +388,11 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "mypy", specifier = ">=1.13" },
+    { name = "mypy", specifier = "==2.1.0" },
     { name = "polyfactory", specifier = ">=2.18" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
-    { name = "ruff", specifier = ">=0.8" },
+    { name = "ruff", specifier = "==0.15.16" },
     { name = "testcontainers", specifier = ">=4.9" },
 ]
 
