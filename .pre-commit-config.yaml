@@ -1,0 +1,24 @@
+# Run: pre-commit install   (one-time, installs the git hook)
+# Run all: pre-commit run --all-files
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: mypy-litestar-backend
+        name: mypy (litestar_backend)
+        entry: bash -c 'cd src/litestar_backend && uv run mypy'
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^src/litestar_backend/
