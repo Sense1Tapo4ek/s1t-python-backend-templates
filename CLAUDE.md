@@ -49,7 +49,8 @@ to discover, `task check` for the static gate (lint + type + arch across BOTH
 services), `task test` for the full Docker gate (both services), `task fmt`,
 `task be:unit` / `task em:unit` for fast local loops. Requires
 [go-task](https://taskfile.dev). Pre-commit hooks (`pre-commit install` once) gate
-both services + `gitleaks` repo-wide.
+both services + `gitleaks` repo-wide. Full dev-tooling guide:
+[docs/development.md](docs/development.md).
 
 **Toolchain (single source of truth).** Both services pin the SAME dev toolchain --
 `ruff==0.15.16`, `mypy==2.1.0` -- in their respective `pyproject.toml`. Keep the two

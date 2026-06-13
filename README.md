@@ -158,6 +158,10 @@ uv run ruff check . && uv run mypy
 Test layout mirrors `src/`: `unit/` (domain, no mocks), `flow/` (use cases,
 mocked interfaces), `integration/` (real Postgres/Valkey), `e2e/` (full app).
 
+The [`Taskfile`](Taskfile.yml) wraps these (`task test`, `task be:unit`) and a
+`pre-commit` gate runs ruff/mypy/gitleaks on every commit — full dev-tooling guide
+in [docs/development.md](docs/development.md).
+
 ---
 
 ## Documentation
@@ -168,6 +172,7 @@ invariants, how-to recipes.
 | Section | Contents |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Both services: contexts, layers, error hierarchy, DI, lifespan, invariants. |
+| [docs/development.md](docs/development.md) | Dev workflow: Taskfile commands, the pre-commit gate, the pinned monorepo toolchain. |
 | [docs/litestar_backend/](docs/litestar_backend/) | Backend references: `contexts/`, `subsystems/` (errors, observability, metrics), `infra/` (dishka, structlog, jinja, postgres, valkey, openapi). |
 | [docs/event_microservice/](docs/event_microservice/) | Worker references: `contexts/media_processing.md`, `infra/` (faststream, saq). |
 | [docs/contract/](docs/contract/) | The `video_uploaded` wire contract both services speak. |
