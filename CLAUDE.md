@@ -44,10 +44,17 @@ docker compose run --rm litestar_backend_test                       # full gate
 docker compose run --rm litestar_backend_test pytest tests/unit -q  # any subset
 ```
 
-Or via `Taskfile` (wraps the same commands): `task --list` to discover,
-`task check` for the static gate (lint + type + arch), `task test` for the full
-Docker gate, `task arch` for the import-linter cross-context contract. Requires
-[go-task](https://taskfile.dev). Pre-commit hooks: `pre-commit install` once.
+Or via `Taskfile` (monorepo command surface; wraps the same commands): `task --list`
+to discover, `task check` for the static gate (lint + type + arch across BOTH
+services), `task test` for the full Docker gate (both services), `task fmt`,
+`task be:unit` / `task em:unit` for fast local loops. Requires
+[go-task](https://taskfile.dev). Pre-commit hooks (`pre-commit install` once) gate
+both services + `gitleaks` repo-wide.
+
+**Toolchain (single source of truth).** Both services pin the SAME dev toolchain --
+`ruff==0.15.16`, `mypy==2.1.0` -- in their respective `pyproject.toml`. Keep the two
+pins identical; `task check` and pre-commit run ruff/mypy on both services via each
+service's own uv venv, so a drift would surface immediately. Bump both together.
 
 Local `uv` for the fast inner loop. Integration + e2e need a Postgres
 testcontainer, so **Docker must be running** (or point at an external DB via
