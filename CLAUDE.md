@@ -44,6 +44,11 @@ docker compose run --rm litestar_backend_test                       # full gate
 docker compose run --rm litestar_backend_test pytest tests/unit -q  # any subset
 ```
 
+Or via `Taskfile` (wraps the same commands): `task --list` to discover,
+`task check` for the static gate (lint + type + arch), `task test` for the full
+Docker gate, `task arch` for the import-linter cross-context contract. Requires
+[go-task](https://taskfile.dev). Pre-commit hooks: `pre-commit install` once.
+
 Local `uv` for the fast inner loop. Integration + e2e need a Postgres
 testcontainer, so **Docker must be running** (or point at an external DB via
 `POSTGRES_HOST` + the other `POSTGRES_*` vars). Run from `src/litestar_backend/`
