@@ -1,7 +1,12 @@
 version: "3"
 
+# Monorepo command surface. Two independent uv services share ONE pinned toolchain
+# (ruff==0.15.16, mypy==2.1.0 -- keep identical in both pyprojects). Static tasks
+# (lint/fmt/type/check) run across BOTH services; tests run per service or together.
+
 vars:
-  SVC: src/litestar_backend
+  BE: src/litestar_backend
+  EM: src/event_microservice
 
 tasks:
   default:
@@ -10,68 +15,102 @@ tasks:
       - task --list
     silent: true
 
-  test:
-    desc: Full gate in Docker (ruff + mypy + pytest)
-    cmds:
-      - docker compose run --rm litestar_backend_test
-
-  test:unit:
-    desc: Domain unit tests (no DB, instant)
-    dir: "{{.SVC}}"
-    cmds:
-      - uv run pytest tests/unit -q
-
-  test:flow:
-    desc: App-layer flow tests (mocked interfaces, no DB)
-    dir: "{{.SVC}}"
-    cmds:
-      - uv run pytest tests/flow -q
-
-  test:integration:
-    desc: Ports/adapters integration tests (needs Docker)
-    dir: "{{.SVC}}"
-    cmds:
-      - uv run pytest tests/integration -q
-
-  test:e2e:
-    desc: Full-app e2e tests (needs Docker)
-    dir: "{{.SVC}}"
-    cmds:
-      - uv run pytest tests/e2e -q
-
+  # ===================== static gate (whole monorepo, no Docker) =====================
   lint:
-    desc: Ruff lint
-    dir: "{{.SVC}}"
+    desc: Ruff lint — both services
     cmds:
-      - uv run ruff check .
+      - 'cd {{.BE}} && uv run ruff check .'
+      - 'cd {{.EM}} && uv run ruff check .'
 
   fmt:
-    desc: Ruff format
-    dir: "{{.SVC}}"
+    desc: Ruff format — both services
     cmds:
-      - uv run ruff format .
+      - 'cd {{.BE}} && uv run ruff format .'
+      - 'cd {{.EM}} && uv run ruff format .'
 
   type:
-    desc: Mypy type-check
-    dir: "{{.SVC}}"
+    desc: Mypy — both services
     cmds:
-      - uv run mypy
+      - 'cd {{.BE}} && uv run mypy'
+      - 'cd {{.EM}} && uv run mypy'
 
   arch:
-    desc: Architecture fitness (import-linter cross-context independence)
-    dir: "{{.SVC}}"
+    desc: Architecture fitness — import-linter (litestar_backend; event_microservice is single-context)
+    dir: "{{.BE}}"
     cmds:
       - uv run lint-imports
 
   check:
-    desc: Static gate — lint + type + arch (no DB)
+    desc: Static gate — lint + type + arch across the monorepo (no Docker)
     cmds:
       - task: lint
       - task: type
       - task: arch
 
+  # ===================== tests =====================
+  test:
+    desc: Full Docker gate — BOTH services (ruff + mypy + pytest in tester images)
+    cmds:
+      - docker compose run --rm litestar_backend_test
+      - docker compose run --rm event_microservice_test
+
+  test:backend:
+    desc: Full Docker gate — litestar_backend only
+    cmds:
+      - docker compose run --rm litestar_backend_test
+
+  test:event:
+    desc: Full Docker gate — event_microservice only
+    cmds:
+      - docker compose run --rm event_microservice_test
+
+  # fast local subsets — litestar_backend
+  be:unit:
+    desc: litestar_backend — domain unit tests (instant, no DB)
+    dir: "{{.BE}}"
+    cmds:
+      - uv run pytest tests/unit -q
+  be:flow:
+    desc: litestar_backend — app flow tests (mocked interfaces, no DB)
+    dir: "{{.BE}}"
+    cmds:
+      - uv run pytest tests/flow -q
+  be:integration:
+    desc: litestar_backend — ports/adapters integration tests (needs Docker)
+    dir: "{{.BE}}"
+    cmds:
+      - uv run pytest tests/integration -q
+  be:e2e:
+    desc: litestar_backend — full-app e2e tests (needs Docker)
+    dir: "{{.BE}}"
+    cmds:
+      - uv run pytest tests/e2e -q
+
+  # fast local subsets — event_microservice
+  em:unit:
+    desc: event_microservice — unit tests (instant, no infra)
+    dir: "{{.EM}}"
+    cmds:
+      - uv run pytest tests/unit -q
+  em:flow:
+    desc: event_microservice — flow tests (mocked interfaces)
+    dir: "{{.EM}}"
+    cmds:
+      - uv run pytest tests/flow -q
+  em:integration:
+    desc: event_microservice — integration tests (needs Docker)
+    dir: "{{.EM}}"
+    cmds:
+      - uv run pytest tests/integration -q
+  em:e2e:
+    desc: event_microservice — e2e tests (needs Docker)
+    dir: "{{.EM}}"
+    cmds:
+      - uv run pytest tests/e2e -q
+
+  # ===================== run =====================
   dev:
-    desc: Run the stack locally (db + app, hot-reload via compose override)
+    desc: Run the full stack locally (db + valkey + backend + microservice + worker, hot-reload)
     cmds:
       - docker compose up --build
 

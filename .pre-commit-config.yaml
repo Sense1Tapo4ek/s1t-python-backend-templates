@@ -1,13 +1,14 @@
 # Run all: pre-commit run --all-files
-# NOTE: this environment has core.hooksPath set, so `pre-commit install` refuses
-# until it is unset (or overridden repo-locally). `pre-commit run` works regardless;
-# wire it into CI.
 #
-# ruff / ruff-format / mypy run via the project's OWN uv venv (local hooks) so the
-# pinned tool versions never drift from `task lint` / `task type`. gitleaks is a
-# standalone scanner binary, so it stays a pinned external hook. Python hooks are
-# scoped to src/litestar_backend/; event_microservice keeps its own gate. gitleaks
-# scans the whole repo.
+# Monorepo gate covering BOTH services. ruff / ruff-format / mypy run via EACH
+# service's own uv venv (local hooks) so the pinned tool versions never drift from
+# `task lint` / `task type`. Both services pin the SAME toolchain
+# (ruff==0.15.16, mypy==2.1.0) -- keep them in sync (see CLAUDE.md "Toolchain").
+# gitleaks scans the whole repo for secrets.
+#
+# NOTE: this environment had core.hooksPath set; it was unset (local, == the default
+# .git/hooks) so `pre-commit install` could wire .git/hooks/pre-commit. `pre-commit
+# run` works regardless of that.
 repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.21.2
@@ -16,6 +17,7 @@ repos:
 
   - repo: local
     hooks:
+      # ---- litestar_backend ----
       - id: ruff-litestar-backend
         name: ruff (litestar_backend)
         entry: bash -c 'cd src/litestar_backend && uv run ruff check --fix .'
@@ -39,3 +41,28 @@ repos:
         types: [python]
         pass_filenames: false
         files: ^src/litestar_backend/
+
+      # ---- event_microservice ----
+      - id: ruff-event-microservice
+        name: ruff (event_microservice)
+        entry: bash -c 'cd src/event_microservice && uv run ruff check --fix .'
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^src/event_microservice/
+
+      - id: ruff-format-event-microservice
+        name: ruff-format (event_microservice)
+        entry: bash -c 'cd src/event_microservice && uv run ruff format .'
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^src/event_microservice/
+
+      - id: mypy-event-microservice
+        name: mypy (event_microservice)
+        entry: bash -c 'cd src/event_microservice && uv run mypy'
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^src/event_microservice/
