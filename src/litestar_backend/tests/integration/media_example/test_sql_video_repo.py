@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from factories.media import seed_videos
 from media_example.domain import Video
 from media_example.domain.video_status_vo import VideoStatus
 from media_example.ports.driven.orm_models import VideoRow
@@ -195,3 +196,30 @@ async def test_list_by_content_type_filters_on_jsonb_field(session: AsyncSession
 
     # Assert
     assert [v.id for v in found] == [mp4.id]
+
+
+@pytest.mark.asyncio
+async def test_seed_then_page_through_all(session: AsyncSession) -> None:
+    """
+    Given 5 factory-seeded videos,
+    When paging the keyset reader to exhaustion,
+    Then every seeded id is returned exactly once.
+    """
+    # Arrange
+    repo = SqlVideoRepo(_session=session)
+    await session.execute(delete(VideoRow))
+    seeded = await seed_videos(repo, 5)
+
+    # Act -- walk the keyset until a short page
+    collected: list = []
+    after = None
+    while True:
+        page = await repo.list_page(after=after, limit=2)
+        if not page:
+            break
+        collected.extend(page)
+        after = (page[-1].uploaded_at, page[-1].id)
+
+    # Assert
+    assert {v.id for v in collected} == {v.id for v in seeded}
+    assert len(collected) == 5
