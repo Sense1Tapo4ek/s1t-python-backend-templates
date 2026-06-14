@@ -65,6 +65,10 @@ class SqlVideoRepo(IVideoRepo):
             .limit(limit)
         )
         if after is not None:
+            # Keyset: Postgres compares the row-value (uploaded_at, id) tuple
+            # lexicographically, so `< cursor` returns rows strictly "older" than
+            # the previous page under the (uploaded_at DESC, id DESC) order --
+            # no skips or repeats at timestamp ties. Matches the composite index.
             stmt = stmt.where(
                 tuple_(VideoRow.uploaded_at, VideoRow.id)
                 < tuple_(literal(after[0]), literal(after[1]))
