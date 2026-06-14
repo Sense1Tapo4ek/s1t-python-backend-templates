@@ -63,7 +63,7 @@ from shared.adapters.problem_details import (
 )
 from shared.config import AppEnv, BaseAppConfig, MetricsConfig, ValkeyConfig
 from shared.generics.config import PROJECT_ROOT
-from shared.generics.errors import AdapterError, AppError, DomainError, PortError
+from shared.generics.errors import AdapterError, AppError, DomainError, NotFoundError, PortError
 
 _STATIC_DIR = PROJECT_ROOT / "static"
 
@@ -84,6 +84,7 @@ def _resolve_app_version() -> str:
 EXCEPTION_TO_PROBLEM: dict[type[Exception], Callable[[Any], ProblemDetailsException]] = {
     DomainError: domain_to_problem,
     AppError: app_to_problem,
+    NotFoundError: not_found_to_problem,
     AlchemyNotFoundError: not_found_to_problem,
     PortError: port_to_problem,
     AdapterError: adapter_to_problem,
