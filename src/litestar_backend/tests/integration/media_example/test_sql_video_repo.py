@@ -2,10 +2,12 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from media_example.domain import Video
 from media_example.domain.video_status_vo import VideoStatus
+from media_example.ports.driven.orm_models import VideoRow
 from media_example.ports.driven.sql_video_repo import SqlVideoRepo
 
 
@@ -65,6 +67,10 @@ async def test_list_page_keyset_orders_and_paginates(session: AsyncSession) -> N
     """
     # Arrange
     repo = SqlVideoRepo(_session=session)
+    # media.videos is shared with e2e tests that COMMIT rows; a keyset assertion
+    # over the whole table needs a known slate. Clearing inside this test's
+    # transaction is undone by the session fixture's rollback.
+    await session.execute(delete(VideoRow))
     shared_ts = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
     rows = [
         Video.reconstitute(
