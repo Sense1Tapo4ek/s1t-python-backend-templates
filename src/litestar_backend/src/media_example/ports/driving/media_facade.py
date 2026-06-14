@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from ...app import (
+    DeleteVideoUC,
     ListVideosQuery,
     MarkDoneUC,
     MarkFailedUC,
@@ -29,6 +30,7 @@ class MediaFacade:
     _mark_processing: MarkProcessingUC
     _mark_done: MarkDoneUC
     _mark_failed: MarkFailedUC
+    _delete: DeleteVideoUC
 
     async def upload(self, request: UploadVideoRequest) -> VideoModel:
         """Register a newly uploaded video and stage its outbox event.
@@ -86,3 +88,12 @@ class MediaFacade:
         logged and does not fail this call.
         """
         await self._mark_failed(video_id)
+
+    async def delete(self, video_id: UUID) -> None:
+        """Soft-delete a video by id.
+
+        Triggered by DELETE /videos/{id}. The row stops appearing in reads but is
+        retained (deleted_at set). Raises VideoNotFound (app) when no active video
+        with that id exists; PortError on a storage failure.
+        """
+        await self._delete(video_id)

@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from media_example.domain import Video
@@ -96,3 +96,63 @@ async def test_list_page_keyset_orders_and_paginates(session: AsyncSession) -> N
     ids = [v.id for v in (*page1, *page2)]
     assert ids == [UUID(int=99), UUID(int=3), UUID(int=2), UUID(int=1)]
     assert len(set(ids)) == 4
+
+
+@pytest.mark.asyncio
+async def test_audit_columns_populated_on_save(session: AsyncSession) -> None:
+    """
+    Given a saved video,
+    When the row is read back,
+    Then created_at and updated_at are set and deleted_at is NULL.
+
+    The bump of updated_at across UPDATEs is cross-transaction (now() is fixed
+    within a transaction); this single-transaction test only asserts the columns
+    are populated.
+    """
+    # Arrange
+    repo = SqlVideoRepo(_session=session)
+    await session.execute(delete(VideoRow))
+    video = Video.upload(source_key="s3://bucket/audit.mp4")
+
+    # Act
+    await repo.save(video)
+    row = (await session.execute(select(VideoRow).where(VideoRow.id == video.id))).scalar_one()
+
+    # Assert
+    assert row.created_at is not None
+    assert row.updated_at is not None
+    assert row.deleted_at is None
+
+
+@pytest.mark.asyncio
+async def test_soft_delete_hides_row_from_reads(session: AsyncSession) -> None:
+    """
+    Given a saved video,
+    When it is soft-deleted,
+    Then get_by_id returns None and it is absent from list_page, but the row
+    still exists with deleted_at set.
+    """
+    # Arrange
+    repo = SqlVideoRepo(_session=session)
+    await session.execute(delete(VideoRow))
+    video = Video.upload(source_key="s3://bucket/sd.mp4")
+    await repo.save(video)
+
+    # Act
+    deleted = await repo.soft_delete(video.id)
+
+    # Assert
+    assert deleted is True
+    assert await repo.get_by_id(video.id) is None
+    assert await repo.list_page(after=None, limit=50) == []
+    row = (await session.execute(select(VideoRow).where(VideoRow.id == video.id))).scalar_one()
+    assert row.deleted_at is not None
+
+
+@pytest.mark.asyncio
+async def test_soft_delete_returns_false_for_unknown_id(session: AsyncSession) -> None:
+    """Given no matching active row, When soft_delete, Then it returns False."""
+    repo = SqlVideoRepo(_session=session)
+    video = Video.upload(source_key="s3://bucket/ghost.mp4")
+
+    assert await repo.soft_delete(video.id) is False

@@ -21,6 +21,7 @@ from media_example.adapters.driving.status_consumer import (
     VideoStatusConsumer,
 )
 from media_example.app import (
+    DeleteVideoUC,
     ListVideosQuery,
     MarkDoneUC,
     MarkFailedUC,
@@ -150,6 +151,7 @@ def _make_facade_factory(feed: _RecordingFeed) -> Callable[[AsyncSession], Media
             _mark_processing=MarkProcessingUC(_repo=repo, _uow=uow, _feed=feed),
             _mark_done=MarkDoneUC(_repo=repo, _uow=uow, _feed=feed),
             _mark_failed=MarkFailedUC(_repo=repo, _uow=uow, _feed=feed),
+            _delete=DeleteVideoUC(_repo=repo, _uow=uow),
         )
 
     return factory

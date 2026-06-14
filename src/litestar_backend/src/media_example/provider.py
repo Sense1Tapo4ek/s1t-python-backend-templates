@@ -14,6 +14,7 @@ from .adapters.driven.outbox_relay import OutboxRelay
 from .adapters.driving.status_consumer import VideoStatusConsumer
 from .adapters.lifespan_manager import MediaLifespanManager
 from .app import (
+    DeleteVideoUC,
     IFeedPublisher,
     ListVideosQuery,
     MarkDoneUC,
@@ -44,6 +45,7 @@ def build_facade(session: AsyncSession, clock: IClock, feed: IFeedPublisher) -> 
         _mark_processing=MarkProcessingUC(_repo=repo, _uow=uow, _feed=feed),
         _mark_done=MarkDoneUC(_repo=repo, _uow=uow, _feed=feed),
         _mark_failed=MarkFailedUC(_repo=repo, _uow=uow, _feed=feed),
+        _delete=DeleteVideoUC(_repo=repo, _uow=uow),
     )
 
 

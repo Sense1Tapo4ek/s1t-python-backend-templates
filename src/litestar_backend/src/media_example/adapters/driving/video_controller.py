@@ -1,8 +1,9 @@
 from typing import Annotated
+from uuid import UUID
 
 from dishka import FromDishka
 from dishka.integrations.litestar import inject
-from litestar import Controller, get, post
+from litestar import Controller, delete, get, post
 from litestar.exceptions import ValidationException
 from litestar.params import Parameter
 from litestar.status_codes import HTTP_202_ACCEPTED
@@ -54,3 +55,8 @@ class VideoController(Controller):
             except ValueError as exc:
                 raise ValidationException(detail="invalid cursor") from exc
         return await facade.list_page(after, limit)
+
+    @delete("/{video_id:uuid}", summary="Soft-delete a video", responses=error_responses(404, 503))
+    @inject
+    async def delete_video(self, video_id: UUID, facade: FromDishka[MediaFacade]) -> None:
+        await facade.delete(video_id)

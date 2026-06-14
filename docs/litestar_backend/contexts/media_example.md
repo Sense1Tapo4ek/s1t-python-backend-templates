@@ -58,6 +58,7 @@ live-browser update).
 |:---|:---|:---|:---|:---|
 | POST | `/videos` | `UploadVideoRequest` (source_key) | `VideoModel` | 202 |
 | GET | `/videos` | `?limit=1-200` (default 50), `?cursor=<token>` (optional) | `VideoPage {items, next_cursor}` | 200, 400 on bad cursor |
+| DELETE | `/videos/{id}` | — | — | 204, 404 unknown id |
 | GET | `/videos/feed` | — | SSE stream | 200 |
 
 `POST /videos` increments the `videos_uploaded_total` Prometheus counter.
@@ -82,7 +83,10 @@ connected subscribers.
 
 Migrations in `migrations/media/` run at lifespan start via yoyo (psycopg3
 backend). `001` creates the schema; `002` replaces the single-column index with
-the composite `(uploaded_at DESC, id DESC)` required for stable keyset paging.
+the composite `(uploaded_at DESC, id DESC)` required for stable keyset paging;
+`003` adds audit columns (`created_at`, `updated_at`, `deleted_at`) via shared
+mixins and replaces the full keyset index with a partial one covering only active
+rows (`WHERE deleted_at IS NULL`). Reads always filter `deleted_at IS NULL`.
 
 ```
 schema media
@@ -91,7 +95,10 @@ schema media
     source_key  TEXT NOT NULL
     status      TEXT NOT NULL   -- 'pending' | 'processing' | 'done' | 'failed'
     uploaded_at TIMESTAMPTZ NOT NULL
-    ix_videos_keyset (uploaded_at DESC, id DESC)  -- migration 002 replaces ix_videos_uploaded_at
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()   -- migration 003
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()   -- migration 003
+    deleted_at  TIMESTAMPTZ NULL                     -- migration 003; NULL = active
+    ix_videos_active_keyset (uploaded_at DESC, id DESC WHERE deleted_at IS NULL)
 
   outbox_messages
     id          UUID PK

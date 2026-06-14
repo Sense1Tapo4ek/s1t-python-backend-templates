@@ -1,3 +1,4 @@
+from .delete_video_uc import DeleteVideoUC
 from .errors import VideoNotFound
 from .interfaces import IFeedPublisher, IOutboxRepo, IUoW, IVideoRepo
 from .status_ucs import MarkDoneUC, MarkFailedUC, MarkProcessingUC
@@ -5,6 +6,7 @@ from .upload_video_uc import UploadVideoCommand, UploadVideoUC
 from .video_queries import ListVideosQuery
 
 __all__ = [
+    "DeleteVideoUC",
     "IFeedPublisher",
     "IOutboxRepo",
     "IUoW",

@@ -4,12 +4,14 @@ from uuid import UUID
 from sqlalchemy import DateTime, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from shared.adapters.driven.postgres import SoftDeleteMixin, TimestampMixin
+
 
 class Base(DeclarativeBase):
     pass
 
 
-class VideoRow(Base):
+class VideoRow(TimestampMixin, SoftDeleteMixin, Base):
     __tablename__ = "videos"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)

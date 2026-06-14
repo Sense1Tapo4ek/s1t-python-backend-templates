@@ -10,6 +10,7 @@ class FakeVideoRepo:
     def __init__(self) -> None:
         self._store: dict[UUID, Video] = {}
         self._order: list[UUID] = []
+        self._deleted: set[UUID] = set()
 
     async def save(self, video: Video) -> None:
         if video.id not in self._store:
@@ -17,13 +18,25 @@ class FakeVideoRepo:
         self._store[video.id] = video
 
     async def get_by_id(self, video_id: UUID) -> Video | None:
+        if video_id in self._deleted:
+            return None
         return self._store.get(video_id)
 
     async def list_page(self, after: tuple[datetime, UUID] | None, limit: int) -> list[Video]:
-        ordered = sorted(self._store.values(), key=lambda v: (v.uploaded_at, v.id), reverse=True)
+        ordered = sorted(
+            (v for v in self._store.values() if v.id not in self._deleted),
+            key=lambda v: (v.uploaded_at, v.id),
+            reverse=True,
+        )
         if after is not None:
             ordered = [v for v in ordered if (v.uploaded_at, v.id) < after]
         return ordered[:limit]
+
+    async def soft_delete(self, video_id: UUID) -> bool:
+        if video_id in self._store and video_id not in self._deleted:
+            self._deleted.add(video_id)
+            return True
+        return False
 
     def seed(self, video: Video) -> None:
         if video.id not in self._store:

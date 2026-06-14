@@ -166,3 +166,24 @@ def test_list_rejects_malformed_cursor(e2e_client: TestClient) -> None:
     """Given a malformed cursor, When GET /videos, Then 400."""
     resp = e2e_client.get("/videos", params={"cursor": "not-a-cursor"})
     assert resp.status_code == 400
+
+
+def test_delete_soft_deletes_and_hides(e2e_client: TestClient) -> None:
+    """
+    Given an uploaded video,
+    When DELETE /videos/{id} is called,
+    Then it returns 204 and the video no longer appears in the list.
+    """
+    video_id = e2e_client.post("/videos", json={"source_key": "s3://bucket/del.mp4"}).json()["id"]
+
+    resp = e2e_client.delete(f"/videos/{video_id}")
+
+    assert resp.status_code == 204
+    listed = e2e_client.get("/videos", params={"limit": 200}).json()["items"]
+    assert video_id not in [v["id"] for v in listed]
+
+
+def test_delete_unknown_returns_404(e2e_client: TestClient) -> None:
+    """Given a random id, When DELETE /videos/{id}, Then 404."""
+    resp = e2e_client.delete("/videos/00000000-0000-0000-0000-0000000000ff")
+    assert resp.status_code == 404
