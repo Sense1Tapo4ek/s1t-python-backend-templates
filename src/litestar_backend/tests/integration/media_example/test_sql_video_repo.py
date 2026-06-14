@@ -156,3 +156,40 @@ async def test_soft_delete_returns_false_for_unknown_id(session: AsyncSession) -
     video = Video.upload(source_key="s3://bucket/ghost.mp4")
 
     assert await repo.soft_delete(video.id) is False
+
+
+@pytest.mark.asyncio
+async def test_document_round_trips(session: AsyncSession) -> None:
+    """Given a video with a JSONB document, When saved and loaded, Then it round-trips."""
+    repo = SqlVideoRepo(_session=session)
+    await session.execute(delete(VideoRow))
+    doc = {"content_type": "video/mp4", "duration_s": 12, "hd": True}
+    video = Video.upload(source_key="s3://bucket/doc.mp4", document=doc)
+
+    await repo.save(video)
+    loaded = await repo.get_by_id(video.id)
+
+    assert loaded is not None
+    assert loaded.document == doc
+
+
+@pytest.mark.asyncio
+async def test_list_by_content_type_filters_on_jsonb_field(session: AsyncSession) -> None:
+    """
+    Given videos with different document content types,
+    When filtering by content_type via the JSONB ->> extraction,
+    Then only matching active videos are returned.
+    """
+    # Arrange
+    repo = SqlVideoRepo(_session=session)
+    await session.execute(delete(VideoRow))
+    mp4 = Video.upload(source_key="a", document={"content_type": "video/mp4"})
+    mp3 = Video.upload(source_key="b", document={"content_type": "audio/mpeg"})
+    await repo.save(mp4)
+    await repo.save(mp3)
+
+    # Act
+    found = await repo.list_by_content_type("video/mp4", limit=50)
+
+    # Assert
+    assert [v.id for v in found] == [mp4.id]

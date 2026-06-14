@@ -40,7 +40,11 @@ class MediaFacade:
         created video as a wire model. Raises EmptySourceKey (domain) on a
         blank key, PortError on a storage failure.
         """
-        return to_model(await self._upload(UploadVideoCommand(source_key=request.source_key)))
+        return to_model(
+            await self._upload(
+                UploadVideoCommand(source_key=request.source_key, document=request.document)
+            )
+        )
 
     async def list_page(self, after: tuple[datetime, UUID] | None, limit: int) -> VideoPage:
         """Return one keyset page of videos as wire models, newest-first.

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 import msgspec
@@ -17,6 +17,7 @@ class UploadVideoRequest(msgspec.Struct, kw_only=True):
             examples=["s3://bucket/a.mp4"],
         ),
     ]
+    document: dict[str, Any] = msgspec.field(default_factory=dict)
 
 
 class VideoModel(msgspec.Struct, kw_only=True):
@@ -36,6 +37,7 @@ class VideoModel(msgspec.Struct, kw_only=True):
         ),
     ]
     uploaded_at: datetime
+    document: dict[str, Any] = msgspec.field(default_factory=dict)
 
 
 class VideoPage(msgspec.Struct, kw_only=True):
@@ -52,4 +54,5 @@ def to_model(video: Video) -> VideoModel:
         source_key=video.source_key,
         status=video.status.value,
         uploaded_at=video.uploaded_at,
+        document=video.document,
     )

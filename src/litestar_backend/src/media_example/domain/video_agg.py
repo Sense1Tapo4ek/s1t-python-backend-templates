@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from .errors import EmptySourceKey, InvalidTransition
@@ -20,14 +21,21 @@ class Video:
     source_key: str
     status: VideoStatus = VideoStatus.PENDING
     uploaded_at: datetime
+    document: dict[str, Any] = field(default_factory=dict)
     _events: list[VideoUploaded] = field(default_factory=list, repr=False)
 
     @classmethod
-    def upload(cls, *, source_key: str, uploaded_at: datetime | None = None) -> "Video":
+    def upload(
+        cls,
+        *,
+        source_key: str,
+        uploaded_at: datetime | None = None,
+        document: dict[str, Any] | None = None,
+    ) -> "Video":
         if not source_key:
             raise EmptySourceKey()
         ts = uploaded_at or datetime.now().astimezone()
-        video = cls(source_key=source_key, uploaded_at=ts)
+        video = cls(source_key=source_key, uploaded_at=ts, document=document or {})
         video._events.append(
             VideoUploaded(video_id=video.id, source_key=source_key, uploaded_at=ts)
         )
@@ -41,8 +49,15 @@ class Video:
         source_key: str,
         status: VideoStatus,
         uploaded_at: datetime,
+        document: dict[str, Any] | None = None,
     ) -> "Video":
-        return cls(id=id, source_key=source_key, status=status, uploaded_at=uploaded_at)
+        return cls(
+            id=id,
+            source_key=source_key,
+            status=status,
+            uploaded_at=uploaded_at,
+            document=document or {},
+        )
 
     def _transition(self, to: VideoStatus) -> None:
         if to not in _ALLOWED[self.status]:

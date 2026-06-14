@@ -56,7 +56,7 @@ live-browser update).
 
 | Method | Path | Request | Response | Status |
 |:---|:---|:---|:---|:---|
-| POST | `/videos` | `UploadVideoRequest` (source_key) | `VideoModel` | 202 |
+| POST | `/videos` | `UploadVideoRequest` (source_key, optional `document` JSONB) | `VideoModel` (incl. `document`) | 202 |
 | GET | `/videos` | `?limit=1-200` (default 50), `?cursor=<token>` (optional) | `VideoPage {items, next_cursor}` | 200, 400 on bad cursor |
 | DELETE | `/videos/{id}` | — | — | 204, 404 unknown id |
 | GET | `/videos/feed` | — | SSE stream | 200 |
@@ -86,7 +86,9 @@ backend). `001` creates the schema; `002` replaces the single-column index with
 the composite `(uploaded_at DESC, id DESC)` required for stable keyset paging;
 `003` adds audit columns (`created_at`, `updated_at`, `deleted_at`) via shared
 mixins and replaces the full keyset index with a partial one covering only active
-rows (`WHERE deleted_at IS NULL`). Reads always filter `deleted_at IS NULL`.
+rows (`WHERE deleted_at IS NULL`). Reads always filter `deleted_at IS NULL`. `004`
+adds the free-form `document` JSONB column (carried on upload and read) with a GIN
+index for containment / field-extraction queries.
 
 ```
 schema media
@@ -98,7 +100,9 @@ schema media
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()   -- migration 003
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()   -- migration 003
     deleted_at  TIMESTAMPTZ NULL                     -- migration 003; NULL = active
+    document    JSONB NOT NULL DEFAULT '{}'          -- migration 004; free-form metadata
     ix_videos_active_keyset (uploaded_at DESC, id DESC WHERE deleted_at IS NULL)
+    ix_videos_document GIN (document)                -- migration 004
 
   outbox_messages
     id          UUID PK
@@ -164,6 +168,8 @@ key collision).
 - `src/media_example/ports/feed.py` — `VIDEOS_CHANNEL` constant
 - `migrations/media/001-create-videos.sql` — schema DDL
 - `migrations/media/002-videos-keyset-index.sql` — composite index for keyset pagination
+- `migrations/media/003-videos-audit-softdelete.sql` — audit columns + soft-delete + partial index
+- `migrations/media/004-videos-document-jsonb.sql` — JSONB document column + GIN index
 - [docs/contract/video_status.md](../../contract/video_status.md) — wire contract for the return stream
 - [docs/infra/valkey.md](../infra/valkey.md) — Valkey wiring (outbox relay + Channels backend)
 - [docs/infra/postgres.md](../infra/postgres.md) — SQLAlchemy engine, search_path, migrations

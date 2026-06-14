@@ -1,7 +1,9 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, func, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from shared.adapters.driven.postgres import SoftDeleteMixin, TimestampMixin
@@ -18,6 +20,9 @@ class VideoRow(TimestampMixin, SoftDeleteMixin, Base):
     source_key: Mapped[str]
     status: Mapped[str]
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    document: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
 
 
 class OutboxRow(Base):

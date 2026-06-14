@@ -21,6 +21,7 @@ def _to_domain(row: VideoRow) -> Video:
         source_key=row.source_key,
         status=VideoStatus(row.status),
         uploaded_at=row.uploaded_at,
+        document=row.document,
     )
 
 
@@ -36,6 +37,7 @@ class SqlVideoRepo(IVideoRepo):
                 source_key=video.source_key,
                 status=video.status.value,
                 uploaded_at=video.uploaded_at,
+                document=video.document,
             )
             .on_conflict_do_update(
                 index_elements=["id"],
@@ -90,3 +92,22 @@ class SqlVideoRepo(IVideoRepo):
         except SQLAlchemyError as exc:
             raise PortError(f"soft delete video failed: {exc}") from exc
         return cursor.rowcount > 0
+
+    async def list_by_content_type(self, content_type: str, limit: int) -> list[Video]:
+        # JSONB field extraction: document->>'content_type' = :content_type.
+        # Active rows only, newest-first. Demonstrates JSONB querying; not on
+        # IVideoRepo because no use case consumes it yet.
+        stmt = (
+            select(VideoRow)
+            .where(
+                VideoRow.deleted_at.is_(None),
+                VideoRow.document["content_type"].astext == content_type,
+            )
+            .order_by(VideoRow.uploaded_at.desc(), VideoRow.id.desc())
+            .limit(limit)
+        )
+        try:
+            result = await self._session.execute(stmt)
+        except SQLAlchemyError as exc:
+            raise PortError(f"list videos by content type failed: {exc}") from exc
+        return [_to_domain(r) for r in result.scalars().all()]

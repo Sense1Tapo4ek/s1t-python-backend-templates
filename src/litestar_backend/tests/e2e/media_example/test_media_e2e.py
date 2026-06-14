@@ -187,3 +187,19 @@ def test_delete_unknown_returns_404(e2e_client: TestClient) -> None:
     """Given a random id, When DELETE /videos/{id}, Then 404."""
     resp = e2e_client.delete("/videos/00000000-0000-0000-0000-0000000000ff")
     assert resp.status_code == 404
+
+
+def test_upload_persists_and_returns_document(e2e_client: TestClient) -> None:
+    """
+    Given an upload with a document,
+    When POST /videos then GET /videos,
+    Then the listed video echoes the document.
+    """
+    doc = {"content_type": "video/mp4", "tags": ["demo"]}
+    video_id = e2e_client.post(
+        "/videos", json={"source_key": "s3://bucket/withdoc.mp4", "document": doc}
+    ).json()["id"]
+
+    items = e2e_client.get("/videos", params={"limit": 200}).json()["items"]
+    match = next(v for v in items if v["id"] == video_id)
+    assert match["document"] == doc

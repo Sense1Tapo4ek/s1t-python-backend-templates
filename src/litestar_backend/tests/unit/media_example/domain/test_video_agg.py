@@ -30,3 +30,13 @@ def test_done_is_terminal() -> None:
     v.mark_done()
     with pytest.raises(InvalidTransition):
         v.mark_processing()
+
+
+def test_upload_carries_document() -> None:
+    v = Video.upload(source_key="k", document={"content_type": "video/mp4"})
+    assert v.document == {"content_type": "video/mp4"}
+
+
+def test_upload_defaults_document_to_empty() -> None:
+    v = Video.upload(source_key="k")
+    assert v.document == {}
