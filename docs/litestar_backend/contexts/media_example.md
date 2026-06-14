@@ -88,7 +88,7 @@ the composite `(uploaded_at DESC, id DESC)` required for stable keyset paging;
 mixins and replaces the full keyset index with a partial one covering only active
 rows (`WHERE deleted_at IS NULL`). Reads always filter `deleted_at IS NULL`. `004`
 adds the free-form `document` JSONB column (carried on upload and read) with a GIN
-index for containment / field-extraction queries.
+index for containment (`@>`) queries.
 
 ```
 schema media

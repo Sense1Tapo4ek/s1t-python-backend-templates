@@ -176,17 +176,19 @@ async def test_document_round_trips(session: AsyncSession) -> None:
 @pytest.mark.asyncio
 async def test_list_by_content_type_filters_on_jsonb_field(session: AsyncSession) -> None:
     """
-    Given videos with different document content types,
-    When filtering by content_type via the JSONB ->> extraction,
-    Then only matching active videos are returned.
+    Given videos with different content types (and one with no document key),
+    When filtering by content_type via JSONB @> containment,
+    Then only the matching active video is returned (a missing key never matches).
     """
     # Arrange
     repo = SqlVideoRepo(_session=session)
     await session.execute(delete(VideoRow))
     mp4 = Video.upload(source_key="a", document={"content_type": "video/mp4"})
     mp3 = Video.upload(source_key="b", document={"content_type": "audio/mpeg"})
+    no_doc = Video.upload(source_key="c")  # empty document -- no content_type key
     await repo.save(mp4)
     await repo.save(mp3)
+    await repo.save(no_doc)
 
     # Act
     found = await repo.list_by_content_type("video/mp4", limit=50)

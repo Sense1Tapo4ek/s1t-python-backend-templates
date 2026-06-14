@@ -94,14 +94,16 @@ class SqlVideoRepo(IVideoRepo):
         return cursor.rowcount > 0
 
     async def list_by_content_type(self, content_type: str, limit: int) -> list[Video]:
-        # JSONB field extraction: document->>'content_type' = :content_type.
-        # Active rows only, newest-first. Demonstrates JSONB querying; not on
-        # IVideoRepo because no use case consumes it yet.
+        # JSONB containment: document @> {"content_type": ...}. The @> operator
+        # uses the GIN index (ix_videos_document); the ->> text-extraction
+        # operator would NOT (it needs a functional B-tree index on the key).
+        # Active rows only, newest-first. Demonstrates GIN-accelerated JSONB
+        # querying; not on IVideoRepo because no use case consumes it yet.
         stmt = (
             select(VideoRow)
             .where(
                 VideoRow.deleted_at.is_(None),
-                VideoRow.document["content_type"].astext == content_type,
+                VideoRow.document.contains({"content_type": content_type}),
             )
             .order_by(VideoRow.uploaded_at.desc(), VideoRow.id.desc())
             .limit(limit)

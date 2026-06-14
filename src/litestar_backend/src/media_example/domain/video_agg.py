@@ -35,7 +35,9 @@ class Video:
         if not source_key:
             raise EmptySourceKey()
         ts = uploaded_at or datetime.now().astimezone()
-        video = cls(source_key=source_key, uploaded_at=ts, document=document or {})
+        video = cls(
+            source_key=source_key, uploaded_at=ts, document=document if document is not None else {}
+        )
         video._events.append(
             VideoUploaded(video_id=video.id, source_key=source_key, uploaded_at=ts)
         )
@@ -56,7 +58,7 @@ class Video:
             source_key=source_key,
             status=status,
             uploaded_at=uploaded_at,
-            document=document or {},
+            document=document if document is not None else {},
         )
 
     def _transition(self, to: VideoStatus) -> None:
