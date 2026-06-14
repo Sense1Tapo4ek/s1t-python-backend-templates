@@ -26,6 +26,8 @@ class ValkeyInboxStore(IInboxStore):
 
     async def mark_processed(self, event_id: UUID) -> None:
         try:
-            await self._valkey.set(_key(event_id), "1", ex=self._ttl_seconds)
+            # NX: the first mark wins its TTL window; a racing second mark for the
+            # same event does not refresh it (marking is "record if new", not "touch").
+            await self._valkey.set(_key(event_id), "1", ex=self._ttl_seconds, nx=True)
         except RedisError as exc:
             raise PortError(f"inbox mark failed for {event_id}: {exc}") from exc

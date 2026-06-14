@@ -79,7 +79,8 @@ class TestOnVideoUploadedUC:
         # Arrange
         queue = _SpyQueue()
         publisher = _FailingPublisher()
-        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher, _inbox=_SpyInbox())
+        inbox = _SpyInbox()
+        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher, _inbox=inbox)
         video_id = uuid4()
 
         # Act / Assert
@@ -87,6 +88,8 @@ class TestOnVideoUploadedUC:
             await uc(video_id, uuid4())
 
         assert len(queue.calls) == 3
+        # mark-after-success: publish raised, so the event is NOT marked -> redelivery reprocesses
+        assert inbox.marked == []
 
     @pytest.mark.asyncio
     async def test_publishes_started_after_enqueue(self) -> None:

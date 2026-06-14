@@ -9,7 +9,7 @@ tolerates duplicates, so the system converges.
 | Hop | Guarantee | Mechanism | Backed by |
 |:---|:---|:---|:---|
 | Outbox -> stream (backend) | at-least-once | the relay re-reads unsent rows until the broker accepts | `litestar_backend` outbox-relay tests |
-| Stream -> consumer | at-least-once | a failed handler leaves the message un-acked; FastStream redelivers | `uploaded_consumer` error handling |
+| Stream -> consumer | at-least-once | a failed handler leaves the message un-acked; FastStream redelivers | `test_handle_uploaded` (ack on poison pill, raise on transient) |
 | Consumer processing | **idempotent** | `event_id` inbox (`seen` / `mark_processed`), marked AFTER fan-out | `test_redelivery_idempotent`, `test_valkey_inbox_store` |
 | Job enqueue | at-least-once | SAQ retries; a redelivered upload re-enqueues | `test_saq_job_queue` |
 | Job join | **idempotent** | set-based distinct-kind count; re-adding a kind holds the count | `test_valkey_join_store` |
