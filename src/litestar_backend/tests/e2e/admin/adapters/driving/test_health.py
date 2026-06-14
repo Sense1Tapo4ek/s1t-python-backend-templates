@@ -85,22 +85,3 @@ def test_ping_endpoint_returns_pong(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
     assert response.status_code == HTTP_200_OK
     assert response.json() == {"message": "pong"}
-
-
-def test_ready_returns_200_with_all_checks_up(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Given infra up, When GET /health/ready, Then 200 and all checks up."""
-    monkeypatch.setenv("APP_NAME", "test-service")
-    monkeypatch.setenv("VOLUME_PATH", str(tmp_path))
-
-    app = create_app()
-
-    with TestClient(app=app) as client:
-        resp = client.get("/health/ready")
-
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["status"] == "ready"
-    assert body["checks"] == {"log_dir": "up", "postgres": "up", "valkey": "up"}

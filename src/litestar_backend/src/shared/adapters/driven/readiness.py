@@ -26,23 +26,28 @@ class ReadinessProbe:
     _timeout_s: float = 2.0
 
     async def check(self) -> ReadinessReport:
-        checks = {
-            "postgres": await self._probe_postgres(),
-            "valkey": await self._probe_valkey(),
-        }
+        # Probe dependencies concurrently so total latency is ~_timeout_s, not
+        # the sum -- a single hung dependency must not blow the readiness budget.
+        postgres, valkey = await asyncio.gather(self._probe_postgres(), self._probe_valkey())
+        checks = {"postgres": postgres, "valkey": valkey}
         return ReadinessReport(ok=all(v == "up" for v in checks.values()), checks=checks)
 
     async def _probe_postgres(self) -> str:
+        # Bound the WHOLE probe (connect handshake + query): a host that accepts
+        # TCP but stalls on the wire protocol must still degrade to "down" within
+        # the budget, not block on asyncpg's default 60s connect timeout.
         try:
-            async with self._engine.connect() as conn:
-                await asyncio.wait_for(conn.execute(text("SELECT 1")), self._timeout_s)
-        except Exception:  # a probe degrades to "down" on any failure
+            async with asyncio.timeout(self._timeout_s):
+                async with self._engine.connect() as conn:
+                    await conn.execute(text("SELECT 1"))
+        except Exception:
             return "down"
         return "up"
 
     async def _probe_valkey(self) -> str:
         try:
-            await asyncio.wait_for(self._valkey.ping(), self._timeout_s)
-        except Exception:  # a probe degrades to "down" on any failure
+            async with asyncio.timeout(self._timeout_s):
+                await self._valkey.ping()
+        except Exception:
             return "down"
         return "up"
