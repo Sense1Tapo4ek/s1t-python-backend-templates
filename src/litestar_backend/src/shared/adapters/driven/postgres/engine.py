@@ -6,15 +6,23 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import NullPool
 
+from .observability import attach_query_observability
 
-def build_engine(alchemy_url: str, schema: str, *, pool_size: int | None = None) -> AsyncEngine:
+
+def build_engine(
+    alchemy_url: str, schema: str, *, pool_size: int | None = None, observe: bool = True
+) -> AsyncEngine:
     # search_path scopes this context to its schema; unqualified table names resolve there.
     extra: dict[str, int] = {} if pool_size is None else {"pool_size": pool_size}
-    return create_async_engine(
+    engine = create_async_engine(
         alchemy_url,
         connect_args={"server_settings": {"search_path": schema}},
         **extra,
     )
+    if observe:
+        # Core events live on the underlying sync engine.
+        attach_query_observability(engine.sync_engine)
+    return engine
 
 
 def build_sessionmaker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:

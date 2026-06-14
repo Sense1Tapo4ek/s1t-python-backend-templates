@@ -73,11 +73,23 @@ default.
 Interaction with `ProblemDetailsPlugin` and `enable_for_all_http_exceptions`:
 [error hierarchy](error_hierarchy.md#snitchbot-interaction).
 
+## Query observability
+
+`build_engine` attaches `before/after_cursor_execute` SQLAlchemy Core listeners to
+`engine.sync_engine`. Every statement is timed and recorded into the
+`db_query_duration_seconds` Prometheus histogram (visible on `/metrics`). Statements
+at or above `SLOW_QUERY_S` (default 0.1 s) are also logged at WARNING via structlog
+with the event `"db query slow"`, `duration_ms`, and a whitespace-collapsed,
+truncated statement template (no bound parameter values -- no PII). The probe engine
+(`build_probe_engine`) is separate and uninstrumented by construction.
+
+Module: `src/shared/adapters/driven/postgres/observability.py`.
+
 ## Pointers
 
 - Code: `src/shared/logging.py`, `src/shared/adapters/middleware/`
 - Admin log subsystem: [contexts/admin-log.md](../contexts/admin-log.md)
-- Metrics subsystem: [subsystems/metrics.md](metrics.md) — Prometheus
+- Metrics subsystem: [subsystems/metrics.md](metrics.md) -- Prometheus
   endpoint and admin dashboard. Independent surface; do not duplicate
   signals here.
 - structlog pipeline reference: [infra/structlog.md](../infra/structlog.md)
