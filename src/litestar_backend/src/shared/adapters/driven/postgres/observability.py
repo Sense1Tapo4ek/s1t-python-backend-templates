@@ -53,7 +53,10 @@ def attach_query_observability(sync_engine: Engine) -> None:
         context: Any,
         executemany: bool,
     ) -> None:
-        elapsed = time.perf_counter() - getattr(context, "_query_start", time.perf_counter())
+        start = getattr(context, "_query_start", None)
+        if start is None:
+            return  # before_cursor_execute did not run -- no start, skip rather than record a bogus sample
+        elapsed = time.perf_counter() - start
         DB_QUERY_DURATION.observe(elapsed)
         if elapsed >= SLOW_QUERY_S:
             _log.warning(
