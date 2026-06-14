@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from ...app import (
@@ -9,7 +10,8 @@ from ...app import (
     UploadVideoCommand,
     UploadVideoUC,
 )
-from .video_dto import UploadVideoRequest, VideoModel, to_model
+from .video_cursor import encode_cursor
+from .video_dto import UploadVideoRequest, VideoModel, VideoPage, to_model
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -38,13 +40,19 @@ class MediaFacade:
         """
         return to_model(await self._upload(UploadVideoCommand(source_key=request.source_key)))
 
-    async def list_recent(self, limit: int) -> list[VideoModel]:
-        """Return up to `limit` videos as wire models, newest first.
+    async def list_page(self, after: tuple[datetime, UUID] | None, limit: int) -> VideoPage:
+        """Return one keyset page of videos as wire models, newest-first.
 
-        Triggered by the recent-videos read endpoint. Read-only; an empty
-        table yields an empty list. Raises PortError on a storage failure.
+        Triggered by GET /videos. `after` is the decoded cursor (the controller
+        owns decoding + the 400 on a malformed token). `next_cursor` is set only
+        when a full `limit` page came back -- a short page is the last page.
+        Read-only. Raises PortError on a storage failure.
         """
-        return [to_model(v) for v in await self._recent(limit)]
+        videos = await self._recent(after, limit)
+        next_cursor = (
+            encode_cursor(videos[-1].uploaded_at, videos[-1].id) if len(videos) == limit else None
+        )
+        return VideoPage(items=[to_model(v) for v in videos], next_cursor=next_cursor)
 
     async def mark_processing(self, video_id: UUID) -> None:
         """Transition a video to PROCESSING and persist it.

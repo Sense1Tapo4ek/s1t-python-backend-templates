@@ -44,7 +44,7 @@ def test_list_includes_uploaded(e2e_client: TestClient) -> None:
 
     # Assert
     assert list_resp.status_code == 200
-    ids = [v["id"] for v in list_resp.json()]
+    ids = [v["id"] for v in list_resp.json()["items"]]
     assert video_id in ids
 
 
@@ -132,7 +132,8 @@ async def test_status_events_drive_video_to_done(
     status = None
     while elapsed < deadline:
         videos = {
-            v["id"]: v["status"] for v in e2e_client.get("/videos", params={"limit": 50}).json()
+            v["id"]: v["status"]
+            for v in e2e_client.get("/videos", params={"limit": 50}).json()["items"]
         }
         status = videos.get(video_id)
         if status == "done":
@@ -141,3 +142,27 @@ async def test_status_events_drive_video_to_done(
         elapsed += interval
 
     assert status == "done", f"video stayed in status={status!r} after {deadline}s"
+
+
+def test_list_paginates_with_cursor(e2e_client: TestClient) -> None:
+    """
+    Given at least two uploaded videos,
+    When paging with limit=1 and following next_cursor,
+    Then the cursor walks to a distinct video id.
+    """
+    e2e_client.post("/videos", json={"source_key": "s3://bucket/p1.mp4"})
+    e2e_client.post("/videos", json={"source_key": "s3://bucket/p2.mp4"})
+
+    first = e2e_client.get("/videos", params={"limit": 1}).json()
+    assert len(first["items"]) == 1
+    assert first["next_cursor"] is not None
+
+    second = e2e_client.get("/videos", params={"limit": 1, "cursor": first["next_cursor"]}).json()
+    assert len(second["items"]) == 1
+    assert first["items"][0]["id"] != second["items"][0]["id"]
+
+
+def test_list_rejects_malformed_cursor(e2e_client: TestClient) -> None:
+    """Given a malformed cursor, When GET /videos, Then 400."""
+    resp = e2e_client.get("/videos", params={"cursor": "not-a-cursor"})
+    assert resp.status_code == 400

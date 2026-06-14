@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from datetime import datetime
+from uuid import UUID
 
 from ..domain import Video
 from .interfaces import IVideoRepo
@@ -8,5 +10,5 @@ from .interfaces import IVideoRepo
 class ListVideosQuery:
     _repo: IVideoRepo
 
-    async def __call__(self, limit: int) -> list[Video]:
-        return await self._repo.list_recent(limit)
+    async def __call__(self, after: tuple[datetime, UUID] | None, limit: int) -> list[Video]:
+        return await self._repo.list_page(after, limit)

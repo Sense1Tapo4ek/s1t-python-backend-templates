@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import literal, select, tuple_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,11 +51,20 @@ class SqlVideoRepo(IVideoRepo):
         row = result.scalar_one_or_none()
         return _to_domain(row) if row is not None else None
 
-    async def list_recent(self, limit: int) -> list[Video]:
-        try:
-            result = await self._session.execute(
-                select(VideoRow).order_by(VideoRow.uploaded_at.desc()).limit(limit)
+    async def list_page(self, after: tuple[datetime, UUID] | None, limit: int) -> list[Video]:
+        stmt = (
+            select(VideoRow).order_by(VideoRow.uploaded_at.desc(), VideoRow.id.desc()).limit(limit)
+        )
+        if after is not None:
+            # Row-value comparison: rows strictly "older" than the cursor in the
+            # (uploaded_at, id) DESC order. Postgres evaluates the tuple
+            # lexicographically, matching the composite index.
+            stmt = stmt.where(
+                tuple_(VideoRow.uploaded_at, VideoRow.id)
+                < tuple_(literal(after[0]), literal(after[1]))
             )
+        try:
+            result = await self._session.execute(stmt)
         except SQLAlchemyError as exc:
-            raise PortError(f"list recent videos failed: {exc}") from exc
+            raise PortError(f"list videos page failed: {exc}") from exc
         return [_to_domain(r) for r in result.scalars().all()]

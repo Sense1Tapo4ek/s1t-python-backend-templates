@@ -38,6 +38,11 @@ class VideoModel(msgspec.Struct, kw_only=True):
     uploaded_at: datetime
 
 
+class VideoPage(msgspec.Struct, kw_only=True):
+    items: list[VideoModel]
+    next_cursor: str | None
+
+
 VideoReadDTO = MsgspecDTO[VideoModel]
 
 

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
@@ -22,11 +23,12 @@ class IVideoRepo(Protocol):
         """
         ...
 
-    async def list_recent(self, limit: int) -> list[Video]:
-        """Return the most recent videos, newest first.
+    async def list_page(self, after: tuple[datetime, UUID] | None, limit: int) -> list[Video]:
+        """Return up to `limit` videos newest-first by (uploaded_at, id) DESC.
 
-        Ordered by uploaded_at descending and capped at `limit` rows;
-        an empty table yields an empty list. Read-only. Raises
-        PortError on a storage failure.
+        Keyset pagination: when `after` is the (uploaded_at, id) of the last row
+        of the previous page, only strictly-older rows are returned, so paging
+        never skips or repeats a row even when timestamps tie. `after=None`
+        yields the first page. Read-only. Raises PortError on a storage failure.
         """
         ...

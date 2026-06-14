@@ -57,7 +57,7 @@ live-browser update).
 | Method | Path | Request | Response | Status |
 |:---|:---|:---|:---|:---|
 | POST | `/videos` | `UploadVideoRequest` (source_key) | `VideoModel` | 202 |
-| GET | `/videos` | `?limit=1-200` (default 50) | `list[VideoModel]` | 200 |
+| GET | `/videos` | `?limit=1-200` (default 50), `?cursor=<token>` (optional) | `VideoPage {items, next_cursor}` | 200, 400 on bad cursor |
 | GET | `/videos/feed` | — | SSE stream | 200 |
 
 `POST /videos` increments the `videos_uploaded_total` Prometheus counter.
@@ -80,8 +80,9 @@ connected subscribers.
 
 ### Schema and tables
 
-Migration `migrations/media/001-create-videos.sql` runs at lifespan start
-via yoyo (psycopg3 backend).
+Migrations in `migrations/media/` run at lifespan start via yoyo (psycopg3
+backend). `001` creates the schema; `002` replaces the single-column index with
+the composite `(uploaded_at DESC, id DESC)` required for stable keyset paging.
 
 ```
 schema media
@@ -90,7 +91,7 @@ schema media
     source_key  TEXT NOT NULL
     status      TEXT NOT NULL   -- 'pending' | 'processing' | 'done' | 'failed'
     uploaded_at TIMESTAMPTZ NOT NULL
-    ix_videos_uploaded_at (uploaded_at DESC)
+    ix_videos_keyset (uploaded_at DESC, id DESC)  -- migration 002 replaces ix_videos_uploaded_at
 
   outbox_messages
     id          UUID PK
@@ -155,6 +156,7 @@ key collision).
 - `src/media_example/ports/driving/status_events.py` — inbound event schema
 - `src/media_example/ports/feed.py` — `VIDEOS_CHANNEL` constant
 - `migrations/media/001-create-videos.sql` — schema DDL
+- `migrations/media/002-videos-keyset-index.sql` — composite index for keyset pagination
 - [docs/contract/video_status.md](../../contract/video_status.md) — wire contract for the return stream
 - [docs/infra/valkey.md](../infra/valkey.md) — Valkey wiring (outbox relay + Channels backend)
 - [docs/infra/postgres.md](../infra/postgres.md) — SQLAlchemy engine, search_path, migrations

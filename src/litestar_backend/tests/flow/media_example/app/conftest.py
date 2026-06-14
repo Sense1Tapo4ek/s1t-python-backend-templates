@@ -19,9 +19,11 @@ class FakeVideoRepo:
     async def get_by_id(self, video_id: UUID) -> Video | None:
         return self._store.get(video_id)
 
-    async def list_recent(self, limit: int) -> list[Video]:
-        ids = list(reversed(self._order))[:limit]
-        return [self._store[vid_id] for vid_id in ids]
+    async def list_page(self, after: tuple[datetime, UUID] | None, limit: int) -> list[Video]:
+        ordered = sorted(self._store.values(), key=lambda v: (v.uploaded_at, v.id), reverse=True)
+        if after is not None:
+            ordered = [v for v in ordered if (v.uploaded_at, v.id) < after]
+        return ordered[:limit]
 
     def seed(self, video: Video) -> None:
         if video.id not in self._store:
