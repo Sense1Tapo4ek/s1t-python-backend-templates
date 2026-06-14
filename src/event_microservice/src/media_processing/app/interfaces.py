@@ -78,3 +78,32 @@ class IEventPublisher(Protocol):
             PortError: the stream backend is unreachable or rejected the write.
         """
         ...
+
+
+class IInboxStore(Protocol):
+    async def seen(self, event_id: UUID) -> bool:
+        """True if `event_id` was already marked processed within the TTL window.
+
+        NOT a lock: two concurrent redeliveries of the same event may both observe
+        False and both process. Acceptable here -- the job queue and join store are
+        idempotent under at-least-once, so a duplicate fan-out converges. The inbox
+        is an optimisation that skips re-doing an already-completed event, not a
+        correctness barrier.
+
+        Raises:
+            PortError: the store backend is unreachable.
+        """
+        ...
+
+    async def mark_processed(self, event_id: UUID) -> None:
+        """Record `event_id` as fully processed, with a TTL window.
+
+        Called AFTER fan-out + publish succeed, so a failure before this leaves the
+        event unmarked and the inbound message unacked -> redelivery reprocesses
+        (at-least-once preserved). The TTL bounds dedup memory; an event redelivered
+        after it expires is reprocessed (rare, tolerated).
+
+        Raises:
+            PortError: the store backend is unreachable.
+        """
+        ...

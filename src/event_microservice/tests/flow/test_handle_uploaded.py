@@ -11,7 +11,7 @@ class _SpyFacade:
     def __init__(self) -> None:
         self.uploaded: list = []
 
-    async def on_uploaded(self, video_id) -> None:
+    async def on_uploaded(self, video_id, event_id) -> None:
         self.uploaded.append(video_id)
 
     async def complete_job(self, video_id, kind) -> None: ...

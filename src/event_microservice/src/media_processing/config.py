@@ -15,6 +15,7 @@ class MediaProcessingConfig(BaseSettings):
     fake_work_seconds: float = 0.05
     transcode_iterations: int = 2_000_000
     join_ttl_seconds: int = 3600
+    inbox_ttl_seconds: int = 86400
     job_retries: int = 3
     job_timeout_seconds: int = 120
     metrics_port: int = 9100

@@ -17,12 +17,13 @@ class MediaProcessingFacade:
     _complete_job: CompleteJobUC
     _on_failed: OnJobFailedUC
 
-    async def on_uploaded(self, video_id: UUID) -> None:
+    async def on_uploaded(self, video_id: UUID, event_id: UUID) -> None:
         """Fan out the three processing jobs for a freshly uploaded video.
 
-        Propagates PortError if the job-queue backend is unreachable.
+        Idempotent by event_id: a redelivered upload whose event_id was already
+        fully processed is a no-op. Propagates PortError if a backend is unreachable.
         """
-        await self._on_uploaded(video_id)
+        await self._on_uploaded(video_id, event_id)
 
     async def complete_job(self, video_id: UUID, kind: JobKind) -> None:
         """Record one finished job; clear the join once all three are done.

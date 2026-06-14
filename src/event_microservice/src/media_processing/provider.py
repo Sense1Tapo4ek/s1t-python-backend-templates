@@ -7,6 +7,7 @@ from root.config import RootConfig
 from .app import (
     CompleteJobUC,
     IEventPublisher,
+    IInboxStore,
     IJobQueue,
     IJoinStore,
     OnJobFailedUC,
@@ -14,7 +15,7 @@ from .app import (
 )
 from .config import MediaProcessingConfig
 from .domain import JobKind
-from .ports.driven import SaqJobQueue, ValkeyEventPublisher, ValkeyJoinStore
+from .ports.driven import SaqJobQueue, ValkeyEventPublisher, ValkeyInboxStore, ValkeyJoinStore
 from .ports.driving import MediaProcessingFacade
 
 
@@ -46,6 +47,10 @@ class MediaProcessingProvider(Provider):
     @provide
     def publisher(self, valkey: aioredis.Redis) -> IEventPublisher:
         return ValkeyEventPublisher(_valkey=valkey)
+
+    @provide
+    def inbox(self, valkey: aioredis.Redis, config: MediaProcessingConfig) -> IInboxStore:
+        return ValkeyInboxStore(_valkey=valkey, _ttl_seconds=config.inbox_ttl_seconds)
 
     @provide
     def complete_job(self, join_store: IJoinStore, publisher: IEventPublisher) -> CompleteJobUC:

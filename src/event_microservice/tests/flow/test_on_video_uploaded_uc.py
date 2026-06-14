@@ -38,6 +38,18 @@ class _FailingPublisher(_FakePublisher):
         raise PortError("valkey unreachable")
 
 
+class _SpyInbox:
+    def __init__(self, *, seen: bool = False) -> None:
+        self._seen = seen
+        self.marked: list = []
+
+    async def seen(self, event_id) -> bool:
+        return self._seen
+
+    async def mark_processed(self, event_id) -> None:
+        self.marked.append(event_id)
+
+
 class TestOnVideoUploadedUC:
     @pytest.mark.asyncio
     async def test_enqueues_one_job_per_kind(self) -> None:
@@ -45,11 +57,11 @@ class TestOnVideoUploadedUC:
         # Arrange
         queue = _SpyQueue()
         publisher = _FakePublisher()
-        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher)
+        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher, _inbox=_SpyInbox())
         video_id = uuid4()
 
         # Act
-        await uc(video_id)
+        await uc(video_id, uuid4())
 
         # Assert
         assert {kind for _, kind in queue.calls} == set(JobKind)
@@ -67,12 +79,12 @@ class TestOnVideoUploadedUC:
         # Arrange
         queue = _SpyQueue()
         publisher = _FailingPublisher()
-        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher)
+        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher, _inbox=_SpyInbox())
         video_id = uuid4()
 
         # Act / Assert
         with pytest.raises(PortError):
-            await uc(video_id)
+            await uc(video_id, uuid4())
 
         assert len(queue.calls) == 3
 
@@ -86,12 +98,45 @@ class TestOnVideoUploadedUC:
         # Arrange
         queue = _SpyQueue()
         publisher = _FakePublisher()
-        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher)
+        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher, _inbox=_SpyInbox())
         video_id = uuid4()
 
         # Act
-        await uc(video_id)
+        await uc(video_id, uuid4())
 
         # Assert
         assert publisher.started == [video_id]
         assert len(queue.calls) == 3
+
+    @pytest.mark.asyncio
+    async def test_duplicate_event_is_skipped(self) -> None:
+        """Given an event_id the inbox has seen, When the UC runs, Then nothing fans out."""
+        # Arrange
+        queue = _SpyQueue()
+        publisher = _FakePublisher()
+        inbox = _SpyInbox(seen=True)
+        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher, _inbox=inbox)
+
+        # Act
+        await uc(uuid4(), uuid4())
+
+        # Assert
+        assert queue.calls == []
+        assert publisher.started == []
+        assert inbox.marked == []
+
+    @pytest.mark.asyncio
+    async def test_marks_processed_after_success(self) -> None:
+        """Given a fresh event, When the UC completes, Then the event_id is marked."""
+        # Arrange
+        queue = _SpyQueue()
+        publisher = _FakePublisher()
+        inbox = _SpyInbox()
+        uc = OnVideoUploadedUC(_queue=queue, _publisher=publisher, _inbox=inbox)
+        event_id = uuid4()
+
+        # Act
+        await uc(uuid4(), event_id)
+
+        # Assert
+        assert inbox.marked == [event_id]

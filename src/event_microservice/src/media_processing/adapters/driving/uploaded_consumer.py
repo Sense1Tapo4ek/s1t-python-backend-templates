@@ -20,7 +20,7 @@ async def handle_uploaded(payload: str | bytes, facade: MediaProcessingFacade) -
     event = msgspec.json.decode(payload, type=VideoUploadedSchema)
     EVENTS_RECEIVED.inc()
     _log.info("video_uploaded received", video_id=str(event.video_id), event_id=str(event.event_id))
-    await facade.on_uploaded(event.video_id)
+    await facade.on_uploaded(event.video_id, event.event_id)
 
 
 @router.subscriber(
@@ -36,7 +36,7 @@ async def on_video_uploaded(
     except msgspec.MsgspecError:
         # Poison pill: a malformed payload never decodes -- log and ack so it does
         # not redeliver forever. Transient failures (PortError) propagate and stay
-        # un-acked for redelivery. (event_id dedup is deferred; see
-        # docs/contract/video_uploaded.md.)
+        # un-acked for redelivery; the facade dedups by event_id, so a redelivered
+        # event that already completed is a no-op.
         _log.warning("video_uploaded malformed payload dropped", raw=str(body)[:200])
     await msg.ack()
