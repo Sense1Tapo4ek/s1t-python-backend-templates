@@ -1,9 +1,9 @@
-# JWT auth
+# JWT auth and API keys
 
 Purpose: how the `auth` context verifies bearer credentials, mints/rotates/
-revokes JWT pairs, and how revocation survives across short-lived access
-tokens. For contributors touching auth; consumers calling `/auth/*` read the
-contract pages.
+revokes JWT pairs and DB-backed API keys, and how revocation survives across
+short-lived access tokens. For contributors touching auth; consumers calling
+`/auth/*` read the contract pages.
 
 ## Mental model
 
@@ -19,16 +19,19 @@ Authorization: Bearer <token>
         |
    CompositeTokenResolver  (first non-None wins)
         |-- JwtTokenResolver   (token has 2 dots: verify + denylist check)
+        |-- ApiKeyResolver     (token starts with "ak_": one DB read by hash)
         '-- StaticTokenResolver (opaque: compare_digest vs admin_token)
         |
    Principal | None  ->  Principal(UNKNOWN) on None or PortError (fail-closed)
 ```
 
-Two credential families coexist: the **static admin token** (bootstrap, opaque)
-and **JWT access tokens** (compact JWS, two dots). The shape gate in
-`JwtTokenResolver` (`token.count(".") != 2`) routes opaque tokens past the JWT
-verifier and the Valkey denylist entirely -- the static path never touches
-Valkey.
+Three credential families coexist: the **static admin token** (bootstrap,
+opaque), **JWT access tokens** (compact JWS, two dots), and **API keys**
+(opaque, `ak_` prefix). Each resolver shape-gates first so a token reaches at
+most one verifier: `JwtTokenResolver` only acts on two-dot tokens,
+`ApiKeyResolver` only on `ak_`-prefixed tokens, and `StaticTokenResolver`
+compares the rest. The static path never touches Valkey; the API-key path
+never touches Valkey or the JWT codec.
 
 ## Public surface
 
@@ -80,6 +83,43 @@ Env vars (prefix `AUTH_`, `auth/config.py`):
   (adapters) is the only `joserfc` user; `JwtService` (ports) speaks the
   `IJwtCodec` Protocol and owns claim construction + TTL policy.
 
+## API keys
+
+Long-lived ADMIN credentials backed by a Postgres table, for machine callers
+(CI, cron) that cannot run the JWT refresh dance. A key is an opaque string
+with an `ak_` prefix; only its SHA-256 hash is stored.
+
+HTTP (`auth/adapters/driving/api/api_key_controller.py`), all ADMIN-guarded:
+
+| Endpoint | Result |
+|:---|:---|
+| `POST /auth/api-keys` | `201` CreatedApiKeyResponse (plaintext shown ONCE) |
+| `GET /auth/api-keys` | `200` list of active keys (never the secret) |
+| `DELETE /auth/api-keys/{id}` | `204` / `404` if no active key with that id |
+
+`CreatedApiKeyResponse`: `id`, `name`, `api_key` (plaintext), `role`.
+`ApiKeyResponse` (list): `id`, `name`, `role`, `created_at` -- no secret.
+
+Invariants and gotchas:
+
+- **SHA-256 at rest, no KDF.** The key carries 256 bits of entropy
+  (`secrets.token_urlsafe(32)`), so a plain hash is a safe at-rest form -- the
+  keyspace is not brute-forceable, unlike a human password. No bcrypt/argon2.
+- **`ak_` prefix gate.** `ApiKeyResolver` only reads the DB for tokens starting
+  with `ak_`; JWTs and the static token never hit the api-keys table.
+- **One DB read per `ak_` request, no cache.** `find_active_by_hash` hashes the
+  presented key and looks up the active row. Acceptable for a template; a busy
+  deployment would add a short-TTL cache.
+- **Revocation is a soft-delete.** `DELETE` flips `revoked_at`; the key stops
+  authenticating immediately (the resolver filters on active rows) but the row
+  stays for audit. Revoking a missing/already-revoked id is `404`.
+- **Fail-closed on Postgres outage.** A DB error surfaces as `PortError`; the
+  middleware catches it and returns anonymous -- same fail-closed path as the
+  JWT denylist. An `ak_` request whose key cannot be checked is unauthenticated.
+- **Resolver reads outside request scope.** The resolver and its repo are
+  APP-scope with a self-managed session, because the auth middleware runs before
+  the per-request DI scope exists.
+
 ## How-to
 
 Bootstrap a JWT pair, then use it:
@@ -95,13 +135,28 @@ curl -sX POST localhost:8000/auth/refresh -d "{\"refresh_token\":\"$REFRESH\"}"
 curl -sX POST localhost:8000/auth/revoke  -d "{\"token\":\"$ACCESS\"}"       # 204
 ```
 
+Mint an API key with the admin token, then use it (plaintext shown once):
+
+```bash
+ADMIN="$AUTH_ADMIN_TOKEN"
+KEY=$(curl -sX POST localhost:8000/auth/api-keys -H "Authorization: Bearer $ADMIN" \
+      -d '{"name":"ci"}' | jq -r .api_key)                                  # ak_...
+
+curl -s localhost:8000/auth/api-keys -H "Authorization: Bearer $KEY"        # 200, lists keys
+ID=$(curl -s localhost:8000/auth/api-keys -H "Authorization: Bearer $ADMIN" | jq -r '.[0].id')
+curl -sX DELETE localhost:8000/auth/api-keys/$ID -H "Authorization: Bearer $ADMIN"  # 204
+```
+
 ## Pointers
 
 - `src/auth/adapters/driven/jwt_codec.py` -- `joserfc` HS256 encode/decode.
 - `src/auth/ports/driven/jwt_service.py` -- claim shape, TTL, verify policy.
 - `src/auth/ports/driven/jwt_token_resolver.py` -- shape gate + denylist check.
+- `src/auth/ports/driven/api_key_resolver.py` -- `ak_` gate + hash lookup.
+- `src/auth/ports/driven/sql_api_key_repo.py` -- self-session APP-scope repo.
 - `src/auth/ports/driven/composite_token_resolver.py` -- resolver chain.
 - `src/auth/ports/driven/valkey_denylist.py` -- `jti` denylist, TTL, PortError.
 - `src/auth/adapters/auth_middleware.py` -- fail-closed entrypoint.
-- ADR `docs/adr/0029-jwt-auth.md` -- the decision record.
+- ADR `docs/adr/0029-jwt-auth.md` -- the JWT decision record.
+- ADR `docs/adr/0030-api-key-auth.md` -- the API-key decision record.
 - ADR `docs/adr/0004-static-bearer-cookie-auth.md` -- the static layer below.
