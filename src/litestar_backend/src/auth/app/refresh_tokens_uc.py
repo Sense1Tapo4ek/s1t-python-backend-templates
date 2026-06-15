@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 
 from shared.app import IClock
@@ -21,6 +22,9 @@ class RefreshTokensUC:
             return None
         if await self._denylist.contains(verified.jti):
             return None  # reuse of an already-rotated refresh token
-        ttl = int((verified.expires_at - self._clock.now()).total_seconds())
+        # ceil, not int: a token with <1s of life left still verifies (verify
+        # rejects only expires_at <= now), so truncating to 0 would skip the
+        # denylist write and leave it briefly un-revoked.
+        ttl = math.ceil((verified.expires_at - self._clock.now()).total_seconds())
         await self._denylist.add(verified.jti, ttl_seconds=ttl)  # one-time use
         return self._issuer.issue_pair(role=verified.role)
