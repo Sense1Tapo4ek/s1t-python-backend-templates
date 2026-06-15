@@ -5,6 +5,7 @@ from litestar.connection import ASGIConnection
 from litestar.middleware import AbstractAuthenticationMiddleware, AuthenticationResult
 
 from shared.domain.auth import Principal, Role
+from shared.generics.errors import PortError
 
 from ..config import ADMIN_COOKIE_NAME, MAX_TOKEN_LEN
 from ..ports.driving import AuthFacade
@@ -35,7 +36,15 @@ class AuthMiddleware(AbstractAuthenticationMiddleware):
         # app.state -- middleware reads the prepared instance instead of
         # walking the DI container per request.
         facade: AuthFacade = connection.app.state.auth_facade
-        principal = await facade.authenticate(token)
+        try:
+            principal = await facade.authenticate(token)
+        except PortError:
+            # Denylist (Valkey) unreachable -> fail closed: a JWT we cannot
+            # check for revocation is treated as unauthenticated. The static
+            # admin path never reaches the denylist (shape gate), so this only
+            # degrades JWT auth during a Valkey outage.
+            _log.warning("auth rejected", reason="denylist unavailable")
+            return AuthenticationResult(user=_ANON, auth=_ANON.token_id)
 
         if principal is None:
             _log.warning("auth rejected", reason="invalid token")
