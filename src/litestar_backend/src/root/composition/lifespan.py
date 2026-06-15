@@ -9,6 +9,7 @@ from litestar import Litestar
 from litestar.channels import ChannelsPlugin
 
 from admin.log.config import AdminLogConfig
+from auth.adapters.auth_lifespan_manager import AuthLifespanManager
 from auth.ports.driving import AuthFacade
 from db_example_litestar.adapters.lifespan_manager import (
     DbExampleLitestarLifespanManager,
@@ -48,9 +49,15 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     # is cheaper and clearer than walking the container each time.
     app.state.auth_facade = await container.get(AuthFacade)
 
+    auth_manager: AuthLifespanManager | None = None
     alchemy_manager: DbExampleLitestarLifespanManager | None = None
     media_manager: MediaLifespanManager | None = None
     try:
+        auth_manager = await container.get(AuthLifespanManager)
+        log.info("auth starting")
+        await auth_manager.start()
+        log.info("auth started")
+
         alchemy_manager = await container.get(DbExampleLitestarLifespanManager)
         log.info("db_example_litestar starting")
         await alchemy_manager.start()
@@ -78,6 +85,12 @@ async def lifespan(app: Litestar) -> AsyncIterator[None]:
     finally:
         log.info("lifespan stopping")
         stop_started = time.perf_counter()
+        try:
+            if auth_manager is not None:
+                await auth_manager.stop()
+                log.info("auth stopped")
+        except Exception:
+            log.exception("auth_stop_failed")
         try:
             if alchemy_manager is not None:
                 await alchemy_manager.stop()

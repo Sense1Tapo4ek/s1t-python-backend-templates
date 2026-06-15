@@ -1,10 +1,18 @@
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+
 from dishka import Provider, Scope, provide
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
+from shared.adapters.driven.postgres import build_engine, build_sessionmaker
 from shared.app import IClock
+from shared.config import PostgresConfig
 
+from .adapters.auth_lifespan_manager import AuthLifespanManager
 from .adapters.driven import JwtCodec, JwtKey, build_jwt_key
 from .app import (
     AuthenticateUc,
+    IApiKeyRepo,
     IDenylist,
     IJwtCodec,
     IJwtService,
@@ -15,13 +23,21 @@ from .app import (
 )
 from .config import AuthConfig
 from .ports.driven import (
+    ApiKeyResolver,
     CompositeTokenResolver,
     JwtService,
     JwtTokenResolver,
+    SqlApiKeyRepo,
     StaticTokenResolver,
     ValkeyDenylist,
 )
 from .ports.driving import AuthFacade
+
+
+@dataclass(frozen=True, slots=True)
+class AuthDb:
+    engine: AsyncEngine
+    sessionmaker: async_sessionmaker
 
 
 class AuthProvider(Provider):
@@ -55,12 +71,33 @@ class AuthProvider(Provider):
     denylist = provide(ValkeyDenylist, provides=IDenylist)
 
     @provide
+    async def db(self, pg: PostgresConfig, config: AuthConfig) -> AsyncIterator[AuthDb]:
+        engine = build_engine(pg.alchemy_url, config.schema_name, pool_size=config.pool_size)
+        try:
+            yield AuthDb(engine=engine, sessionmaker=build_sessionmaker(engine))
+        finally:
+            await engine.dispose()
+
+    @provide
+    def api_key_repo(self, db: AuthDb) -> IApiKeyRepo:
+        return SqlApiKeyRepo(_sessionmaker=db.sessionmaker)
+
+    @provide
+    def lifespan(self, pg: PostgresConfig) -> AuthLifespanManager:
+        return AuthLifespanManager(yoyo_url=pg.yoyo_url)
+
+    @provide
     def token_resolver(
-        self, jwt: IJwtService, denylist: IDenylist, config: AuthConfig
+        self,
+        jwt: IJwtService,
+        denylist: IDenylist,
+        repo: IApiKeyRepo,
+        config: AuthConfig,
     ) -> ITokenResolver:
         return CompositeTokenResolver(
             _resolvers=(
                 JwtTokenResolver(_jwt=jwt, _denylist=denylist),
+                ApiKeyResolver(_repo=repo),
                 StaticTokenResolver(_config=config),
             )
         )
