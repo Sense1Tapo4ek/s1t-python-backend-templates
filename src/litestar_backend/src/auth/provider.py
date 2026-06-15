@@ -9,7 +9,10 @@ from .app import (
     IJwtCodec,
     IJwtIssuer,
     IJwtVerifier,
+    IssueTokensUC,
     ITokenResolver,
+    RefreshTokensUC,
+    RevokeTokenUC,
 )
 from .config import AuthConfig
 from .ports.driven import (
@@ -68,4 +71,7 @@ class AuthProvider(Provider):
         )
 
     authenticate_uc = provide(AuthenticateUc)
+    issue_uc = provide(IssueTokensUC)
+    refresh_uc = provide(RefreshTokensUC)
+    revoke_uc = provide(RevokeTokenUC)
     auth_facade = provide(AuthFacade)
