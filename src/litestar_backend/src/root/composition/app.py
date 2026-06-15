@@ -39,6 +39,8 @@ from admin.log.adapters.driving.api import (
     LogsPageController,
 )
 from auth.adapters import AuthMiddleware
+from auth.adapters.driving.api import TokenController
+from auth.app import JwtDisabledError
 from auth.ports.driving import SECURITY_COMPONENTS
 from db_example_litestar.adapters.driving import AuthorController, BookController
 from media_example import VIDEOS_CHANNEL
@@ -56,6 +58,7 @@ from shared.adapters.problem_details import (
     adapter_to_problem,
     app_to_problem,
     domain_to_problem,
+    jwt_disabled_to_problem,
     not_found_to_problem,
     port_to_problem,
     problem_handler,
@@ -84,6 +87,7 @@ def _resolve_app_version() -> str:
 EXCEPTION_TO_PROBLEM: dict[type[Exception], Callable[[Any], ProblemDetailsException]] = {
     DomainError: domain_to_problem,
     AppError: app_to_problem,
+    JwtDisabledError: jwt_disabled_to_problem,
     NotFoundError: not_found_to_problem,
     AlchemyNotFoundError: not_found_to_problem,
     PortError: port_to_problem,
@@ -158,6 +162,10 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
         tags=[
             Tag(name="Health", description="Liveness/readiness probes and build info."),
             Tag(
+                name="Auth",
+                description="JWT token issuance, refresh rotation, and revocation. Bootstrap requires the admin credential.",
+            ),
+            Tag(
                 name="db_example (Alchemy)",
                 description="Example CRUD via SQLAlchemy 2.0 + advanced-alchemy. Illustrative; delete when adapting.",
             ),
@@ -215,6 +223,7 @@ def build_app() -> Litestar:
         route_handlers=[
             HealthController,
             LoginController,
+            TokenController,
             AdminController,
             LogsPageController,
             LogsApiController,

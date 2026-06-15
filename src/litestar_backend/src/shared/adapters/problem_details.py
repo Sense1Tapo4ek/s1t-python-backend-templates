@@ -44,6 +44,16 @@ def app_to_problem(exc: AppError) -> ProblemDetailsException:
     )
 
 
+def jwt_disabled_to_problem(exc: Exception) -> ProblemDetailsException:
+    _log.warning("jwt disabled", error_type=type(exc).__name__, message=str(exc))
+    return ProblemDetailsException(
+        status_code=HTTP_503_SERVICE_UNAVAILABLE,
+        title="JWT Not Configured",
+        detail=str(exc),
+        type_=f"{_TYPE_BASE}:jwt-disabled",
+    )
+
+
 def not_found_to_problem(exc: Exception) -> ProblemDetailsException:
     _log.warning("not found", error_type=type(exc).__name__, message=str(exc))
     return ProblemDetailsException(
