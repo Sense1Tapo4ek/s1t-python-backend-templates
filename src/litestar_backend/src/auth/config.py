@@ -43,3 +43,5 @@ class AuthConfig(BaseAppConfig):
         ge=1,
         description="Refresh-token lifetime in seconds (default 14 days).",
     )
+    schema_name: str = Field(default="auth", description="Postgres schema for the auth context.")
+    pool_size: int = Field(default=5, ge=1, description="SQLAlchemy pool size for the auth engine.")
