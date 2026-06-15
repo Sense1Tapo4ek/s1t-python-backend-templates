@@ -66,7 +66,6 @@ class VideoStatusConsumer:
                 raise
 
     async def run_forever(self) -> None:
-        """Main loop: ensure group then drain entries indefinitely."""
         await self.ensure_group()
         while True:
             try:
