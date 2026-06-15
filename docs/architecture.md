@@ -92,9 +92,6 @@ them is what kills the template's ability to grow.
 └── config.py            # Pydantic Settings with a unique env_prefix.
 ```
 
-This file is the project-level overview of those rules; the per-layer
-sections below are what contributors hold each change against.
-
 ---
 
 ## 3. Error hierarchy
@@ -166,7 +163,9 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 | `admin/log/config.py::AdminLogConfig` | `LOG_` | `file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
 | `shared/config.py::MetricsConfig` | `METRICS_` | Prometheus endpoint path + public flag, HTTP buckets, multiproc dir. |
 | `shared/config.py::ValkeyConfig` | `VALKEY_` | Valkey host/port/db/password/max_connections, `url` property. |
+| `shared/config.py::PostgresConfig` | `POSTGRES_` | host, port, user, password, db; exposes the asyncpg/alchemy/yoyo DSNs. |
 | `media_example/config.py::MediaConfig` | `MEDIA_` | schema_name, pool_size, relay_batch, relay_idle_sleep, status_batch, status_block_ms, status_claim_idle_ms. |
+| `db_example_litestar/config.py::DbExampleLitestarConfig` | `DB_EXAMPLE_LITESTAR_` | schema_name, pool_size. |
 
 Rules:
 - Business logic never reads `os.environ`. Config flows through providers.
@@ -181,18 +180,9 @@ The contract for environment variables is `.env.example`. Don't commit
 
 ## 6a. Browser-served assets
 
-Templates (Jinja2), CSS, and JS live in **one** project-root folder:
-
-```
-static/
-├── shared/_base.html          # layout — every page extends this
-├── admin/dashboard.html
-├── admin/login.html
-├── admin/forbidden.html
-└── admin/log/{index.html, style.css, tail.js}
-```
-
-The folder mirrors the bounded-context tree. One Litestar mount
+Templates (Jinja2), CSS, and JS live in **one** project-root `static/` folder
+that mirrors the bounded-context tree (e.g. `shared/_base.html`,
+`admin/log/{index.html, style.css, tail.js}`). One Litestar mount
 `/static/...` serves the directory; one `TemplateConfig(directory="static",
 engine=JinjaTemplateEngine)` resolves templates. Controllers return
 `Template(template_name="<context>/<file>.html", context={...})`. The *why*
@@ -258,12 +248,6 @@ Postgres 18, schema-per-context via `search_path` ([litestar_backend/infra/postg
 2. ≤40 lines. One decision per file. Status: `accepted`. Date today.
 3. Never renumber. Supersede with a new ADR — keep the old one in tree.
 
-### Add a public-API symbol
-
-If the contract isn't visible from name+types (invariants, side effects,
-lifecycle constraints, failure modes), write a docstring. Otherwise, no
-docstring.
-
 ---
 
 ## 9. Testing
@@ -283,23 +267,13 @@ Conventions:
 - Docstring: Given / When / Then. Body: Arrange / Act / Assert.
 - E2E suite warms DI eagerly before env-isolation autouse fixtures kick in.
 
-```bash
-uv run pytest                     # full suite
-uv run pytest tests/unit/         # domain only
-uv run pytest tests/integration/  # ports/adapters against tmp_path files
-```
-
 ---
 
 ## 10. Writing docs
 
-The documentation discipline in one paragraph: every page has exactly one
-job and one audience (README, architecture, context reference, subsystem,
-infra, contract, ADR, docstring); pages have hard line budgets; each fact
-has one home and other pages link to it; docstrings exist only for contracts
-invisible from name+types; ADRs use MADR, ≤40 lines, never renumbered.
-
-Project-specific overrides:
+The global documentation discipline (one job + one audience per page, hard
+line budgets, one home per fact, docstrings only for contracts invisible from
+name+types, MADR ADRs <=40 lines) is the baseline. Project-specific overrides:
 
 - **Layout is fixed**: `docs/litestar_backend/{contexts,subsystems,infra}/` and `docs/adr/`. Do not add
   new top-level folders. If something doesn't fit, it probably belongs

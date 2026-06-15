@@ -52,12 +52,13 @@ ProblemDetailsPlugin(
 
 ```python
 EXCEPTION_TO_PROBLEM = {
-    DomainError:         domain_to_problem,    # 409
-    AppError:            app_to_problem,       # 422
-    ItemNotFound:        not_found_to_problem, # 404 (MRO: wins over AppError)
-    AlchemyNotFoundError: not_found_to_problem,
-    PortError:           port_to_problem,      # 503
-    AdapterError:        adapter_to_problem,   # 500
+    DomainError:          domain_to_problem,       # 409
+    AppError:             app_to_problem,          # 422
+    JwtDisabledError:     jwt_disabled_to_problem, # 503
+    NotFoundError:        not_found_to_problem,    # 404 (MRO: wins over AppError)
+    AlchemyNotFoundError: not_found_to_problem,    # 404
+    PortError:            port_to_problem,         # 503
+    AdapterError:         adapter_to_problem,      # 500
 }
 ```
 

@@ -17,10 +17,10 @@ problem-details format. There is one body shape across all status codes.
 ```json
 {
   "status": 409,
-  "type": "urn:litestar-base:error:empty-item-name",
+  "type": "urn:litestar-base:error:empty-source-key",
   "title": "Conflict",
-  "detail": "item name must not be empty",
-  "instance": "/db-example-sddd/pooled/items"
+  "detail": "video source_key must not be empty",
+  "instance": "/videos"
 }
 ```
 
@@ -70,7 +70,7 @@ Two conventions produce the `type` value:
 
 - **Application errors** (`LayerError` subtypes): derived from the exception
   class name, kebab-cased, under `urn:litestar-base:error:`. Example:
-  `EmptyItemName` -> `urn:litestar-base:error:empty-item-name`. 5xx use fixed
+  `EmptySourceKey` -> `urn:litestar-base:error:empty-source-key`. 5xx use fixed
   slugs `:service-unavailable` (503) and `:internal` (500).
 - **Framework errors**: hand-written stable slugs so the framework class name
   never leaks. Authentication/authorization use
@@ -87,10 +87,10 @@ add new URNs; existing ones stay stable.
 ```json
 {
   "status": 409,
-  "type": "urn:litestar-base:error:empty-item-name",
+  "type": "urn:litestar-base:error:empty-source-key",
   "title": "Conflict",
-  "detail": "item name must not be empty",
-  "instance": "/db-example-sddd/pooled/items"
+  "detail": "video source_key must not be empty",
+  "instance": "/videos"
 }
 ```
 
@@ -100,7 +100,7 @@ message lands in `title`, `detail` is the generic status phrase):
 ```json
 {
   "status": 400,
-  "title": "Object missing required field `name`",
+  "title": "Object missing required field `source_key`",
   "detail": "Bad Request"
 }
 ```
@@ -108,12 +108,12 @@ message lands in `title`, `detail` is the generic status phrase):
 ## Pseudo-client
 
 ```python
-resp = await client.post("/db-example-sddd/pooled/items", json=payload)
+resp = await client.post("/videos", json=payload)
 if resp.status_code >= 400:
     problem = resp.json()           # application/problem+json
     code = problem["status"]        # always present
     kind = problem.get("type")      # present only on application errors
-    if code == 409 and kind == "urn:litestar-base:error:empty-item-name":
+    if code == 409 and kind == "urn:litestar-base:error:empty-source-key":
         ...                         # handle the specific conflict
     elif code == 400:
         ...                         # validation: no `type`; show problem["title"]
