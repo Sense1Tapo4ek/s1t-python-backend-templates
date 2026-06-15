@@ -55,7 +55,7 @@ API.
 |:---|:---|:---|
 | `shared` | `src/litestar_backend/src/shared/` | Cross-cutting kernel: domain types (`Role`, `Principal`), base config, error hierarchy, `PostgresConfig` (the three driver DSNs), middleware, structlog setup. Imported by every other context; imports nothing from them. |
 | `root` | `src/litestar_backend/src/root/` | Entrypoints (`api.py`, `cli.py`) and DI container assembly. The only place that wires providers together. |
-| `auth` | `src/litestar_backend/src/auth/` | Bearer/cookie auth: token resolution, `AuthMiddleware`, `require_role` guards. See [litestar_backend/contexts/auth.md](litestar_backend/contexts/auth.md). |
+| `auth` | `src/litestar_backend/src/auth/` | Auth: three credential families (JWT, API-key, static admin token) resolved by a composite chain behind `AuthMiddleware`, plus `require_role` guards. Owns a Postgres schema (`api_keys`) migrated on startup. See [litestar_backend/contexts/auth.md](litestar_backend/contexts/auth.md), [subsystems/jwt-auth.md](litestar_backend/subsystems/jwt-auth.md). |
 | `admin` | `src/litestar_backend/src/admin/` | Admin dashboard skeleton: login UI, dashboard shell, build-info panel. See [litestar_backend/contexts/admin.md](litestar_backend/contexts/admin.md). |
 | `admin/log` | `src/litestar_backend/src/admin/log/` | Sub-context: file-tail log viewer over the rotating JSONL file the app writes; SSE live tail, NDJSON/CSV export. See [litestar_backend/contexts/admin-log.md](litestar_backend/contexts/admin-log.md). |
 | `db_example_litestar` | `src/litestar_backend/src/db_example_litestar/` | Example context: SQLAlchemy 2.0 + advanced-alchemy, hybrid layering, `SQLAlchemyDTO`. The only advanced-alchemy user (both DB contexts run on SQLAlchemy). See [litestar_backend/contexts/db_example_litestar.md](litestar_backend/contexts/db_example_litestar.md). |
@@ -142,9 +142,11 @@ Order of operations on startup:
    `StreamHandler` (stdout) + `WatchedFileHandler(LOG_FILE_PATH)`. No queue.
 5. `app.state.auth_facade = await container.get(AuthFacade)` — middleware-bound
    singletons resolved once.
-6. `DbExampleLitestarLifespanManager.start()` — `create_all` for the
+6. `AuthLifespanManager.start()` — runs the `auth` schema migration
+   (`api_keys` table). First of the three managers.
+7. `DbExampleLitestarLifespanManager.start()` — `create_all` for the
    advanced-alchemy example.
-7. `MediaLifespanManager.start()` — media migrations, then two background
+8. `MediaLifespanManager.start()` — media migrations, then two background
    tasks: the outbox relay and the `video_status` consumer.
 
 Shutdown unwinds in reverse, each in `try/finally` so one component's failure
@@ -160,7 +162,7 @@ Pydantic Settings, one `config.py` per context, unique `env_prefix`.
 |:---|:---|:---|
 | `shared/config.py::BaseAppConfig` | `APP_` | `app_name`, `app_env`, `volume_path`, `runtime_path`. |
 | `root/config.py::RootConfig` | `APP_` (extends Base) | server bind/port/workers, security CSP/HSTS, prod invariants. |
-| `auth/config.py::AuthConfig` | `AUTH_` | `admin_token` (`SecretStr`). |
+| `auth/config.py::AuthConfig` | `AUTH_` | `admin_token` (`SecretStr`), `jwt_secret`, `jwt_issuer`, `jwt_access_ttl_seconds`, `jwt_refresh_ttl_seconds`, `schema_name`, `pool_size`. |
 | `admin/log/config.py::AdminLogConfig` | `LOG_` | `file_path`, `tail_lines`, `load_more_lines`, `follow_poll_ms`, `max_line_bytes`. |
 | `shared/config.py::MetricsConfig` | `METRICS_` | Prometheus endpoint path + public flag, HTTP buckets, multiproc dir. |
 | `shared/config.py::ValkeyConfig` | `VALKEY_` | Valkey host/port/db/password/max_connections, `url` property. |
@@ -247,7 +249,7 @@ Things that, if you change them, will break the app silently or in production.
 ### Add a migration
 
 Postgres 18, schema-per-context via `search_path` ([litestar_backend/infra/postgres.md](litestar_backend/infra/postgres.md), [adr/0019](adr/0019-sqlite-to-postgres.md)).
-`media_example` ships yoyo SQL under `migrations/media/`; `db_example_litestar` uses `create_all` -- follow whichever matches your driver.
+`auth` and `media_example` ship yoyo SQL under `migrations/<context>/`; `db_example_litestar` uses `create_all` -- follow whichever matches your driver.
 
 ### Add an ADR
 

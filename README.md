@@ -3,8 +3,9 @@
 Production-shaped template: a two-service, event-driven monorepo.
 
 - **`litestar_backend`** — Litestar API with strict-DDD layout, Dishka DI,
-  role-based auth, an admin UI (dashboard + file-tail log viewer), Prometheus
-  metrics, and a transactional-outbox video pipeline.
+  role-based auth (JWT, API keys, static admin token), an admin UI (dashboard
+  + file-tail log viewer), Prometheus metrics, and a transactional-outbox
+  video pipeline.
 - **`event_microservice`** — FastStream consumer + SAQ worker. Consumes the
   `video_uploaded` Valkey Stream and fans heavy work out to SAQ jobs.
 
@@ -91,7 +92,7 @@ src/
 │   ├── src/
 │   │   ├── shared/           Cross-cutting kernel: config, errors, Postgres/Valkey/metrics infra
 │   │   ├── root/             Entrypoints + Dishka container assembly
-│   │   ├── auth/             Bearer/cookie auth, role guards, middleware
+│   │   ├── auth/             JWT + API-key + static bearer/cookie auth, role guards, middleware
 │   │   ├── admin/            Admin dashboard; admin/log/ = file-tail log viewer (SSE, export)
 │   │   ├── media_example/    GOLDEN CONTEXT: outbox + relay + SSE, full S-DDD layering
 │   │   └── db_example_litestar/  Hybrid CRUD example: advanced-alchemy + SQLAlchemyDTO
