@@ -25,3 +25,21 @@ class AuthConfig(BaseAppConfig):
         default=None,
         description="Bearer token granting Role.ADMIN. Empty disables auth in dev.",
     )
+    jwt_secret: SecretStr | None = Field(
+        default=None,
+        description="HS256 signing secret for JWT. Empty disables JWT issuance/verification.",
+    )
+    jwt_issuer: str = Field(
+        default="litestar-base",
+        description="Value of the JWT 'iss' claim; verified on decode.",
+    )
+    jwt_access_ttl_seconds: int = Field(
+        default=900,
+        ge=1,
+        description="Access-token lifetime in seconds (default 15 min).",
+    )
+    jwt_refresh_ttl_seconds: int = Field(
+        default=1_209_600,
+        ge=1,
+        description="Refresh-token lifetime in seconds (default 14 days).",
+    )
