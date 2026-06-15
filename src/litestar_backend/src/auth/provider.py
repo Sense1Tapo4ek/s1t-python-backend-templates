@@ -12,13 +12,16 @@ from .adapters.auth_lifespan_manager import AuthLifespanManager
 from .adapters.driven import JwtCodec, JwtKey, build_jwt_key
 from .app import (
     AuthenticateUc,
+    GenerateApiKeyUC,
     IApiKeyRepo,
     IDenylist,
     IJwtCodec,
     IJwtService,
     IssueTokensUC,
     ITokenResolver,
+    ListApiKeysUC,
     RefreshTokensUC,
+    RevokeApiKeyUC,
     RevokeTokenUC,
 )
 from .config import AuthConfig
@@ -106,4 +109,7 @@ class AuthProvider(Provider):
     issue_uc = provide(IssueTokensUC)
     refresh_uc = provide(RefreshTokensUC)
     revoke_uc = provide(RevokeTokenUC)
+    generate_api_key_uc = provide(GenerateApiKeyUC)
+    list_api_keys_uc = provide(ListApiKeysUC)
+    revoke_api_key_uc = provide(RevokeApiKeyUC)
     auth_facade = provide(AuthFacade)
