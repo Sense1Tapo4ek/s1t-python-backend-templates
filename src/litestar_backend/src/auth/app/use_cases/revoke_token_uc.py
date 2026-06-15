@@ -3,18 +3,17 @@ from dataclasses import dataclass
 
 from shared.app import IClock
 
-from .i_denylist import IDenylist
-from .i_jwt_verifier import IJwtVerifier
+from ..interfaces import IDenylist, IJwtService
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class RevokeTokenUC:
-    _verifier: IJwtVerifier
+    _jwt: IJwtService
     _denylist: IDenylist
     _clock: IClock
 
     async def __call__(self, token: str) -> None:
-        verified = self._verifier.verify(token)  # any type
+        verified = self._jwt.verify(token)  # any type
         if verified is None:
             return  # idempotent no-op on garbage/expired input
         # ceil, not int: a token with <1s of life left still verifies, so

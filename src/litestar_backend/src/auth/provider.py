@@ -7,8 +7,7 @@ from .app import (
     AuthenticateUc,
     IDenylist,
     IJwtCodec,
-    IJwtIssuer,
-    IJwtVerifier,
+    IJwtService,
     IssueTokensUC,
     ITokenResolver,
     RefreshTokensUC,
@@ -50,22 +49,18 @@ class AuthProvider(Provider):
         )
 
     @provide
-    def jwt_issuer(self, svc: JwtService) -> IJwtIssuer:
-        return svc
-
-    @provide
-    def jwt_verifier(self, svc: JwtService) -> IJwtVerifier:
+    def jwt_service_iface(self, svc: JwtService) -> IJwtService:
         return svc
 
     denylist = provide(ValkeyDenylist, provides=IDenylist)
 
     @provide
     def token_resolver(
-        self, verifier: IJwtVerifier, denylist: IDenylist, config: AuthConfig
+        self, jwt: IJwtService, denylist: IDenylist, config: AuthConfig
     ) -> ITokenResolver:
         return CompositeTokenResolver(
             _resolvers=(
-                JwtTokenResolver(_verifier=verifier, _denylist=denylist),
+                JwtTokenResolver(_jwt=jwt, _denylist=denylist),
                 StaticTokenResolver(_config=config),
             )
         )

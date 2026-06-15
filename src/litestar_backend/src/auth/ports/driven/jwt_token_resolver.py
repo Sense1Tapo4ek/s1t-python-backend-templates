@@ -2,13 +2,13 @@ from dataclasses import dataclass
 
 from shared.domain.auth import Principal
 
-from ...app import IDenylist, IJwtVerifier
+from ...app import IDenylist, IJwtService
 from ...domain import TokenType
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class JwtTokenResolver:
-    _verifier: IJwtVerifier
+    _jwt: IJwtService
     _denylist: IDenylist
 
     async def resolve(self, token: str) -> Principal | None:
@@ -17,7 +17,7 @@ class JwtTokenResolver:
         # so non-JWT requests never touch the verifier or Valkey denylist.
         if token.count(".") != 2:
             return None
-        verified = self._verifier.verify(token, expected_type=TokenType.ACCESS)
+        verified = self._jwt.verify(token, expected_type=TokenType.ACCESS)
         if verified is None:
             return None
         if await self._denylist.contains(verified.jti):
