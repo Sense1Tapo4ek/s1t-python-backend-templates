@@ -4,8 +4,8 @@ Bearer/cookie authentication for admin surfaces. Three credential families
 resolve behind one middleware — JWT, API key, and a static admin token —
 plus role-based authorization and redirect-vs-401 selection by `Accept`.
 
-For the *why*, see the ADRs: [0004 static bearer/cookie](../../adr/0004-static-bearer-cookie-auth.md),
-[0029 JWT](../../adr/0029-jwt-auth.md), [0030 API key](../../adr/0030-api-key-auth.md).
+For the *why*, see the ADRs: [0004 static bearer/cookie](../adr/0004-static-bearer-cookie-auth.md),
+[0029 JWT](../adr/0029-jwt-auth.md), [0030 API key](../adr/0030-api-key-auth.md).
 JWT and API-key depth lives in [subsystems/jwt-auth.md](../subsystems/jwt-auth.md);
 this page is the context overview.
 
@@ -89,9 +89,9 @@ sniffs `Accept` and `path.startswith("/admin")`.
 The context owns a Postgres schema (`auth`, default) holding the `api_keys`
 table — SHA-256 hashes only, soft-deleted on revocation. `AuthLifespanManager`
 applies `migrations/auth/` on startup **before** the alchemy and media managers
-(see [architecture.md §5](../../architecture.md#5-lifespan--startup-ordering)).
+(see [architecture.md §5](../../../../docs/architecture.md#5-lifespan--startup-ordering)).
 The JWT denylist is Valkey-backed, not Postgres. Schema-per-context details:
-[infra/postgres.md](../infra/postgres.md).
+[infra/postgres.md](../../../../docs/infra/postgres.md).
 
 ## Configuration
 
@@ -157,8 +157,8 @@ middleware, facade, and use cases stay unchanged. Existing resolvers
 
 ## Pointers
 
-- ADRs: [0004 static](../../adr/0004-static-bearer-cookie-auth.md),
-  [0029 JWT](../../adr/0029-jwt-auth.md), [0030 API key](../../adr/0030-api-key-auth.md)
+- ADRs: [0004 static](../adr/0004-static-bearer-cookie-auth.md),
+  [0029 JWT](../adr/0029-jwt-auth.md), [0030 API key](../adr/0030-api-key-auth.md)
 - Subsystem: [subsystems/jwt-auth.md](../subsystems/jwt-auth.md) (JWT + API-key depth)
 - Code: `src/auth/`, `src/admin/adapters/driving/api/login_controller.py`
 - Related: [contexts/admin.md](admin.md)

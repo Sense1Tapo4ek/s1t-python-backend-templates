@@ -109,6 +109,6 @@ event = msgspec.json.decode(entry["payload"], type=VideoStatusEvent)
 ```
 
 See also: [../architecture.md](../architecture.md),
-[../litestar_backend/contexts/media_example.md](../litestar_backend/contexts/media_example.md),
-[../event_microservice/contexts/media_processing.md](../event_microservice/contexts/media_processing.md),
+[../../src/litestar_backend/docs/contexts/media_example.md](../../src/litestar_backend/docs/contexts/media_example.md),
+[../../src/event_microservice/docs/contexts/media_processing.md](../../src/event_microservice/docs/contexts/media_processing.md),
 [../adr/0028-video-status-return-path.md](../adr/0028-video-status-return-path.md).

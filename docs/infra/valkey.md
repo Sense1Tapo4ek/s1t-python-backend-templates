@@ -7,7 +7,7 @@ and operators wiring contexts that need cross-process messaging or caching.
 
 `valkey/valkey:8` (compose service `valkey`). Valkey is an open-source
 Redis-compatible key/value store (wire-identical to Redis 7). It replaced
-the Redis image to avoid licence-change risk; see [ADR 0021](../../adr/0021-redis-to-valkey.md).
+the Redis image to avoid licence-change risk; see [ADR 0021](../adr/0021-redis-to-valkey.md).
 
 The Python client is **`redis.asyncio`** (`redis[hiredis]`), retained
 unchanged — Valkey speaks the Redis RESP protocol, so the client requires

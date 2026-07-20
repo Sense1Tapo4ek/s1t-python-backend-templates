@@ -64,7 +64,7 @@ The SAQ worker serves its monitoring UI (queue stats, per-job detail, retry
 and abort) on host port **8081** — enabled by the `--web` flag on the
 `event_microservice_worker` command. Set `SAQ_WEB_PASSWORD` in `.env` to put
 it behind HTTP Basic auth (user `admin`); empty = no auth, dev only. Details:
-[docs/event_microservice/infra/saq.md](docs/event_microservice/infra/saq.md).
+[src/event_microservice/docs/infra/saq.md](src/event_microservice/docs/infra/saq.md).
 
 ### Try the pipeline
 
@@ -174,10 +174,11 @@ invariants, how-to recipes.
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Both services: contexts, layers, error hierarchy, DI, lifespan, invariants. |
 | [docs/development.md](docs/development.md) | Dev workflow: Taskfile commands, the pre-commit gate, the pinned monorepo toolchain. |
-| [docs/litestar_backend/](docs/litestar_backend/) | Backend references: `contexts/`, `subsystems/` (errors, observability, metrics), `infra/` (dishka, structlog, jinja, postgres, valkey, openapi). |
-| [docs/event_microservice/](docs/event_microservice/) | Worker references: `contexts/media_processing.md`, `infra/` (faststream, saq). |
-| [docs/contract/](docs/contract/) | The `video_uploaded` wire contract both services speak. |
-| [docs/adr/](docs/adr/) | Architecture Decision Records (MADR), one log for the whole repo. |
+| [src/litestar_backend/docs/](src/litestar_backend/docs/index.md) | Backend references: `contexts/`, `subsystems/` (errors, observability, metrics), `infra/` (dishka, structlog, jinja, openapi), service ADRs. |
+| [src/event_microservice/docs/](src/event_microservice/docs/index.md) | Worker references: `contexts/media_processing.md`, `infra/` (faststream, saq), service ADRs. |
+| [docs/contract/](docs/contract/README.md) | Wire contracts: `video_uploaded`, `video_status`, the HTTP error envelope. |
+| [docs/infra/](docs/infra/) | Platform substrate: Postgres, Valkey. |
+| [docs/adr/](docs/adr/README.md) | Project-scope ADRs (MADR); service- and context-scope trees live with their service. |
 
 ---
 

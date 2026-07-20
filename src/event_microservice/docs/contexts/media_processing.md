@@ -56,6 +56,6 @@ down (`wait=True`) on worker stop. Process-pool work functions are module-level
 - Status events published: `video_processing_started` after fan-out
   (OnVideoUploadedUC), `video_processed` before join clear (CompleteJobUC),
   `video_processing_failed` from the SAQ `after_process` hook on terminal
-  failure. See [../../contract/video_status.md](../../contract/video_status.md).
-- Wire contracts: [../../contract/video_uploaded.md](../../contract/video_uploaded.md) (inbound),
-  [../../contract/video_status.md](../../contract/video_status.md) (outbound).
+  failure. See [../../../../docs/contract/video_status.md](../../../../docs/contract/video_status.md).
+- Wire contracts: [../../../../docs/contract/video_uploaded.md](../../../../docs/contract/video_uploaded.md) (inbound),
+  [../../../../docs/contract/video_status.md](../../../../docs/contract/video_status.md) (outbound).

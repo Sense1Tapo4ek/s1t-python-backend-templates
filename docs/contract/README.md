@@ -23,7 +23,7 @@ Cross-cutting rules for stream contracts:
 The HTTP API of `litestar_backend` is NOT documented here: its contract is
 the auto-generated OpenAPI schema (`/schema/openapi.json`, UI at
 `/schema/swagger`). The one hand-rolled piece is the RFC 9457 error envelope:
-[../litestar_backend/contract/errors.md](../litestar_backend/contract/errors.md).
+[errors.md](errors.md).
 
 Any wire-shape change MUST update the matching page in the same PR — drift
 between a contract page and server behaviour is a critical bug.

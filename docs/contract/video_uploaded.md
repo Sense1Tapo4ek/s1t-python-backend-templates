@@ -37,7 +37,7 @@ The consumer reads `payload` and ignores the outer `event_id` (it dedups on the
   so re-processing a video is safe at the completion level.
 - **Idempotency key**: payload `event_id`. The consumer deduplicates by `event_id`
   via `ValkeyInboxStore` (marked AFTER fan-out; see
-  [../event_microservice/subsystems/delivery-guarantees.md](../event_microservice/subsystems/delivery-guarantees.md)).
+  [../../src/event_microservice/docs/subsystems/delivery-guarantees.md](../../src/event_microservice/docs/subsystems/delivery-guarantees.md)).
 - **Versioning**: additive only. A breaking change bumps `version` and ships a
   parallel consumer. Consumers must ignore unknown fields.
 
@@ -60,4 +60,4 @@ event = msgspec.json.decode(entry["payload"], type=VideoUploaded)
 ```
 
 See also: [../architecture.md](../architecture.md),
-[../event_microservice/contexts/media_processing.md](../event_microservice/contexts/media_processing.md).
+[../../src/event_microservice/docs/contexts/media_processing.md](../../src/event_microservice/docs/contexts/media_processing.md).

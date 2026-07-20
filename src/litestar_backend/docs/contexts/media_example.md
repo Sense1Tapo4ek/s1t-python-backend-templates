@@ -170,11 +170,11 @@ key collision).
 - `migrations/media/002-videos-keyset-index.sql` — composite index for keyset pagination
 - `migrations/media/003-videos-audit-softdelete.sql` — audit columns + soft-delete + partial index
 - `migrations/media/004-videos-document-jsonb.sql` — JSONB document column + GIN index
-- [docs/contract/video_status.md](../../contract/video_status.md) — wire contract for the return stream
-- [docs/infra/valkey.md](../infra/valkey.md) — Valkey wiring (outbox relay + Channels backend)
-- [docs/infra/postgres.md](../infra/postgres.md) — SQLAlchemy engine, search_path, migrations
-- [docs/adr/0022-video-pipeline-transport-roles.md](../../adr/0022-video-pipeline-transport-roles.md) — transport role decision
-- [docs/adr/0024-media-example-golden-context.md](../../adr/0024-media-example-golden-context.md) — why this replaced orders + db_example_sddd
-- [docs/adr/0025-standardize-on-sqlalchemy.md](../../adr/0025-standardize-on-sqlalchemy.md) — single DB stack; plain SQLAlchemy here
-- [docs/adr/0028-video-status-return-path.md](../../adr/0028-video-status-return-path.md) — why direct-publish over outbox for the return path
-- [docs/architecture.md](../../architecture.md) — S-DDD layers, DI scopes, how to add a context
+- [docs/contract/video_status.md](../../../../docs/contract/video_status.md) — wire contract for the return stream
+- [docs/infra/valkey.md](../../../../docs/infra/valkey.md) — Valkey wiring (outbox relay + Channels backend)
+- [docs/infra/postgres.md](../../../../docs/infra/postgres.md) — SQLAlchemy engine, search_path, migrations
+- [docs/adr/0022-video-pipeline-transport-roles.md](../../../../docs/adr/0022-video-pipeline-transport-roles.md) — transport role decision
+- [docs/adr/0024-media-example-golden-context.md](../adr/0024-media-example-golden-context.md) — why this replaced orders + db_example_sddd
+- [docs/adr/0025-standardize-on-sqlalchemy.md](../adr/0025-standardize-on-sqlalchemy.md) — single DB stack; plain SQLAlchemy here
+- [docs/adr/0028-video-status-return-path.md](../../../../docs/adr/0028-video-status-return-path.md) — why direct-publish over outbox for the return path
+- [docs/architecture.md](../../../../docs/architecture.md) — S-DDD layers, DI scopes, how to add a context
