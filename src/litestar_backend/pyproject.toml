@@ -5,19 +5,19 @@ description = "Litestar backend service (media_example, auth, admin, db_example_
 requires-python = ">=3.12"
 dependencies = [
     "advanced-alchemy>=1.11",
-    "asyncpg>=0.30",
+    "asyncpg>=0.31",
     "dishka>=1.10.1",
-    "joserfc>=1.0",
-    "litestar[jinja,prometheus]>=2.23.0",
-    "msgspec>=0.18",
-    "orjson>=3.10",
-    "psycopg[binary]>=3.2",
-    "pydantic-settings>=2.12.0",
-    "redis[hiredis]>=5.0",
+    "joserfc>=1.7",
+    "litestar[jinja,prometheus]>=2.24.0",
+    "msgspec>=0.21",
+    "orjson>=3.11",
+    "psycopg[binary]>=3.3",
+    "pydantic-settings>=2.14.0",
+    "redis[hiredis]>=8.0",
     "snitchbot>=1.2.0",
-    "sqlalchemy[asyncio]>=2.0",
-    "structlog>=25.5.0",
-    "uvicorn>=0.40.0",
+    "sqlalchemy[asyncio]>=2.0.51",
+    "structlog>=26.1.0",
+    "uvicorn>=0.51.0",
     "yoyo-migrations>=9.0",
 ]
 
@@ -28,11 +28,11 @@ start_litestar = "root.entrypoints.cli:main"
 dev = [
     # Shared monorepo toolchain: ruff/mypy pinned IDENTICALLY in event_microservice.
     "import-linter>=2.1",
-    "mypy==2.1.0",
+    "mypy==2.3.0",
     "pytest>=9.0.2",
     "pytest-asyncio>=0.24",
     "polyfactory>=2.18",
-    "ruff==0.15.16",
+    "ruff==0.15.22",
     "testcontainers>=4.9",
 ]
 

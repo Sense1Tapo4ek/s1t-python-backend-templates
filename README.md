@@ -118,7 +118,7 @@ rules, error hierarchy, DI and invariants:
 
 | Technology | Where it lives | Use it for |
 |---|---|---|
-| Litestar 2.23+ | `litestar_backend` adapters | HTTP controllers, SSE, guards, exception handlers |
+| Litestar 2.24+ | `litestar_backend` adapters | HTTP controllers, SSE, guards, exception handlers |
 | Dishka | `provider.py` per context, `root/composition` | All wiring; business code never builds its dependencies |
 | Pydantic / pydantic-settings | `ports/driving` schemas, `config.py` | HTTP boundary validation and env config — nowhere else |
 | msgspec | outbox payloads, wire events | Dataclass-shaped wire payloads (faster than json/Pydantic) |

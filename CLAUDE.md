@@ -16,7 +16,7 @@ agent needs that a contributor wouldn't.
 
 ## What this is
 
-Litestar 2.23+ starter template, strict-DDD per bounded context, Dishka DI,
+Litestar 2.24+ starter template, strict-DDD per bounded context, Dishka DI,
 a file-tail admin log viewer (reads the rotating JSONL file the app
 writes), role-based auth (JWT + API keys + static admin token, one composite
 resolver behind `AuthMiddleware`), and a Prometheus metrics endpoint via
@@ -54,7 +54,7 @@ both services + `gitleaks` repo-wide. Full dev-tooling guide:
 [docs/development.md](docs/development.md).
 
 **Toolchain (single source of truth).** Both services pin the SAME dev toolchain --
-`ruff==0.15.16`, `mypy==2.1.0` -- in their respective `pyproject.toml`. Keep the two
+`ruff==0.15.22`, `mypy==2.3.0` -- in their respective `pyproject.toml`. Keep the two
 pins identical; `task check` and pre-commit run ruff/mypy on both services via each
 service's own uv venv, so a drift would surface immediately. Bump both together.
 
