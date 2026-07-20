@@ -6,11 +6,11 @@ from dishka import Provider, Scope, from_context, provide
 from litestar.channels import ChannelsPlugin
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from shared.adapters.driven.outbox_relay import OutboxRelay
 from shared.adapters.driven.postgres import SqlUoW, build_engine, build_sessionmaker
 from shared.app import IClock
 from shared.config import PostgresConfig
 
-from .adapters.driven.outbox_relay import OutboxRelay
 from .adapters.driving.status_consumer import VideoStatusConsumer
 from .adapters.lifespan_manager import MediaLifespanManager
 from .app import (
@@ -24,6 +24,7 @@ from .app import (
 )
 from .config import MediaConfig
 from .ports.driven.channels_feed_publisher import ChannelsFeedPublisher
+from .ports.driven.integration_events import VIDEO_UPLOADED_STREAM
 from .ports.driven.sql_outbox_repo import SqlOutboxRepo
 from .ports.driven.sql_video_repo import SqlVideoRepo
 from .ports.driving.media_facade import MediaFacade
@@ -37,7 +38,7 @@ class MediaDb:
 
 def build_facade(session: AsyncSession, clock: IClock, feed: IFeedPublisher) -> MediaFacade:
     repo = SqlVideoRepo(_session=session)
-    outbox = SqlOutboxRepo(_session=session)
+    outbox = SqlOutboxRepo(_session=session, _clock=clock)
     uow = SqlUoW(_session=session)
     return MediaFacade(
         _upload=UploadVideoUC(_repo=repo, _uow=uow, _outbox=outbox, _clock=clock),
@@ -73,6 +74,7 @@ class MediaInfraProvider(Provider):
         return OutboxRelay(
             _sessionmaker=db.sessionmaker,
             _valkey=valkey,
+            _stream=VIDEO_UPLOADED_STREAM,
             _batch=config.relay_batch,
             _idle_sleep=config.relay_idle_sleep,
         )

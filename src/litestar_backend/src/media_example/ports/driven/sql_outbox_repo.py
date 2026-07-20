@@ -5,6 +5,7 @@ import msgspec
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from shared.app import IClock
 from shared.generics.errors import PortError
 
 from ...app import IOutboxRepo
@@ -16,10 +17,12 @@ from .orm_models import OutboxRow
 @dataclass(slots=True, kw_only=True)
 class SqlOutboxRepo(IOutboxRepo):
     _session: AsyncSession
+    _clock: IClock
 
     async def add(self, event: VideoUploaded) -> None:
         integration = VideoUploadedIntegration(
             event_id=uuid4(),
+            occurred_at=self._clock.now(),
             video_id=event.video_id,
             source_key=event.source_key,
             uploaded_at=event.uploaded_at,

@@ -13,9 +13,9 @@ from shared.adapters.openapi import error_responses
 
 from ...ports.driving import (
     MediaFacade,
+    Page,
     UploadVideoRequest,
     VideoModel,
-    VideoPage,
     VideoReadDTO,
     decode_cursor,
 )
@@ -47,7 +47,7 @@ class VideoController(Controller):
         facade: FromDishka[MediaFacade],
         cursor: Annotated[str | None, Parameter(required=False)] = None,
         limit: Annotated[int, Parameter(ge=1, le=200)] = 50,
-    ) -> VideoPage:
+    ) -> Page[VideoModel]:
         after = None
         if cursor is not None:
             try:

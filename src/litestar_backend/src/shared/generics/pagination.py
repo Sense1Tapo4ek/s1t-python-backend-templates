@@ -3,10 +3,23 @@ import binascii
 from datetime import datetime
 from uuid import UUID
 
+import msgspec
 
-def encode_cursor(uploaded_at: datetime, video_id: UUID) -> str:
-    """Opaque, URL-safe token encoding the keyset position (uploaded_at, id)."""
-    raw = f"{uploaded_at.isoformat()}|{video_id}".encode()
+
+class Page[T](msgspec.Struct, kw_only=True):
+    """Keyset-pagination response envelope: one page + the cursor to the next.
+
+    `next_cursor` is None on the final page; otherwise it encodes the keyset
+    position of the last item and is opaque to clients.
+    """
+
+    items: list[T]
+    next_cursor: str | None
+
+
+def encode_cursor(ts: datetime, item_id: UUID) -> str:
+    """Opaque, URL-safe token encoding the keyset position (timestamp, id)."""
+    raw = f"{ts.isoformat()}|{item_id}".encode()
     return base64.urlsafe_b64encode(raw).decode()
 
 

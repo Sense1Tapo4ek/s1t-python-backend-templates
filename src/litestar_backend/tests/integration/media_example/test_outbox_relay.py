@@ -6,9 +6,12 @@ import pytest
 import redis.asyncio as aioredis
 from sqlalchemy import bindparam, text
 
-from media_example.adapters.driven.outbox_relay import VIDEO_UPLOADED_STREAM, OutboxRelay
-from media_example.ports.driven.integration_events import VideoUploadedIntegration
+from media_example.ports.driven.integration_events import (
+    VIDEO_UPLOADED_STREAM,
+    VideoUploadedIntegration,
+)
 from media_example.ports.driven.orm_models import OutboxRow
+from shared.adapters.driven.outbox_relay import OutboxRelay
 from shared.adapters.driven.postgres import build_engine, build_sessionmaker
 
 _QUERY_SENT = text("SELECT id, sent_at FROM media.outbox_messages WHERE id IN :ids").bindparams(
@@ -39,12 +42,20 @@ async def test_drain_once_publishes_rows_to_stream(
 
     payload_a = msgspec.json.encode(
         VideoUploadedIntegration(
-            event_id=id_a, video_id=video_id, source_key=source_key, uploaded_at=now
+            event_id=id_a,
+            occurred_at=now,
+            video_id=video_id,
+            source_key=source_key,
+            uploaded_at=now,
         )
     )
     payload_b = msgspec.json.encode(
         VideoUploadedIntegration(
-            event_id=id_b, video_id=video_id, source_key=source_key, uploaded_at=now
+            event_id=id_b,
+            occurred_at=now,
+            video_id=video_id,
+            source_key=source_key,
+            uploaded_at=now,
         )
     )
 
@@ -56,7 +67,13 @@ async def test_drain_once_publishes_rows_to_stream(
             s.add(OutboxRow(id=id_a, event_type="video_uploaded", payload=payload_a))
             s.add(OutboxRow(id=id_b, event_type="video_uploaded", payload=payload_b))
 
-        relay = OutboxRelay(_sessionmaker=sm, _valkey=valkey, _batch=10, _idle_sleep=0.1)
+        relay = OutboxRelay(
+            _sessionmaker=sm,
+            _valkey=valkey,
+            _stream=VIDEO_UPLOADED_STREAM,
+            _batch=10,
+            _idle_sleep=0.1,
+        )
 
         # Act
         published = await relay._drain_once()

@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from shared.generics.pagination import Page, encode_cursor
+
 from ...app import (
     DeleteVideoUC,
     ListVideosQuery,
@@ -11,8 +13,7 @@ from ...app import (
     UploadVideoCommand,
     UploadVideoUC,
 )
-from .video_cursor import encode_cursor
-from .video_dto import UploadVideoRequest, VideoModel, VideoPage, to_model
+from .video_dto import UploadVideoRequest, VideoModel, to_model
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -46,7 +47,7 @@ class MediaFacade:
             )
         )
 
-    async def list_page(self, after: tuple[datetime, UUID] | None, limit: int) -> VideoPage:
+    async def list_page(self, after: tuple[datetime, UUID] | None, limit: int) -> Page[VideoModel]:
         """Return one keyset page of videos as wire models, newest-first.
 
         Triggered by GET /videos. `after` is the decoded cursor (the controller
@@ -58,7 +59,7 @@ class MediaFacade:
         next_cursor = (
             encode_cursor(videos[-1].uploaded_at, videos[-1].id) if len(videos) == limit else None
         )
-        return VideoPage(items=[to_model(v) for v in videos], next_cursor=next_cursor)
+        return Page(items=[to_model(v) for v in videos], next_cursor=next_cursor)
 
     async def mark_processing(self, video_id: UUID) -> None:
         """Transition a video to PROCESSING and persist it.

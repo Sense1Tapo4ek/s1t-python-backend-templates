@@ -39,8 +39,11 @@ class TestSqlApiKeyRepo:
         Then the record returns with its role.
         """
         repo = SqlApiKeyRepo(_sessionmaker=sessionmaker)
-        key_id = await repo.create(key_hash="hash-create", name="ci", role=Role.ADMIN)
-        found = await repo.find_active_by_hash("hash-create")
+        # Unique per run: the Docker gate hits the persistent compose DB, so a
+        # fixed hash would collide with rows left by previous runs.
+        key_hash = f"hash-create-{uuid4()}"
+        key_id = await repo.create(key_hash=key_hash, name="ci", role=Role.ADMIN)
+        found = await repo.find_active_by_hash(key_hash)
         assert found is not None
         assert found.id == key_id and found.role == Role.ADMIN and found.name == "ci"
 
@@ -62,9 +65,10 @@ class TestSqlApiKeyRepo:
         Then find/list no longer return it and re-delete is False.
         """
         repo = SqlApiKeyRepo(_sessionmaker=sessionmaker)
-        key_id = await repo.create(key_hash="hash-del", name="temp", role=Role.ADMIN)
+        key_hash = f"hash-del-{uuid4()}"
+        key_id = await repo.create(key_hash=key_hash, name="temp", role=Role.ADMIN)
         assert await repo.soft_delete(key_id) is True
-        assert await repo.find_active_by_hash("hash-del") is None
+        assert await repo.find_active_by_hash(key_hash) is None
         assert all(r.id != key_id for r in await repo.list_active())
         assert await repo.soft_delete(key_id) is False
 

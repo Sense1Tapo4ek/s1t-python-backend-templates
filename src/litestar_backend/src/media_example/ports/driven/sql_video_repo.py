@@ -2,12 +2,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import func, literal, select, tuple_, update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from shared.adapters.driven.postgres import keyset_older_than
 from shared.generics.errors import PortError
 
 from ...app import IVideoRepo
@@ -67,14 +68,9 @@ class SqlVideoRepo(IVideoRepo):
             .limit(limit)
         )
         if after is not None:
-            # Keyset: Postgres compares the row-value (uploaded_at, id) tuple
-            # lexicographically, so `< cursor` returns rows strictly "older" than
-            # the previous page under the (uploaded_at DESC, id DESC) order --
-            # no skips or repeats at timestamp ties. Matches the composite index.
-            stmt = stmt.where(
-                tuple_(VideoRow.uploaded_at, VideoRow.id)
-                < tuple_(literal(after[0]), literal(after[1]))
-            )
+            # Pairs with the (uploaded_at DESC, id DESC) order and the
+            # composite index -- no skips or repeats at timestamp ties.
+            stmt = stmt.where(keyset_older_than(VideoRow.uploaded_at, VideoRow.id, after))
         try:
             result = await self._session.execute(stmt)
         except SQLAlchemyError as exc:

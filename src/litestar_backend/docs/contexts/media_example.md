@@ -20,7 +20,7 @@ POST /videos (202)
   |
   +-- return VideoModel (source_key, status, uploaded_at)
 
-OutboxRelay (lifespan background task, runs forever)
+OutboxRelay (shared generic relay; lifespan background task)
   |
   +-- SQLAlchemy session:  SELECT ... FOR UPDATE SKIP LOCKED
   |     XADD video_uploaded (Valkey Stream)
@@ -57,7 +57,7 @@ live-browser update).
 | Method | Path | Request | Response | Status |
 |:---|:---|:---|:---|:---|
 | POST | `/videos` | `UploadVideoRequest` (source_key, optional `document` JSONB) | `VideoModel` (incl. `document`) | 202 |
-| GET | `/videos` | `?limit=1-200` (default 50), `?cursor=<token>` (optional) | `VideoPage {items, next_cursor}` | 200, 400 on bad cursor |
+| GET | `/videos` | `?limit=1-200` (default 50), `?cursor=<token>` (optional) | `Page[VideoModel] {items, next_cursor}` | 200, 400 on bad cursor |
 | DELETE | `/videos/{id}` | — | — | 204, 404 unknown id |
 | GET | `/videos/feed` | — | SSE stream | 200 |
 
