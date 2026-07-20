@@ -39,7 +39,7 @@ from admin.log.adapters.driving.api import (
     LogsPageController,
 )
 from auth.adapters import AuthMiddleware
-from auth.adapters.driving.api import ApiKeyController, TokenController
+from auth.adapters.driving.api import ApiKeyController, TokenController, UserController
 from auth.app import JwtDisabledError
 from auth.ports.driving import SECURITY_COMPONENTS
 from db_example_litestar.adapters.driving import AuthorController, BookController
@@ -225,6 +225,7 @@ def build_app() -> Litestar:
             LoginController,
             TokenController,
             ApiKeyController,
+            UserController,
             AdminController,
             LogsPageController,
             LogsApiController,

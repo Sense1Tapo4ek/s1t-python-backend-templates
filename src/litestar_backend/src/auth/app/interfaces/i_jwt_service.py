@@ -8,11 +8,14 @@ from ...domain import TokenPair, TokenType, VerifiedToken
 class IJwtService(Protocol):
     """Mint and verify JWTs (one cohesive service, implemented by JwtService)."""
 
-    def issue_pair(self, *, role: Role) -> TokenPair | None:
+    def issue_pair(self, *, role: Role, subject: str | None = None) -> TokenPair | None:
         """Mint a fresh access+refresh pair for `role`.
 
-        Each token carries a unique `jti`. Returns None iff JWT is disabled
-        (no signing secret configured) -- callers map that to a 503.
+        `subject` becomes the `sub` claim when the pair belongs to a stored
+        user (their UUID as a string); None mints a role-only pair with
+        `sub == role.value`. Each token carries a unique `jti`. Returns None
+        iff JWT is disabled (no signing secret configured) -- callers map
+        that to a 503.
         """
         ...
 

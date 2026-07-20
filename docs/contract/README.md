@@ -11,6 +11,7 @@ topic family:
 |:--|:--|:--|
 | [video_uploaded.md](video_uploaded.md) | Valkey Stream `video_uploaded` | `litestar_backend` -> `event_microservice` |
 | [video_status.md](video_status.md) | Valkey Stream `video_status` | `event_microservice` -> `litestar_backend` |
+| [user_registered.md](user_registered.md) | Valkey Stream `user_registered` | `litestar_backend` -> (no consumer yet) |
 
 Cross-cutting rules for stream contracts:
 

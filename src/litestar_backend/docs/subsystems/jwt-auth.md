@@ -39,7 +39,8 @@ HTTP (`auth/adapters/driving/api/token_controller.py`):
 
 | Endpoint | Auth | Result |
 |:---|:---|:---|
-| `POST /auth/token` | `require_role(ADMIN)` | `200` TokenPairResponse |
+| `POST /auth/token` | `require_role(ADMIN)` | `200` TokenPairResponse (role-only pair) |
+| `POST /auth/login` | none (credentials in body) | `200` user-bound pair / `401` uniform on any bad credential |
 | `POST /auth/refresh` | none (body bears the proof) | `200` new pair / `401` invalid |
 | `POST /auth/revoke` | none | `204` (idempotent) |
 
@@ -48,7 +49,11 @@ HTTP (`auth/adapters/driving/api/token_controller.py`):
 
 Claim shape (HS256, `joserfc`): `iss`, `sub`, `role`, `type` (access|refresh),
 `jti`, `iat`, `exp`. `verify` checks `iss` match, `type` match, role parse, and
-`exp` against the clock.
+`exp` against the clock. `sub` is the user's UUID for login-minted pairs and
+`role.value` for role-only pairs (`/auth/token`); only a user-identifying
+`sub` surfaces as `VerifiedToken.subject` / `Principal.subject`. Refresh of a
+user-bound pair re-checks the user is active, so deactivation cuts rotation
+while old tokens are still unexpired.
 
 Env vars (prefix `AUTH_`, `auth/config.py`):
 

@@ -46,14 +46,14 @@ handler runs
 |:---|:---|:---|
 | `AuthMiddleware` | `auth/adapters/auth_middleware.py` | Reads token, attaches `Principal` to scope. Never raises; fail-closed. |
 | `require_role(Role)` | `auth/ports/driving/guards.py` | Litestar guard factory. Cross-context callable, lives in `ports/driving/`. |
-| `AuthFacade` | `auth/ports/driving/` | `authenticate`, `issue_tokens`, `refresh_tokens`, `revoke_token`, and the api-key methods. |
+| `AuthFacade` | `auth/ports/driving/` | `authenticate`, token methods, api-key methods, and the user methods (`register`, `login`, `list_users`, `deactivate_user`). |
 | `ITokenResolver` | `auth/app/interfaces/` | Resolver contract. `CompositeTokenResolver` chains JWT + API-key + static. |
-| `AuthLifespanManager` | `auth/adapters/auth_lifespan_manager.py` | Runs the auth Postgres migration on startup (see Database). |
+| `AuthLifespanManager` | `auth/adapters/auth_lifespan_manager.py` | Runs the auth migrations on startup and owns the `user_registered` outbox relay task. |
 | `Role`, `Principal` | `shared/domain/auth/` | Cross-cutting kernel types. |
 
 App layer is split `interfaces/` (Protocols) + `use_cases/` (one UC per
 action: authenticate, issue/refresh/revoke tokens, generate/list/revoke
-api-keys).
+api-keys, register/login users, list/deactivate users).
 
 ### Endpoints
 
@@ -61,6 +61,10 @@ api-keys).
 - `POST /admin/logout` — clears cookie, 303 → `/admin/login`.
 - `POST /auth/{token,refresh,revoke}` — JWT pair mint / rotate / revoke. `TokenController`.
 - `/auth/api-keys` CRUD (POST, GET, DELETE) — ADMIN-guarded. `ApiKeyController`.
+- `POST /auth/{register,login}`, `GET /auth/me`, `GET /auth/users` (keyset
+  `Page[UserResponse]`), `DELETE /auth/users/{id}` — `UserController`.
+  Registration is open; `/me` needs any authenticated role; the users admin
+  surface is ADMIN-guarded.
 
 Endpoint contracts (status codes, payload shapes, claim layout) live in
 [subsystems/jwt-auth.md](../subsystems/jwt-auth.md).
@@ -86,8 +90,11 @@ sniffs `Accept` and `path.startswith("/admin")`.
 
 ## Database
 
-The context owns a Postgres schema (`auth`, default) holding the `api_keys`
-table — SHA-256 hashes only, soft-deleted on revocation. `AuthLifespanManager`
+The context owns a Postgres schema (`auth`, default) holding `api_keys`
+(SHA-256 hashes only), `users` (argon2id `password_hash`, role, soft-delete —
+the active-email unique index is partial, so a deactivated address can
+re-register), and `outbox_messages` (the `user_registered` staging table,
+drained by the shared `OutboxRelay`). `AuthLifespanManager`
 applies `migrations/auth/` on startup **before** the alchemy and media managers
 (see [architecture.md §5](../../../../docs/architecture.md#5-lifespan--startup-ordering)).
 The JWT denylist is Valkey-backed, not Postgres. Schema-per-context details:
@@ -121,7 +128,11 @@ AUTH_POOL_SIZE=5                   # SQLAlchemy pool for the auth engine
   pathological-length sinks.
 - No CSRF token on the login form. Token knowledge is the gate; once
   per-user sessions land, CSRF protection becomes mandatory.
-- No rate-limit on `/admin/login`. Add at the proxy or as middleware.
+- No rate-limit on `/admin/login`, `/auth/login`, or `/auth/register`. Add at
+  the proxy or as middleware before real traffic.
+- Deactivating a user blocks login and refresh immediately; already-issued
+  access tokens live out their TTL (<= 15 min). Unknown-email logins burn a
+  dummy argon2 verify so timing does not leak account existence.
 
 ## Recipes
 

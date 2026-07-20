@@ -16,3 +16,4 @@ class VerifiedToken:
     role: Role
     jti: str
     expires_at: datetime
+    subject: str | None = None  # JWT `sub` when it names a stored user id

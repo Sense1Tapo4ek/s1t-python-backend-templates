@@ -20,3 +20,4 @@ Numbering is per-tree; relocated ADRs keep their historical numbers
 | [0029 JWT auth](0029-jwt-auth.md) | accepted | own |
 | [0030 API-key auth](0030-api-key-auth.md) | accepted | own |
 | [0031 Shared generic patterns](0031-shared-generic-patterns.md) | accepted | own |
+| [0032 User identity model](0032-user-identity-model.md) | accepted | own |
