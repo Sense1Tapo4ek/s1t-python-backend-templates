@@ -22,4 +22,4 @@ class JwtTokenResolver:
             return None
         if await self._denylist.contains(verified.jti):
             return None
-        return Principal(role=verified.role, token_id=verified.jti)
+        return Principal(role=verified.role, token_id=verified.jti, subject=verified.subject)

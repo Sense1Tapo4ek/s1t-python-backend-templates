@@ -11,4 +11,5 @@ class Role(StrEnum):
     """
 
     UNKNOWN = "unknown"
+    USER = "user"
     ADMIN = "admin"

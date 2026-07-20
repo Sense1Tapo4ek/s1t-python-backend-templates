@@ -9,6 +9,16 @@ from shared.domain.auth import Role
 _FAR = datetime(2030, 1, 1, tzinfo=UTC)
 
 
+class _Users:
+    def __init__(self, *, active: bool = True) -> None:
+        self._active = active
+        self.checked: list[object] = []
+
+    async def is_active(self, user_id) -> bool:
+        self.checked.append(user_id)
+        return self._active
+
+
 class _Clock:
     def now(self) -> datetime:
         return datetime(2026, 1, 1, tzinfo=UTC)
@@ -23,8 +33,10 @@ class _Jwt:
         self.issue_calls: list[Role] = []
         self.verify_types: list[TokenType | None] = []
 
-    def issue_pair(self, *, role: Role) -> TokenPair | None:
+    def issue_pair(self, *, role: Role, subject: str | None = None) -> TokenPair | None:
         self.issue_calls.append(role)
+        self.issue_subjects: list[str | None] = getattr(self, "issue_subjects", [])
+        self.issue_subjects.append(subject)
         return self._pair
 
     def verify(self, token, *, expected_type=None):
@@ -67,7 +79,7 @@ async def test_refresh_rotates_and_revokes_old() -> None:
     new_pair = TokenPair(access="a2", refresh="r2", expires_in=900)
     jwt = _Jwt(pair=new_pair, verified=VerifiedToken(role=Role.ADMIN, jti="old", expires_at=_FAR))
     denylist = _Denylist()
-    uc = RefreshTokensUC(_jwt=jwt, _denylist=denylist, _clock=_Clock())
+    uc = RefreshTokensUC(_jwt=jwt, _denylist=denylist, _clock=_Clock(), _users=_Users())
 
     result = await uc("refresh-token")
 
@@ -80,7 +92,9 @@ async def test_refresh_rotates_and_revokes_old() -> None:
 async def test_refresh_rejects_invalid_token() -> None:
     """Given an unverifiable refresh token, When RefreshTokensUC runs, Then None and no rotation."""
     denylist = _Denylist()
-    uc = RefreshTokensUC(_jwt=_Jwt(verified=None), _denylist=denylist, _clock=_Clock())
+    uc = RefreshTokensUC(
+        _jwt=_Jwt(verified=None), _denylist=denylist, _clock=_Clock(), _users=_Users()
+    )
     assert await uc("garbage") is None
     assert denylist.added == []
 
@@ -90,7 +104,7 @@ async def test_refresh_rejects_already_denylisted() -> None:
     """Given a refresh token whose jti is already denylisted (reuse), When refreshing, Then None."""
     jwt = _Jwt(verified=VerifiedToken(role=Role.ADMIN, jti="reused", expires_at=_FAR))
     denylist = _Denylist(denied={"reused"})
-    uc = RefreshTokensUC(_jwt=jwt, _denylist=denylist, _clock=_Clock())
+    uc = RefreshTokensUC(_jwt=jwt, _denylist=denylist, _clock=_Clock(), _users=_Users())
     assert await uc("reused-refresh") is None
 
 
@@ -113,3 +127,49 @@ async def test_revoke_is_noop_for_invalid_token() -> None:
     uc = RevokeTokenUC(_jwt=_Jwt(verified=None), _denylist=denylist, _clock=_Clock())
     await uc("garbage")
     assert denylist.added == []
+
+
+@pytest.mark.asyncio
+async def test_refresh_of_deactivated_user_is_rejected() -> None:
+    """Given a refresh token whose subject is a deactivated user,
+    When refreshing, Then None -- deactivation cuts the refresh path."""
+    verified = VerifiedToken(
+        role=Role.USER,
+        jti="jti-user",
+        expires_at=_FAR,
+        subject="00000000-0000-0000-0000-000000000001",
+    )
+    jwt = _Jwt(pair=TokenPair(access="a", refresh="r", expires_in=900), verified=verified)
+    users = _Users(active=False)
+    uc = RefreshTokensUC(_jwt=jwt, _denylist=_Denylist(), _clock=_Clock(), _users=users)
+
+    assert await uc("some-refresh") is None
+    assert len(users.checked) == 1
+
+
+@pytest.mark.asyncio
+async def test_refresh_of_active_user_reissues_with_same_subject() -> None:
+    """Given an active user's refresh token, When refreshing, Then the new
+    pair keeps the subject."""
+    subject = "00000000-0000-0000-0000-000000000002"
+    verified = VerifiedToken(role=Role.USER, jti="jti-user2", expires_at=_FAR, subject=subject)
+    jwt = _Jwt(pair=TokenPair(access="a", refresh="r", expires_in=900), verified=verified)
+    uc = RefreshTokensUC(_jwt=jwt, _denylist=_Denylist(), _clock=_Clock(), _users=_Users())
+
+    pair = await uc("some-refresh")
+
+    assert pair is not None
+    assert jwt.issue_subjects == [subject]
+
+
+@pytest.mark.asyncio
+async def test_refresh_role_only_token_skips_user_check() -> None:
+    """Given an admin role-only refresh token (no subject), When refreshing,
+    Then the user repo is never consulted."""
+    verified = VerifiedToken(role=Role.ADMIN, jti="jti-admin", expires_at=_FAR)
+    jwt = _Jwt(pair=TokenPair(access="a", refresh="r", expires_in=900), verified=verified)
+    users = _Users()
+    uc = RefreshTokensUC(_jwt=jwt, _denylist=_Denylist(), _clock=_Clock(), _users=users)
+
+    assert await uc("some-refresh") is not None
+    assert users.checked == []

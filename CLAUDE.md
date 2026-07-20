@@ -18,8 +18,8 @@ agent needs that a contributor wouldn't.
 
 Litestar 2.24+ starter template, strict-DDD per bounded context, Dishka DI,
 a file-tail admin log viewer (reads the rotating JSONL file the app
-writes), role-based auth (JWT + API keys + static admin token, one composite
-resolver behind `AuthMiddleware`), and a Prometheus metrics endpoint via
+writes), role-based auth (registered users with argon2id passwords, JWT + API keys +
+static admin token, one composite resolver behind `AuthMiddleware`), and a Prometheus metrics endpoint via
 `prometheus_client` multiprocess mode. Python 3.12+, managed with `uv`.
 Logs go to stdout and to `LOG_FILE_PATH`; the admin UI tails that file.
 

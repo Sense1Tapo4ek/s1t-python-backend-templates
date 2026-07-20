@@ -1,11 +1,23 @@
-from .errors import ApiKeyNotFound, JwtDisabledError
-from .interfaces import IApiKeyRepo, IDenylist, IJwtCodec, IJwtService, ITokenResolver
+from .errors import ApiKeyNotFound, JwtDisabledError, UserNotFound
+from .interfaces import (
+    IApiKeyRepo,
+    IDenylist,
+    IJwtCodec,
+    IJwtService,
+    IPasswordHasher,
+    ITokenResolver,
+    IUserRepo,
+)
 from .use_cases import (
     AuthenticateUc,
+    DeactivateUserUC,
     GenerateApiKeyUC,
     IssueTokensUC,
     ListApiKeysUC,
+    ListUsersUC,
+    LoginUserUC,
     RefreshTokensUC,
+    RegisterUserUC,
     RevokeApiKeyUC,
     RevokeTokenUC,
 )
@@ -13,16 +25,23 @@ from .use_cases import (
 __all__ = [
     "ApiKeyNotFound",
     "AuthenticateUc",
+    "DeactivateUserUC",
     "GenerateApiKeyUC",
     "IApiKeyRepo",
     "IDenylist",
     "IJwtCodec",
     "IJwtService",
+    "IPasswordHasher",
     "ITokenResolver",
+    "IUserRepo",
     "IssueTokensUC",
     "JwtDisabledError",
     "ListApiKeysUC",
+    "ListUsersUC",
+    "LoginUserUC",
     "RefreshTokensUC",
+    "RegisterUserUC",
     "RevokeApiKeyUC",
     "RevokeTokenUC",
+    "UserNotFound",
 ]

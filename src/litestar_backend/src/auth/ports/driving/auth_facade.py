@@ -1,18 +1,25 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from shared.domain.auth import Principal, Role
+from shared.generics.pagination import Page, encode_cursor
 
 from ...app import (
     AuthenticateUc,
+    DeactivateUserUC,
     GenerateApiKeyUC,
     IssueTokensUC,
     ListApiKeysUC,
+    ListUsersUC,
+    LoginUserUC,
     RefreshTokensUC,
+    RegisterUserUC,
     RevokeApiKeyUC,
     RevokeTokenUC,
 )
 from ...domain import ApiKeyRecord, TokenPair
+from .user_dto import UserResponse
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -31,6 +38,10 @@ class AuthFacade:
     _generate_api_key_uc: GenerateApiKeyUC
     _list_api_keys_uc: ListApiKeysUC
     _revoke_api_key_uc: RevokeApiKeyUC
+    _register_uc: RegisterUserUC
+    _login_uc: LoginUserUC
+    _list_users_uc: ListUsersUC
+    _deactivate_user_uc: DeactivateUserUC
 
     async def authenticate(self, token: str) -> Principal | None:
         """Verify a bearer token (JWT or static admin) and return its Principal.
@@ -82,3 +93,43 @@ class AuthFacade:
         """Soft-delete (revoke) an API key. Raises ApiKeyNotFound (404) if no
         active key with that id exists."""
         await self._revoke_api_key_uc(api_key_id)
+
+    async def register(self, *, email: str, password: str) -> UserResponse:
+        """Create a Role.USER account; stages `user_registered` atomically.
+
+        Raises:
+            EmailTakenError: an active account already uses this email (409).
+            PortError: storage failure (503).
+        """
+        return UserResponse.of(await self._register_uc(email=email, password=password))
+
+    async def login(self, *, email: str, password: str) -> TokenPair | None:
+        """Verify credentials and mint a user-bound JWT pair.
+
+        Returns None for ANY bad credential (unknown email, wrong password,
+        deactivated account) -- the controller maps None to one uniform 401.
+
+        Raises:
+            JwtDisabledError: no signing secret configured (503).
+            PortError: storage failure (503).
+        """
+        return await self._login_uc(email=email, password=password)
+
+    async def list_users(
+        self, after: tuple[datetime, UUID] | None, limit: int
+    ) -> Page[UserResponse]:
+        """Active users, newest-first keyset page; admin actor only.
+
+        `after` is the decoded cursor (controller owns decoding + the 400);
+        `next_cursor` is set only when the page is full.
+        """
+        users = await self._list_users_uc(after, limit)
+        next_cursor = (
+            encode_cursor(users[-1].created_at, users[-1].id) if len(users) == limit else None
+        )
+        return Page(items=[UserResponse.of(u) for u in users], next_cursor=next_cursor)
+
+    async def deactivate_user(self, user_id: UUID) -> None:
+        """Soft-delete a user: blocks login and refresh immediately; already
+        issued access tokens live out their TTL. Raises UserNotFound (404)."""
+        await self._deactivate_user_uc(user_id)

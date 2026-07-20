@@ -19,15 +19,15 @@ class JwtService:
     _access_ttl: int
     _refresh_ttl: int
 
-    def issue_pair(self, *, role: Role) -> TokenPair | None:
+    def issue_pair(self, *, role: Role, subject: str | None = None) -> TokenPair | None:
         now = self._clock.now()
         access = self._codec.encode(
-            _HEADER, self._claims(role, TokenType.ACCESS, self._access_ttl, now)
+            _HEADER, self._claims(role, TokenType.ACCESS, self._access_ttl, now, subject)
         )
         if access is None:
             return None  # JWT disabled
         refresh = self._codec.encode(
-            _HEADER, self._claims(role, TokenType.REFRESH, self._refresh_ttl, now)
+            _HEADER, self._claims(role, TokenType.REFRESH, self._refresh_ttl, now, subject)
         )
         if refresh is None:
             return None
@@ -53,14 +53,18 @@ class JwtService:
         expires_at = datetime.fromtimestamp(exp, tz=UTC)
         if expires_at <= self._clock.now():
             return None
-        return VerifiedToken(role=role, jti=jti, expires_at=expires_at)
+        sub = claims.get("sub")
+        # A role-only pair carries sub == role.value; expose subject only when
+        # it actually identifies a stored user.
+        subject = sub if isinstance(sub, str) and sub != role.value else None
+        return VerifiedToken(role=role, jti=jti, expires_at=expires_at, subject=subject)
 
     def _claims(
-        self, role: Role, token_type: TokenType, ttl: int, now: datetime
+        self, role: Role, token_type: TokenType, ttl: int, now: datetime, subject: str | None
     ) -> dict[str, object]:
         return {
             "iss": self._issuer,
-            "sub": role.value,
+            "sub": subject if subject is not None else role.value,
             "role": role.value,
             "type": token_type.value,
             "jti": uuid4().hex,

@@ -12,6 +12,7 @@ dependencies = [
     "msgspec>=0.21",
     "orjson>=3.11",
     "psycopg[binary]>=3.3",
+    "pwdlib[argon2]>=0.2",
     "pydantic-settings>=2.14.0",
     "redis[hiredis]>=8.0",
     "snitchbot>=1.2.0",

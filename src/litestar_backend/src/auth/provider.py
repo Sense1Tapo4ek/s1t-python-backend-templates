@@ -1,9 +1,11 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
+import redis.asyncio as aioredis
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
+from shared.adapters.driven.outbox_relay import OutboxRelay
 from shared.adapters.driven.postgres import build_engine, build_sessionmaker
 from shared.app import IClock
 from shared.config import PostgresConfig
@@ -12,28 +14,37 @@ from .adapters.auth_lifespan_manager import AuthLifespanManager
 from .adapters.driven import JwtCodec, JwtKey, build_jwt_key
 from .app import (
     AuthenticateUc,
+    DeactivateUserUC,
     GenerateApiKeyUC,
     IApiKeyRepo,
     IDenylist,
     IJwtCodec,
     IJwtService,
+    IPasswordHasher,
     IssueTokensUC,
     ITokenResolver,
+    IUserRepo,
     ListApiKeysUC,
+    ListUsersUC,
+    LoginUserUC,
     RefreshTokensUC,
+    RegisterUserUC,
     RevokeApiKeyUC,
     RevokeTokenUC,
 )
 from .config import AuthConfig
 from .ports.driven import (
     ApiKeyResolver,
+    Argon2Hasher,
     CompositeTokenResolver,
     JwtService,
     JwtTokenResolver,
     SqlApiKeyRepo,
+    SqlUserRepo,
     StaticTokenResolver,
     ValkeyDenylist,
 )
+from .ports.driven.integration_events import USER_REGISTERED_STREAM
 from .ports.driving import AuthFacade
 
 
@@ -86,8 +97,23 @@ class AuthProvider(Provider):
         return SqlApiKeyRepo(_sessionmaker=db.sessionmaker)
 
     @provide
-    def lifespan(self, pg: PostgresConfig) -> AuthLifespanManager:
-        return AuthLifespanManager(yoyo_url=pg.yoyo_url)
+    def user_repo(self, db: AuthDb, clock: IClock) -> IUserRepo:
+        return SqlUserRepo(_sessionmaker=db.sessionmaker, _clock=clock)
+
+    hasher = provide(Argon2Hasher, provides=IPasswordHasher)
+
+    @provide
+    def lifespan(
+        self, pg: PostgresConfig, db: AuthDb, valkey: aioredis.Redis
+    ) -> AuthLifespanManager:
+        # The relay is built inline, NOT provided as OutboxRelay: media's
+        # provider already provides that type and Dishka resolves by type.
+        relay = OutboxRelay(
+            _sessionmaker=db.sessionmaker,
+            _valkey=valkey,
+            _stream=USER_REGISTERED_STREAM,
+        )
+        return AuthLifespanManager(yoyo_url=pg.yoyo_url, relay=relay)
 
     @provide
     def token_resolver(
@@ -109,6 +135,10 @@ class AuthProvider(Provider):
     issue_uc = provide(IssueTokensUC)
     refresh_uc = provide(RefreshTokensUC)
     revoke_uc = provide(RevokeTokenUC)
+    register_uc = provide(RegisterUserUC)
+    login_uc = provide(LoginUserUC)
+    list_users_uc = provide(ListUsersUC)
+    deactivate_user_uc = provide(DeactivateUserUC)
     generate_api_key_uc = provide(GenerateApiKeyUC)
     list_api_keys_uc = provide(ListApiKeysUC)
     revoke_api_key_uc = provide(RevokeApiKeyUC)
