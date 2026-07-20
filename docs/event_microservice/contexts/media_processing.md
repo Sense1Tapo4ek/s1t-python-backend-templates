@@ -23,15 +23,16 @@ saq_worker: each job --> run via its model --> facade.complete_job --> SADD join
 | `plagiarism` | thread pool | `run_in_executor(thread_pool, plagiarism_blocking, ...)` |
 | `transcode` | process pool | `run_in_executor(process_pool, transcode_cpu, ...)` |
 
-Pools are built once in the SAQ `startup` hook (`adapters/driven/saq_setup.py`),
-stored in `ctx`, and shut down (`wait=True`) on worker stop. Process-pool work
-functions are module-level (picklable).
+Pools are built once in the SAQ `startup` hook (`root/entrypoints/saq_worker.py`,
+via the builders in `adapters/driven/executors.py`), stored in `ctx`, and shut
+down (`wait=True`) on worker stop. Process-pool work functions are module-level
+(picklable).
 
 ## Public surface
 
 - Inbound schema: `ports/driving/VideoUploadedSchema` (OWN; never imports the
   producer's integration event).
-- Facade: `MediaProcessingFacade.on_uploaded(video_id)` / `.complete_job(video_id, kind)`.
+- Facade: `MediaProcessingFacade.on_uploaded(video_id, event_id)` / `.complete_job(video_id, kind)`.
 - Config: `MEDIA_PROCESSING_` (`worker_concurrency`,
   `thread_pool_size`, `process_pool_size`, `fake_work_seconds`,
   `transcode_iterations`, `join_ttl_seconds`, `job_retries`,

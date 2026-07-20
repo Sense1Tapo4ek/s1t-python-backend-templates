@@ -16,37 +16,40 @@ problem-details format. There is one body shape across all status codes.
 
 ```json
 {
-  "status": 409,
-  "type": "urn:litestar-base:error:empty-item-name",
-  "title": "Conflict",
-  "detail": "item name must not be empty",
-  "instance": "/db-example-sddd/pooled/items"
+  "status": 404,
+  "type": "urn:litestar-base:error:video-not-found",
+  "title": "Not Found",
+  "detail": "video 3fa85f64-5717-4562-b3fc-2c963f66afa6 not found",
+  "instance": "/videos/3fa85f64-5717-4562-b3fc-2c963f66afa6"
 }
 ```
 
 There are two body shapes behind the single media type, distinguished by the
 presence of `type`:
 
-- **Application errors** (`LayerError` subtypes -> 409/404/422/503/500):
-  `type` present, `title` = short status phrase (`"Conflict"`, `"Not Found"`),
-  `detail` = the domain/app message on 4xx (a fixed generic string on 5xx),
+- **Typed errors** (`type` + `instance` present): every `LayerError` subtype
+  (409/404/422/503/500) plus the auth errors (401 `unauthorized`, 403
+  `forbidden`). `title` = short status phrase (`"Conflict"`, `"Not Found"`),
+  `detail` = the domain/app/auth message on 4xx (a fixed generic string on 5xx),
   `instance` = the request path.
-- **Framework/validation errors** (400 and other raw `HTTPException`s):
-  **no `type` key, no `instance` key**. `title` carries the offending field
-  message (e.g. ``"Object missing required field `name`"``) and `detail` is the
-  generic status phrase (`"Bad Request"`). There is no `extra`/`errors` object.
+- **Raw validation errors** (400, the unconverted `HTTPException` path):
+  **no `type`, no `instance`**. `title` is a generic
+  ``"Validation failed for <METHOD> <path>"`` summary, `detail` is the status
+  phrase (`"Bad Request"`), and an `extra` array carries one
+  `{message, key, source}` object per offending field.
 
 | Field | Semantics |
 |:---|:---|
-| `type` | Stable, **non-dereferenceable** URN identifying the problem class. Match on it as a string; do **not** HTTP-fetch it. **Present only on application errors** — absent on framework/validation errors. See the registry below. |
-| `title` | Short human summary. On application errors it is the status phrase (`"Conflict"`, `"Not Found"`). On a framework/validation error it carries the offending **field message** instead. |
+| `type` | Stable, **non-dereferenceable** URN identifying the problem class. Match on it as a string; do **not** HTTP-fetch it. **Present on typed errors** (`LayerError` + auth 401/403) — absent on raw validation (400). See the registry below. |
+| `title` | Short human summary. On typed errors it is the status phrase (`"Conflict"`, `"Not Found"`, `"Unauthorized"`). On a raw validation error (400) it is a generic `"Validation failed for <METHOD> <path>"` summary; the per-field messages live in `extra`. |
 | `status` | The HTTP status code, repeated in the body. Always present. |
-| `detail` | On application 4xx: the domain/app message. On 5xx: a fixed generic string — internals never leak. On framework/validation errors: the generic status phrase (e.g. `"Bad Request"`). |
-| `instance` | The request path of this occurrence. Present on application errors; **absent on framework/validation errors**. |
+| `detail` | On typed 4xx: the domain/app/auth message. On 5xx: a fixed generic string — internals never leak. On raw validation (400): the generic status phrase (e.g. `"Bad Request"`). |
+| `instance` | The request path of this occurrence. Present on typed errors (incl. 401/403); **absent on raw validation (400)**. |
+| `extra` | Present **only on raw validation errors (400)**: an array of `{message, key, source}` objects, one per offending field. Absent on typed errors. |
 
-Branch your logic on `status` (always present) and, for application errors,
-`type`. `type` is absent on framework/validation errors — do not rely on it for
-400. Never parse `detail` or `title` — they are prose and may change.
+Branch your logic on `status` (always present) and, for typed errors, `type`.
+`type` is absent on raw validation (400) — do not rely on it there; read
+`extra` instead. Never parse `detail` or `title` — they are prose and may change.
 
 ## Observable status codes
 
@@ -64,13 +67,19 @@ Branch your logic on `status` (always present) and, for application errors,
 (The 4xx/503 wordings mirror `_ERROR_DESCRIPTIONS` in
 `src/shared/adapters/openapi.py`, the source the OpenAPI schema uses.)
 
+409 (`DomainError`) and 422 (non-NotFound `AppError`) are defined by the error
+model but are not emitted by any built-in endpoint today -- the bundled
+endpoints surface 400/401/403/404 and, under failure, 503/500. A new context
+that raises a domain conflict or an unprocessable `AppError` makes them
+observable; the envelope shape is identical (`type` + `instance` present).
+
 ## `type` URN registry
 
 Two conventions produce the `type` value:
 
 - **Application errors** (`LayerError` subtypes): derived from the exception
   class name, kebab-cased, under `urn:litestar-base:error:`. Example:
-  `EmptyItemName` -> `urn:litestar-base:error:empty-item-name`. 5xx use fixed
+  `VideoNotFound` -> `urn:litestar-base:error:video-not-found`. 5xx use fixed
   slugs `:service-unavailable` (503) and `:internal` (500).
 - **Framework errors**: hand-written stable slugs so the framework class name
   never leaks. Authentication/authorization use
@@ -82,41 +91,48 @@ add new URNs; existing ones stay stable.
 
 ## Worked examples
 
-409 — domain conflict (application error: `type` + `instance` present):
+404 — resource not found (application error: `type` + `instance` present):
 
 ```json
 {
-  "status": 409,
-  "type": "urn:litestar-base:error:empty-item-name",
-  "title": "Conflict",
-  "detail": "item name must not be empty",
-  "instance": "/db-example-sddd/pooled/items"
+  "status": 404,
+  "type": "urn:litestar-base:error:video-not-found",
+  "title": "Not Found",
+  "detail": "video 3fa85f64-5717-4562-b3fc-2c963f66afa6 not found",
+  "instance": "/videos/3fa85f64-5717-4562-b3fc-2c963f66afa6"
 }
 ```
 
-400 — validation failure (framework error: no `type`, no `instance`; the field
-message lands in `title`, `detail` is the generic status phrase):
+400 — validation failure (raw validation: no `type`, no `instance`; the
+per-field messages land in `extra`, `title` is a generic summary):
 
 ```json
 {
   "status": 400,
-  "title": "Object missing required field `name`",
-  "detail": "Bad Request"
+  "title": "Validation failed for POST /videos",
+  "detail": "Bad Request",
+  "extra": [
+    {
+      "message": "Object missing required field `source_key`",
+      "key": "data",
+      "source": "body"
+    }
+  ]
 }
 ```
 
 ## Pseudo-client
 
 ```python
-resp = await client.post("/db-example-sddd/pooled/items", json=payload)
+resp = await client.delete(f"/videos/{video_id}")
 if resp.status_code >= 400:
     problem = resp.json()           # application/problem+json
     code = problem["status"]        # always present
-    kind = problem.get("type")      # present only on application errors
-    if code == 409 and kind == "urn:litestar-base:error:empty-item-name":
-        ...                         # handle the specific conflict
+    kind = problem.get("type")      # present only on typed errors
+    if code == 404 and kind == "urn:litestar-base:error:video-not-found":
+        ...                         # the video does not exist (or was deleted)
     elif code == 400:
-        ...                         # validation: no `type`; show problem["title"]
+        ...                         # validation: no `type`; read problem["extra"]
     elif code == 503:
         ...                         # retry / back off; body is generic
     else:

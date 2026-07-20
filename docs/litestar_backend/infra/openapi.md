@@ -15,7 +15,7 @@ OpenAPIConfig(
     use_handler_docstrings=True,     # handler docstring -> operation description
     contact=Contact(...),
     servers=[Server(url="/", ...)],
-    tags=[Tag(name=..., description=...), ...],   # the 6 groups below
+    tags=[Tag(name=..., description=...), ...],   # the 7 groups below
 )
 ```
 
@@ -33,17 +33,18 @@ UIs (served unauthenticated):
 
 Every controller sets `tags = [...]  # noqa: RUF012`; nothing falls in the
 implicit `default` bucket. The Prometheus `/metrics` controller is built
-dynamically (`metrics/adapters/driving/prom_controller.py`) and gets its tag
-through the `attrs` dict.
+dynamically (`shared/adapters/metrics.py::build_prom_controller`) and gets its
+tag through the `attrs` dict.
 
 | Tag | Endpoints |
 |:---|:---|
 | `Health` | `/health`, `/health/ready`, `/ping` |
-| `db_example (SDDD)` | `/db-example-sddd/{pooled,per-request}/items` |
+| `Auth` | `/auth/token`, `/auth/refresh`, `/auth/revoke`, `/auth/api-keys` |
 | `db_example (Alchemy)` | `/db-example-litestar/{authors,books}` |
 | `Admin Logs` | `/api/v1/admin/logs` (+ `/older`, `/stream`, `/export`) |
-| `Metrics` | `/metrics`, `/metrics-demo` |
+| `Metrics` | `/metrics` |
 | `Admin UI` | `/admin/`, `/admin/login`, `/admin/logout`, `/admin/logs` |
+| `media` | `/videos` (+ `/videos/{id}`), `/videos/feed` |
 
 `Admin UI` covers server-rendered HTML / redirects; those pages stay in the
 schema (not hidden) but carry only a one-line description, no error responses.
@@ -52,9 +53,9 @@ schema (not hidden) but carry only a one-line description, no error responses.
 
 - **Descriptions** come from the handler docstring (`use_handler_docstrings=True`);
   **summaries** from the `summary=` kwarg on the route decorator.
-- **Field docs/examples** live on the schema types: sddd `ItemModel` uses
-  `msgspec.Meta(description=, examples=)`; the Admin Logs schemas use pydantic
-  `Field(description=, examples=)`.
+- **Field docs/examples** live on the schema types: media_example `VideoModel`
+  uses `msgspec.Meta(description=, examples=)`; the Admin Logs schemas use
+  pydantic `Field(description=, examples=)`.
 - **Error responses** are documented with one shared helper,
   `src/shared/adapters/openapi.py::error_responses(*codes)`, which maps each
   status to a `ResponseSpec` over the `ProblemDetail` struct, media type
@@ -64,13 +65,13 @@ schema (not hidden) but carry only a one-line description, no error responses.
 ```python
 from shared.adapters.openapi import error_responses
 
-@get("/{item_id:uuid}", summary="Get an item by id", responses=error_responses(404, 503))
+@delete("/{video_id:uuid}", summary="Soft-delete a video", responses=error_responses(404, 503))
 ```
 
 Only codes an endpoint can actually emit are documented (the status mapping
 lives in the converters in `shared/adapters/problem_details.py`, wired in
-`src/root/composition/app.py`): DomainError->409, ItemNotFound /
-advanced-alchemy NotFoundError->404, validation->400, PortError->503,
+`src/root/composition/app.py`): DomainError->409, NotFoundError subtypes
+(e.g. `VideoNotFound`) / advanced-alchemy NotFoundError->404, validation->400, PortError->503,
 NotAuthorized->401, PermissionDenied->403. App-wide there is no reachable 422
 path declared on an endpoint, so it is not documented. The full wire contract
 is [../contract/errors.md](../contract/errors.md).
@@ -83,7 +84,7 @@ is [../contract/errors.md](../contract/errors.md).
   must match the per-controller `tags=` byte-for-byte, or an operation lands in
   an undeclared group. `tests/e2e/root/entrypoints/test_openapi_schema.py`
   guards this (declared tags, zero untagged operations, documented operations,
-  ItemModel examples).
+  VideoModel examples).
 - **Error docs follow runtime.** When a handler's reachable status codes change,
   update its `responses=` in the same change.
 
@@ -99,7 +100,7 @@ is [../contract/errors.md](../contract/errors.md).
 - **advanced-alchemy field docs are limited.** `SQLAlchemyDTO` (advanced-alchemy
   1.11) has no clean per-field OpenAPI description/example hook, so the
   `db_example (Alchemy)` schemas are documented at the operation level only.
-- **MsgspecDTO schema names are per-operation.** sddd `ItemModel` surfaces as
-  `CreateItemModelRequestBody`, `GetOneItemModelResponseBody`, etc. -- there is
-  no single `ItemModel` component. The msgspec `Meta` examples/descriptions are
-  copied into each.
+- **MsgspecDTO schema names are per-operation.** media_example `VideoModel`
+  surfaces as `UploadVideoModelResponseBody`, etc. -- there is no single
+  `VideoModel` component. The msgspec `Meta` examples/descriptions are copied
+  into each.

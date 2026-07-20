@@ -15,12 +15,11 @@ return make_async_container(
     SharedProvider(),
     AdminProvider(),
     AdminLogWebProvider(),
-    MetricsProvider(),
     AuthProvider(),
-    DbExampleSdddInfraProvider(),
-    PooledDbExampleSdddProvider(),
-    PerRequestDbExampleSdddProvider(),
     DbExampleLitestarProvider(),
+    MediaInfraProvider(),
+    MediaWebProvider(),
+    context={ChannelsPlugin: channels},
 )
 ```
 
@@ -36,9 +35,9 @@ controllers.
   automatically by the Litestar integration; available in handlers via
   `FromDishka[...]`.
 
-The reader pool is APP-scope because it owns its own lifecycle (open at
-startup, close at shutdown). A per-request session would defeat pool
-reuse.
+A DB engine and the Valkey client are APP-scope because they own their
+lifecycle (open at startup, closed on container teardown). The per-request
+DB session (`Scope.REQUEST`) layers on top so pool reuse is preserved.
 
 ## Provider patterns
 
@@ -81,9 +80,11 @@ request.
   resolution. Tests that use env-isolation autouse fixtures must warm
   DI eagerly before the fixture wipes env vars. See
   `tests/e2e/conftest.py::e2e_client`.
-- **`SharedProvider` takes no arguments.** It provides only
-  `BaseAppConfig`. `build_container()` is called with no plugin
-  threaded through.
+- **`build_container` threads the `ChannelsPlugin`.** It takes
+  `channels: ChannelsPlugin` and registers it as Dishka context
+  (`context={ChannelsPlugin: channels}`) so the media feed publisher can
+  inject it. `SharedProvider` provides the cross-cutting singletons
+  (configs, clock, Valkey client, readiness probe).
 - **Container close is idempotent in lifespan.** The shutdown path
   always reaches `await container.close()` regardless of partial
   start failures.
