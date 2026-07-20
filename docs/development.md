@@ -33,8 +33,8 @@ Both services pin the SAME dev toolchain in their `pyproject.toml`:
 
 | Tool | Version | Pinned in |
 |---|---|---|
-| ruff | `==0.15.16` | each service's `[dependency-groups] dev` |
-| mypy | `==2.1.0` | each service's `[dependency-groups] dev` |
+| ruff | `==0.15.22` | each service's `[dependency-groups] dev` |
+| mypy | `==2.3.0` | each service's `[dependency-groups] dev` |
 
 Keep the two pins identical. To upgrade: bump BOTH, run `task fmt && task check`,
 commit together. `task check` and pre-commit run the tools through each service's
