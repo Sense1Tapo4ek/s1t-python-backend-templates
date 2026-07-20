@@ -30,10 +30,10 @@ the `video_uploaded` Valkey-Stream contract.
 Two always-on example contexts ship in the template:
 - `media_example/` — the golden context: plain SQLAlchemy 2.0, transactional
   outbox + relay draining to a Valkey Stream, Litestar SSE feed, full S-DDD
-  layering and test pyramid. See [docs/litestar_backend/contexts/media_example.md](docs/litestar_backend/contexts/media_example.md).
+  layering and test pyramid. See [src/litestar_backend/docs/contexts/media_example.md](src/litestar_backend/docs/contexts/media_example.md).
 - `db_example_litestar/` — SQLAlchemy 2.0 + advanced-alchemy 1.11 on Postgres,
   hybrid layering, `SQLAlchemyDTO`, `create_all`. The **only** advanced-alchemy
-  user. See [docs/litestar_backend/contexts/db_example_litestar.md](docs/litestar_backend/contexts/db_example_litestar.md).
+  user. See [src/litestar_backend/docs/contexts/db_example_litestar.md](src/litestar_backend/docs/contexts/db_example_litestar.md).
 
 ## Quick verifications
 
@@ -113,7 +113,7 @@ deploys ignore the override: `docker compose -f docker-compose.yml up`.
   that mirrors the context tree. Single Litestar mount `/static/...`;
   single `TemplateConfig(directory="static", engine=JinjaTemplateEngine)`.
   Rule §1.3 in `~/.claude/rules/s-ddd_python/structure.md`; see
-  [docs/litestar_backend/infra/jinja.md](docs/litestar_backend/infra/jinja.md).
+  [src/litestar_backend/docs/infra/jinja.md](src/litestar_backend/docs/infra/jinja.md).
 - **Migrations live in `migrations/<context>/`.** The project-root
   `migrations/` folder mirrors `src/`, `static/`, `docs/`, `tests/`. Each
   context that uses yoyo gets its own subfolder (e.g.
@@ -122,7 +122,7 @@ deploys ignore the override: `docker compose -f docker-compose.yml up`.
   yoyo targets Postgres via the psycopg3 sync backend
   (`yoyo_url` = `postgresql+psycopg://...`). `db_example_litestar`
   uses `create_all` and has no migration files. See
-  [docs/litestar_backend/infra/postgres.md](docs/litestar_backend/infra/postgres.md).
+  [docs/infra/postgres.md](docs/infra/postgres.md).
 - **Both DB contexts run on SQLAlchemy** (`postgresql+asyncpg`).
   `media_example` uses plain SQLAlchemy 2.0; `db_example_litestar` is the only
   advanced-alchemy user. The shared engine/session builder lives in
@@ -150,7 +150,7 @@ deploys ignore the override: `docker compose -f docker-compose.yml up`.
   `prometheus_client` constants in the owning adapter (e.g. `videos_uploaded_total`
   in `media_example`); registered once on import, they survive repeated
   `create_app()` in tests without a duplicate-registration error. Details:
-  [docs/litestar_backend/subsystems/metrics.md](docs/litestar_backend/subsystems/metrics.md).
+  [src/litestar_backend/docs/subsystems/metrics.md](src/litestar_backend/docs/subsystems/metrics.md).
 
 ## Editing rules
 

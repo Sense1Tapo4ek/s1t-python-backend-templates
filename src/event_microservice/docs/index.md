@@ -5,12 +5,12 @@ Audience: contributor working on the event-driven worker.
 Standalone uv service: a FastStream consumer that reads the `video_uploaded`
 Valkey Stream and fans heavy work out to SAQ jobs, joined in Valkey. Shares no
 code with `litestar_backend` -- only the wire contract (see
-[../architecture.md](../architecture.md)).
+[../../../docs/architecture.md](../../../docs/architecture.md)).
 
 Status: fully implemented. The `media_processing` context, the three SAQ
 execution models, and the Valkey join are live. The full loop is closed:
 return events flow back to `litestar_backend` over the `video_status` stream
-(see [../contract/video_status.md](../contract/video_status.md)).
+(see [../../../docs/contract/video_status.md](../../../docs/contract/video_status.md)).
 
 ## Layout
 

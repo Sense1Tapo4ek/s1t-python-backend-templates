@@ -3,7 +3,7 @@
 Version: per `pyproject.toml`. Async DI container. Documentation:
 <https://dishka.readthedocs.io/>.
 
-For the *why*, see [adr/0001-dishka-for-di.md](../../adr/0001-dishka-for-di.md).
+For the *why*, see [adr/0001-dishka-for-di.md](../../../../docs/adr/0001-dishka-for-di.md).
 
 ## Where it's used
 
@@ -91,6 +91,6 @@ request.
 
 ## Pointers
 
-- ADR: [0001-dishka-for-di.md](../../adr/0001-dishka-for-di.md)
+- ADR: [0001-dishka-for-di.md](../../../../docs/adr/0001-dishka-for-di.md)
 - Code: `src/root/composition/container.py`, `src/*/provider.py`
 - Litestar integration: <https://dishka.readthedocs.io/en/stable/integrations/litestar.html>

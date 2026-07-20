@@ -141,6 +141,6 @@ if resp.status_code >= 400:
 
 ## Pointers
 
-- ADR: [adr/0018-rfc9457-problem-details.md](../../adr/0018-rfc9457-problem-details.md).
-- Internals: [subsystems/error_hierarchy.md](../subsystems/error_hierarchy.md).
+- ADR: [adr/0018-rfc9457-problem-details.md](../../src/litestar_backend/docs/adr/0018-rfc9457-problem-details.md).
+- Internals: [subsystems/error_hierarchy.md](../../src/litestar_backend/docs/subsystems/error_hierarchy.md).
 - Schema source: `src/shared/adapters/openapi.py` (`ProblemDetail`).
