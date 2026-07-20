@@ -40,11 +40,6 @@ class VideoModel(msgspec.Struct, kw_only=True):
     document: dict[str, Any] = msgspec.field(default_factory=dict)
 
 
-class VideoPage(msgspec.Struct, kw_only=True):
-    items: list[VideoModel]
-    next_cursor: str | None
-
-
 VideoReadDTO = MsgspecDTO[VideoModel]
 
 

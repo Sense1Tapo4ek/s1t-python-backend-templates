@@ -3,10 +3,10 @@ from dataclasses import dataclass, field
 
 import structlog
 
+from shared.adapters.driven.outbox_relay import OutboxRelay
 from shared.adapters.driven.postgres import run_migrations
 from shared.generics.config import PROJECT_ROOT
 
-from .driven.outbox_relay import OutboxRelay
 from .driving.status_consumer import VideoStatusConsumer
 
 _MIGRATIONS_DIR = str(PROJECT_ROOT / "migrations" / "media")

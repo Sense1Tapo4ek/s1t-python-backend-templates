@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from media_example.ports.driving.video_cursor import decode_cursor, encode_cursor
+from shared.generics.pagination import decode_cursor, encode_cursor
 
 
 def _token(raw: str) -> str:

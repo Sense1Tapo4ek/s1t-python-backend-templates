@@ -19,3 +19,4 @@ Numbering is per-tree; relocated ADRs keep their historical numbers
 | [0025 Standardize on SQLAlchemy](0025-standardize-on-sqlalchemy.md) | accepted | own |
 | [0029 JWT auth](0029-jwt-auth.md) | accepted | own |
 | [0030 API-key auth](0030-api-key-auth.md) | accepted | own |
+| [0031 Shared generic patterns](0031-shared-generic-patterns.md) | accepted | own |

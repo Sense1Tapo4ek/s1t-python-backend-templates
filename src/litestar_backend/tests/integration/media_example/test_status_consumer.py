@@ -143,7 +143,7 @@ def _make_facade_factory(feed: _RecordingFeed) -> Callable[[AsyncSession], Media
 
     def factory(session: AsyncSession) -> MediaFacade:
         repo = SqlVideoRepo(_session=session)
-        outbox = SqlOutboxRepo(_session=session)
+        outbox = SqlOutboxRepo(_session=session, _clock=clock)
         uow = SqlUoW(_session=session)
         return MediaFacade(
             _upload=UploadVideoUC(_repo=repo, _uow=uow, _outbox=outbox, _clock=clock),

@@ -2,11 +2,11 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, func, text
+from sqlalchemy import DateTime, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from shared.adapters.driven.postgres import SoftDeleteMixin, TimestampMixin
+from shared.adapters.driven.postgres import OutboxMixin, SoftDeleteMixin, TimestampMixin
 
 
 class Base(DeclarativeBase):
@@ -25,11 +25,5 @@ class VideoRow(TimestampMixin, SoftDeleteMixin, Base):
     )
 
 
-class OutboxRow(Base):
+class OutboxRow(OutboxMixin, Base):
     __tablename__ = "outbox_messages"
-
-    id: Mapped[UUID] = mapped_column(primary_key=True)
-    event_type: Mapped[str]
-    payload: Mapped[bytes]
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

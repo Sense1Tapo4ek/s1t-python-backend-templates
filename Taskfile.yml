@@ -51,18 +51,18 @@ tasks:
   test:
     desc: Full Docker gate — BOTH services (ruff + mypy + pytest in tester images)
     cmds:
-      - docker compose run --rm litestar_backend_test
-      - docker compose run --rm event_microservice_test
+      - docker compose run --build --rm litestar_backend_test
+      - docker compose run --build --rm event_microservice_test
 
   test:backend:
     desc: Full Docker gate — litestar_backend only
     cmds:
-      - docker compose run --rm litestar_backend_test
+      - docker compose run --build --rm litestar_backend_test
 
   test:event:
     desc: Full Docker gate — event_microservice only
     cmds:
-      - docker compose run --rm event_microservice_test
+      - docker compose run --build --rm event_microservice_test
 
   # fast local subsets — litestar_backend
   be:unit:

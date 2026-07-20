@@ -26,6 +26,7 @@ The consumer reads `payload` and ignores the outer `event_id` (it dedups on the
 | `event_id` | string (UUID) | yes | unique event id; the idempotency key |
 | `event_type` | string | yes | `"video_uploaded"` |
 | `version` | integer | yes | schema version; `1` today |
+| `occurred_at` | string (RFC 3339 / ISO 8601, UTC) | yes | when the producer staged the event (envelope field; added 2026-07, additive) |
 | `video_id` | string (UUID) | yes | the uploaded video's id |
 | `source_key` | string | yes | object-store key of the upload |
 | `uploaded_at` | string (RFC 3339 / ISO 8601, UTC) | yes | upload timestamp |
