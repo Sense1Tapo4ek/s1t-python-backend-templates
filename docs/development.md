@@ -102,6 +102,27 @@ Notes:
 No CI workflow ships yet. When added, it runs `task check` +
 `pre-commit run --all-files` + `task test`. Until then these are local gates.
 
+## Feature workflow
+
+Every non-trivial change walks the same path, docs at both ends:
+
+1. **Frame the feature.** State the goal and the boundary in a few lines:
+   which bounded context owns it, what crosses the wire, what is out of
+   scope.
+2. **Read the docs first.** [architecture.md](architecture.md), the owning
+   context's page under `src/<svc>/docs/contexts/`, the relevant
+   `docs/contract/` pages, and any ADR that already constrains the area.
+3. **Write the design.** A short spec: data flow, layer placement, new or
+   changed wire shapes, error cases. New decision -> new ADR (<=40 lines).
+4. **Read the code.** The owning context end-to-end plus the nearest
+   analog (`media_example` is the golden reference) — plan the
+   implementation against what actually exists, not against memory.
+5. **Implement.** Domain first, then app, ports, adapters; tests at each
+   level as you go (`unit -> flow -> integration -> e2e`).
+6. **Update every touched doc in the same change.** Context page, contract
+   page on any wire change, ADR status, env templates for new vars. A
+   stale doc is a bug — the gate is not green until the docs match.
+
 ## Pointers
 
 - [architecture.md](architecture.md) — layers, error hierarchy, DI, invariants.

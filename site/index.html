@@ -81,8 +81,10 @@ nav a{color:var(--soft)}
 .layer:hover .t,.layer.hl .t{color:var(--brass)}
 .layer.core{border-color:var(--line-bright);background:linear-gradient(180deg,var(--raised-2),var(--raised))}
 .layer.core .t{color:var(--brass)}
-.layer-arrow{display:flex;justify-content:center;font:400 11px/1 var(--mono);color:var(--faint);padding:5px 0;user-select:none}
-.layer-arrow em{font-style:normal;letter-spacing:1px}
+.hex{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.hex .span2{grid-column:1/-1}
+.hex .layer{text-align:center}
+.hex-arrow{display:flex;justify-content:center;font:400 13px/1 var(--mono);color:var(--faint);padding:6px 0;user-select:none}
 .tree{font:400 12.5px/2 var(--mono);color:var(--faint);background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:14px 20px;overflow-x:auto;white-space:pre}
 .tree .ln{display:block;transition:color .15s,background .15s;border-radius:2px;margin:0 -8px;padding:0 8px;border-left:2px solid transparent}
 .tree .ln.on{color:var(--brass);background:rgba(227,182,97,.07);border-left-color:var(--brass)}
@@ -193,23 +195,22 @@ footer a{color:var(--soft);font-family:var(--mono)}
   <div class="container">
     <div class="overline"><i class="geo g-clay">◇</i>anatomy of a context</div>
     <h2>A symmetric hexagon — everything depends on the core.</h2>
-    <p class="lede">Driving side carries requests in, driven side carries
-    effects out; both converge on a pure domain. Hover a layer to see where
-    it lives in the tree. Context boundaries are enforced by import-linter;
-    layer direction is the reviewed convention.</p>
+    <p class="lede">Requests climb the driving side into the core; effects
+    flow down the driven side out of it. The domain sits on top and imports
+    nothing. Hover a layer to see where it lives in the tree. Context
+    boundaries are enforced by import-linter; layer direction is the
+    reviewed convention.</p>
     <div class="layers-grid">
-      <div>
-        <div class="layer" data-l="adapters-driving"><div class="t">adapters/driving/</div><div class="d">controllers, consumers — HTTP and streams enter here</div></div>
-        <div class="layer-arrow"><em>│ ▼</em></div>
-        <div class="layer" data-l="ports-driving"><div class="t">ports/driving/</div><div class="d">facades &amp; DTOs — the context's public API</div></div>
-        <div class="layer-arrow"><em>│ ▼</em></div>
-        <div class="layer" data-l="app"><div class="t">app/</div><div class="d">use cases + Protocol interfaces — orchestration, zero I/O</div></div>
-        <div class="layer-arrow"><em>│ ▼</em></div>
-        <div class="layer core" data-l="domain"><div class="t">domain/</div><div class="d">pure stdlib — aggregates, value objects, domain events · imports nothing</div></div>
-        <div class="layer-arrow"><em>│ ▲</em></div>
-        <div class="layer" data-l="ports-driven"><div class="t">ports/driven/</div><div class="d">repos &amp; publishers implementing the app's interfaces</div></div>
-        <div class="layer-arrow"><em>│ ▲</em></div>
-        <div class="layer" data-l="adapters-driven"><div class="t">adapters/driven/</div><div class="d">engines, brokers, raw clients — frameworks stay at the edges</div></div>
+      <div class="hex">
+        <div class="layer core span2" data-l="domain"><div class="t">domain/</div><div class="d">pure stdlib — aggregates, value objects, domain events · imports nothing</div></div>
+        <div class="hex-arrow span2">▲</div>
+        <div class="layer span2" data-l="app"><div class="t">app/</div><div class="d">use cases + Protocol interfaces — orchestration, zero I/O</div></div>
+        <div class="hex-arrow">▲</div><div class="hex-arrow">▼</div>
+        <div class="layer" data-l="ports-driving"><div class="t">ports/driving/</div><div class="d">facades &amp; DTOs — the public API</div></div>
+        <div class="layer" data-l="ports-driven"><div class="t">ports/driven/</div><div class="d">repos implementing app interfaces</div></div>
+        <div class="hex-arrow">▲</div><div class="hex-arrow">▼</div>
+        <div class="layer" data-l="adapters-driving"><div class="t">adapters/driving/</div><div class="d">controllers, consumers</div></div>
+        <div class="layer" data-l="adapters-driven"><div class="t">adapters/driven/</div><div class="d">engines, brokers, clients</div></div>
       </div>
       <div class="tree"><span class="ln">media_example/</span><span class="ln" data-l="domain">├── domain/</span><span class="ln" data-l="domain">│   └── video_agg.py</span><span class="ln" data-l="app">├── app/</span><span class="ln" data-l="app">│   ├── interfaces/i_video_repo.py</span><span class="ln" data-l="app">│   └── upload_video_uc.py</span><span class="ln" data-l="ports-driving ports-driven">├── ports/</span><span class="ln" data-l="ports-driving">│   ├── driving/media_facade.py</span><span class="ln" data-l="ports-driven">│   └── driven/sql_video_repo.py</span><span class="ln" data-l="adapters-driving adapters-driven">├── adapters/</span><span class="ln" data-l="adapters-driving">│   ├── driving/video_controller.py</span><span class="ln" data-l="adapters-driven">│   └── lifespan_manager.py <span class="cm">· engine lives in shared/</span></span><span class="ln">├── provider.py   <span class="cm">· DI wiring, the only place</span></span><span class="ln">└── config.py     <span class="cm">· own env prefix</span></span></div>
     </div>
