@@ -100,9 +100,9 @@ nav a{color:var(--soft)}
 .pat .links a:hover{color:var(--brass)}
 
 /* scenario */
-.flow{margin-top:34px;overflow-x:auto;padding-bottom:6px}
-.flow-inner{display:flex;align-items:center;gap:0;min-width:900px}
-.step{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:12px 14px;text-align:center;flex:1;transition:border-color .2s,box-shadow .2s,background .2s}
+.flow{margin-top:34px}
+.flow-inner{display:flex;align-items:center;flex-wrap:wrap;gap:10px 0;justify-content:center}
+.step{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:12px 14px;text-align:center;flex:0 1 auto;transition:border-color .2s,box-shadow .2s,background .2s}
 .step .s-t{font:500 12px var(--mono);color:var(--head);white-space:nowrap}
 .step .s-p{font:400 10px var(--mono);color:var(--faint);margin-top:4px;white-space:nowrap}
 .step.lit{border-color:var(--brass);background:var(--raised-2);box-shadow:0 0 18px var(--brass-glow)}
@@ -204,7 +204,7 @@ footer a{color:var(--soft);font-family:var(--mono)}
         <div class="layer-arrow"><em>│ imports ▼</em></div>
         <div class="layer" data-l="domain"><div class="t">domain/</div><div class="d">pure stdlib — aggregates, value objects, domain events · imports nothing</div></div>
       </div>
-      <div class="tree"><span class="ln">media_example/</span><span class="ln" data-l="domain">├── domain/video_agg.py</span><span class="ln" data-l="app">├── app/upload_video_uc.py</span><span class="ln" data-l="app">├── app/interfaces/i_video_repo.py</span><span class="ln" data-l="ports">├── ports/driving/media_facade.py</span><span class="ln" data-l="ports">├── ports/driven/sql_video_repo.py</span><span class="ln" data-l="adapters">├── adapters/driving/video_controller.py</span><span class="ln" data-l="adapters">├── adapters/lifespan_manager.py</span><span class="ln">├── provider.py   <span class="cm">· DI wiring, the only place</span></span><span class="ln">└── config.py     <span class="cm">· own env prefix</span></span></div>
+      <div class="tree"><span class="ln">media_example/</span><span class="ln" data-l="domain">├── domain/</span><span class="ln" data-l="domain">│   └── video_agg.py</span><span class="ln" data-l="app">├── app/</span><span class="ln" data-l="app">│   ├── interfaces/i_video_repo.py</span><span class="ln" data-l="app">│   └── upload_video_uc.py</span><span class="ln" data-l="ports">├── ports/</span><span class="ln" data-l="ports">│   ├── driving/media_facade.py</span><span class="ln" data-l="ports">│   └── driven/sql_video_repo.py</span><span class="ln" data-l="adapters">├── adapters/</span><span class="ln" data-l="adapters">│   ├── driving/video_controller.py</span><span class="ln" data-l="adapters">│   └── lifespan_manager.py</span><span class="ln">├── provider.py   <span class="cm">· DI wiring, the only place</span></span><span class="ln">└── config.py     <span class="cm">· own env prefix</span></span></div>
     </div>
     <p class="layers-note">The rules are written down, not implied:
     <code>adapters → ports → app → domain</code>, siblings talk through ACLs,
