@@ -27,7 +27,7 @@ reused across contexts.
 | `VALKEY_MAX_CONNECTIONS` | `20` | pool ceiling |
 
 `ValkeyConfig.url` produces a `redis://[:password@]host:port/db` DSN.
-`.env.example` is the contract; `.env` is gitignored.
+`.env.full.example` is the contract; `.env` is gitignored.
 
 ## Where it touches code
 

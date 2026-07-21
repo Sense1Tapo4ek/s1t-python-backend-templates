@@ -29,7 +29,7 @@ Use it as a template, not a library — fork, rename, delete what you don't need
 
 ```bash
 # 1. Copy env template, generate an admin token
-cp .env.example .env
+cp .env.example .env            # minimal; every knob: .env.full.example
 openssl rand -hex 32        # paste into AUTH_ADMIN_TOKEN=...
 
 # 2. Start everything: Postgres, Valkey, API, consumer, SAQ worker
@@ -45,7 +45,7 @@ image copy, so code changes need no rebuild. Production deploys ignore it:
 | API | `http://localhost:8000` |
 | Admin login | `http://localhost:8000/admin/login` |
 | Admin dashboard + log viewer | `http://localhost:8000/admin` |
-| OpenAPI UI | `http://localhost:8000/schema/swagger` (needs the dev CSP from `.env.example`) |
+| OpenAPI UI | `http://localhost:8000/schema/swagger` (needs the dev CSP from `.env.full.example`) |
 | Backend Prometheus metrics | `http://localhost:8000/metrics` |
 | SAQ admin panel (jobs, retry/abort) | `http://localhost:8081` |
 | Consumer / worker Prometheus metrics | `http://localhost:9101/metrics`, `http://localhost:9102/metrics` |
@@ -190,7 +190,7 @@ curl http://localhost:8000/health
 
 Returns app name, started_at, commit_sha, branch, dirty flag. In dev with a
 checked-out repo these resolve via `git`; in Docker/CI populate
-`GIT_COMMIT_SHA` / `GIT_BRANCH` / `GIT_DIRTY` (see `.env.example`).
+`GIT_COMMIT_SHA` / `GIT_BRANCH` / `GIT_DIRTY` (see `.env.full.example`).
 
 ---
 

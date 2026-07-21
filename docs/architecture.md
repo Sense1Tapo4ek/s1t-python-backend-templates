@@ -174,7 +174,8 @@ Rules:
 - `RootConfig._validate_prod_invariants` enforces `AUTH_ADMIN_TOKEN`
   non-empty in `APP_ENV=prod`.
 
-The contract for environment variables is `.env.example`. Don't commit
+The contract for environment variables is `.env.full.example` (the
+minimal `.env.example` is its quick-start subset). Don't commit
 `.env`.
 
 ---
