@@ -1,72 +1,61 @@
-# s1t-python-backend-templates
+# s1t-litestar-template
 
-Production-shaped template: a two-service, event-driven monorepo.
+**An architecture you can read.** Two services, zero shared code, strict DDD
+in every context — a production-shaped monorepo template where the patterns
+are the product and the features exist to prove them.
 
-- **`litestar_backend`** — Litestar API with strict-DDD layout, Dishka DI,
-  role-based auth (JWT, API keys, static admin token), an admin UI (dashboard
-  + file-tail log viewer), Prometheus metrics, and a transactional-outbox
-  video pipeline.
-- **`event_microservice`** — FastStream consumer + SAQ worker. Consumes the
-  `video_uploaded` Valkey Stream and fans heavy work out to SAQ jobs.
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-e3b661)](https://www.python.org/)
+[![Litestar 2.24+](https://img.shields.io/badge/litestar-2.24%2B-e3b661)](https://litestar.dev/)
+[![Tests](https://img.shields.io/badge/tests-364-9cc48c)](#tests)
+[![License: MIT](https://img.shields.io/badge/license-MIT-c9bda8)](LICENSE)
 
-The services share **no code** — only the `video_uploaded` wire contract
-([docs/contract/video_uploaded.md](docs/contract/video_uploaded.md)). Each is
-a standalone uv project that could be extracted to its own repo unchanged.
-
-Use it as a template, not a library — fork, rename, delete what you don't need.
+**[→ The landing page](https://sense1tapo4ek.github.io/s1t-python-backend-templates/)**
+tells this story visually.
 
 ---
 
-## Requirements
+## Topology
 
-- Docker + Docker Compose (dev is container-only; source is bind-mounted, no
-  host venv needed)
-- [`uv`](https://docs.astral.sh/uv/) — optional, for the fast local inner loop
-
----
-
-## First run
-
-```bash
-# 1. Copy env template, generate an admin token
-cp .env.example .env            # minimal; every knob: .env.full.example
-openssl rand -hex 32        # paste into AUTH_ADMIN_TOKEN=...
-
-# 2. Start everything: Postgres, Valkey, API, consumer, SAQ worker
-docker compose up --build
+```
+┌──────────────────────┐   video_uploaded (stream)   ┌──────────────────────┐
+│   litestar_backend   │ ──────────────────────────▶ │  event_microservice  │
+│  HTTP · Postgres     │                             │  FastStream · SAQ    │
+│  outbox · auth · SSE │ ◀────────────────────────── │  Valkey join · jobs  │
+└──────────────────────┘    video_status (stream)    └──────────────────────┘
 ```
 
-`docker-compose.override.yml` is auto-merged: it bind-mounts `src/` over the
-image copy, so code changes need no rebuild. Production deploys ignore it:
-`docker compose -f docker-compose.yml up`.
+Only wire contracts cross the boundary — not a single shared import. Each
+service is a standalone uv project (own `pyproject.toml`, lock, Dockerfile)
+you could extract to its own repo unchanged. Contracts:
+[docs/contract/](docs/contract/README.md).
 
-| What | URL |
-|---|---|
-| API | `http://localhost:8000` |
-| Admin login | `http://localhost:8000/admin/login` |
-| Admin dashboard + log viewer | `http://localhost:8000/admin` |
-| OpenAPI UI | `http://localhost:8000/schema/swagger` (needs the dev CSP from `.env.full.example`) |
-| Backend Prometheus metrics | `http://localhost:8000/metrics` |
-| SAQ admin panel (jobs, retry/abort) | `http://localhost:8081` |
-| Consumer / worker Prometheus metrics | `http://localhost:9101/metrics`, `http://localhost:9102/metrics` |
+## Anatomy of a context
 
-### Admin login
+Every bounded context keeps the same four layers; imports point inward only,
+enforced by import-linter:
 
-1. Open `/admin/login`, paste your `AUTH_ADMIN_TOKEN` value.
-2. Cookie is set (HttpOnly, SameSite=Strict). You land on `/admin`.
+```
+adapters ──▶ ports ──▶ app ──▶ domain
+controllers  facades   use cases  pure stdlib
+engines      repos     Protocols  aggregates, VOs, events
+```
 
-With `AUTH_ADMIN_TOKEN=` empty, auth is disabled and a warning is logged at
-startup (dev only). `APP_ENV=prod` rejects an empty token at boot.
+Plus `provider.py` (Dishka DI — the only wiring point) and `config.py` (own
+env prefix). Siblings talk through ACLs; every decision has an ADR. Full
+rules: [docs/architecture.md](docs/architecture.md).
 
-### SAQ admin panel
+## Pattern catalog
 
-The SAQ worker serves its monitoring UI (queue stats, per-job detail, retry
-and abort) on host port **8081** — enabled by the `--web` flag on the
-`event_microservice_worker` command. Set `SAQ_WEB_PASSWORD` in `.env` to put
-it behind HTTP Basic auth (user `admin`); empty = no auth, dev only. Details:
-[src/event_microservice/docs/infra/saq.md](src/event_microservice/docs/infra/saq.md).
+| Pattern | What it buys | Where |
+|---|---|---|
+| Transactional outbox | row + event commit atomically; relay drains to a Valkey Stream | [`shared/adapters/driven/outbox_relay.py`](src/litestar_backend/src/shared/adapters/driven/outbox_relay.py) · [ADR 0031](src/litestar_backend/docs/adr/0031-shared-generic-patterns.md) |
+| Inbox dedup | at-least-once delivery, exactly-once effect via `event_id` inbox | [delivery-guarantees.md](src/event_microservice/docs/subsystems/delivery-guarantees.md) |
+| Composite auth chain | JWT → API-key → static token, first match wins, fail-closed | [`auth/ports/driven/composite_token_resolver.py`](src/litestar_backend/src/auth/ports/driven/composite_token_resolver.py) · [ADR 0032](src/litestar_backend/docs/adr/0032-user-identity-model.md) |
+| Keyset pagination | opaque cursors, stable pages under writes, one generic `Page[T]` | [`shared/generics/pagination.py`](src/litestar_backend/src/shared/generics/pagination.py) |
+| Integration-event envelope | `event_id` + `version` + `occurred_at` on every wire event by construction | [`shared/generics/integration_event.py`](src/litestar_backend/src/shared/generics/integration_event.py) |
+| Graceful drain | lifespan managers own their background tasks and stop them inside the grace window | [`media_example/adapters/lifespan_manager.py`](src/litestar_backend/src/media_example/adapters/lifespan_manager.py) |
 
-### Try the pipeline
+## One request, every pattern
 
 ```bash
 curl -X POST http://localhost:8000/videos \
@@ -75,14 +64,41 @@ curl -X POST http://localhost:8000/videos \
 ```
 
 The API writes the video row + outbox message in one transaction; a relay
-publishes `video_uploaded` to a Valkey Stream; the consumer enqueues three SAQ
-jobs (stt, plagiarism, transcode); the worker joins their completion in
-Valkey and publishes `video_status` events back; the backend consumer drives
-the video through PENDING -> PROCESSING -> DONE/FAILED and broadcasts each
-transition to the SSE feed at `/videos/feed`. Watch it in the SAQ panel and
-the admin log viewer.
+publishes `video_uploaded` to a Valkey Stream; the consumer enqueues three
+SAQ jobs (stt, plagiarism, transcode); the worker joins their completion in
+Valkey and publishes `video_status` back; the backend drives the video
+through PENDING → PROCESSING → DONE/FAILED and broadcasts each transition to
+the SSE feed at `/videos/feed`. Watch it in the SAQ panel and the admin log
+viewer.
 
 ---
+
+## First run
+
+```bash
+cp .env.example .env      # minimal; every knob: .env.full.example
+openssl rand -hex 32      # paste into AUTH_ADMIN_TOKEN=...
+docker compose up --build # Postgres, Valkey, API, consumer, SAQ worker
+```
+
+Dev is container-only: `docker-compose.override.yml` is auto-merged and
+bind-mounts `src/` over the image copy, so code changes need no rebuild.
+Production ignores it: `docker compose -f docker-compose.yml up`.
+
+| What | URL |
+|---|---|
+| API | `http://localhost:8000` |
+| Admin login → dashboard + log viewer | `http://localhost:8000/admin/login` |
+| OpenAPI UI | `http://localhost:8000/schema/swagger` (needs the dev CSP from `.env.full.example`) |
+| Backend Prometheus metrics | `http://localhost:8000/metrics` |
+| SAQ admin panel (jobs, retry/abort) | `http://localhost:8081` |
+| Consumer / worker metrics | `http://localhost:9101/metrics`, `http://localhost:9102/metrics` |
+
+Admin auth: paste `AUTH_ADMIN_TOKEN` at `/admin/login` (HttpOnly cookie,
+SameSite=Strict). Empty token disables auth with a startup warning — dev
+only; `APP_ENV=prod` rejects it at boot. The SAQ panel takes
+`SAQ_WEB_PASSWORD` for HTTP Basic (user `admin`); details:
+[saq.md](src/event_microservice/docs/infra/saq.md).
 
 ## Project layout
 
@@ -92,7 +108,7 @@ src/
 │   ├── src/
 │   │   ├── shared/           Cross-cutting kernel: config, errors, Postgres/Valkey/metrics infra
 │   │   ├── root/             Entrypoints + Dishka container assembly
-│   │   ├── auth/             JWT + API-key + static bearer/cookie auth, role guards, middleware
+│   │   ├── auth/             Users (argon2id) + JWT + API keys + admin token, role guards
 │   │   ├── admin/            Admin dashboard; admin/log/ = file-tail log viewer (SSE, export)
 │   │   ├── media_example/    GOLDEN CONTEXT: outbox + relay + SSE, full S-DDD layering
 │   │   └── db_example_litestar/  Hybrid CRUD example: advanced-alchemy + SQLAlchemyDTO
@@ -107,14 +123,11 @@ src/
     └── tests/
 ```
 
-Every context keeps the same S-DDD layers: `domain/`, `app/`,
-`ports/{driving,driven}/`, `adapters/`, `provider.py`, `config.py`. Layer
-rules, error hierarchy, DI and invariants:
-[docs/architecture.md](docs/architecture.md).
+Picking an example to copy: start from **`media_example`** for anything with
+real business logic (full layering, domain events, outbox, tests at all four
+levels). Use **`db_example_litestar`** only for thin CRUD with no invariants.
 
----
-
-## Technology map — what to use where
+## Technology map
 
 | Technology | Where it lives | Use it for |
 |---|---|---|
@@ -125,18 +138,12 @@ rules, error hierarchy, DI and invariants:
 | SQLAlchemy 2.0 (plain) | `media_example` | The default DB pattern to copy: explicit session, mappers, outbox |
 | advanced-alchemy | `db_example_litestar` only | Thin CRUD where a repository/service + `SQLAlchemyDTO` suffice |
 | yoyo-migrations | `migrations/<context>/` | Schema changes, applied in the context's lifespan |
-| Valkey | streams, `litestar.channels`, join store | Event transport between the services; SSE fan-out; job-join state |
+| Valkey | streams, `litestar.channels`, join store | Event transport between services; SSE fan-out; job-join state |
 | FastStream | `event_microservice` consumer | Reacting to stream events (the "HTTP of the event world") |
-| SAQ | `event_microservice` worker | Heavy/retryable background jobs: CPU via process pool, blocking I/O via threads |
-| structlog | `shared/logging.py` in both services | Structured JSON logs; stdout + the JSONL file the admin UI tails (orjson renderer in the backend) |
+| SAQ | `event_microservice` worker | Heavy/retryable jobs: CPU via process pool, blocking I/O via threads |
+| structlog | `shared/logging.py` in both services | Structured JSON logs; stdout + the JSONL file the admin UI tails |
 | prometheus_client | `shared` (backend), worker adapters | Counters/gauges; multiprocess mode makes `APP_WORKERS` a free knob |
 | Jinja | `static/` + admin controllers | Server-rendered admin pages; no SPA build step |
-
-Picking an example to copy: start from **`media_example`** for anything with
-real business logic (full layering, domain events, outbox, tests at all four
-levels). Use **`db_example_litestar`** only for thin CRUD with no invariants.
-
----
 
 ## Tests
 
@@ -148,7 +155,7 @@ docker compose run --rm litestar_backend_test pytest tests/unit -q  # any subset
 docker compose run --rm event_microservice_test
 ```
 
-Local `uv` inner loop (run from the service root, e.g. `src/litestar_backend/`):
+Local `uv` inner loop (from the service root, e.g. `src/litestar_backend/`):
 
 ```bash
 uv run pytest tests/unit tests/flow   # instant, no DB
@@ -158,42 +165,24 @@ uv run ruff check . && uv run mypy
 
 Test layout mirrors `src/`: `unit/` (domain, no mocks), `flow/` (use cases,
 mocked interfaces), `integration/` (real Postgres/Valkey), `e2e/` (full app).
-
-The [`Taskfile`](Taskfile.yml) wraps these (`task test`, `task be:unit`) and a
-`pre-commit` gate runs ruff/mypy/gitleaks on every commit — full dev-tooling guide
-in [docs/development.md](docs/development.md).
-
----
+The [`Taskfile`](Taskfile.yml) wraps these (`task test`, `task be:unit`) and
+`pre-commit` runs ruff/mypy/gitleaks on every commit — see
+[docs/development.md](docs/development.md).
 
 ## Documentation
-
-Start at [docs/architecture.md](docs/architecture.md) — decisions, layers,
-invariants, how-to recipes.
 
 | Section | Contents |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Both services: contexts, layers, error hierarchy, DI, lifespan, invariants. |
-| [docs/development.md](docs/development.md) | Dev workflow: Taskfile commands, the pre-commit gate, the pinned monorepo toolchain. |
-| [src/litestar_backend/docs/](src/litestar_backend/docs/index.md) | Backend references: `contexts/`, `subsystems/` (errors, observability, metrics), `infra/` (dishka, structlog, jinja, openapi), service ADRs. |
-| [src/event_microservice/docs/](src/event_microservice/docs/index.md) | Worker references: `contexts/media_processing.md`, `infra/` (faststream, saq), service ADRs. |
 | [docs/contract/](docs/contract/README.md) | Wire contracts: `video_uploaded`, `video_status`, the HTTP error envelope. |
-| [docs/infra/](docs/infra/) | Platform substrate: Postgres, Valkey. |
 | [docs/adr/](docs/adr/README.md) | Project-scope ADRs (MADR); service- and context-scope trees live with their service. |
+| [src/litestar_backend/docs/](src/litestar_backend/docs/index.md) | Backend: `contexts/`, `subsystems/`, `infra/`, service ADRs. |
+| [src/event_microservice/docs/](src/event_microservice/docs/index.md) | Worker: `contexts/media_processing.md`, `infra/` (faststream, saq), service ADRs. |
+| [docs/development.md](docs/development.md) | Dev workflow: Taskfile, pre-commit gate, pinned toolchain. |
+| [docs/infra/](docs/infra/) | Platform substrate: Postgres, Valkey. |
 
 ---
 
-## Health & build info
-
-```bash
-curl http://localhost:8000/health
-```
-
-Returns app name, started_at, commit_sha, branch, dirty flag. In dev with a
-checked-out repo these resolve via `git`; in Docker/CI populate
-`GIT_COMMIT_SHA` / `GIT_BRANCH` / `GIT_DIRTY` (see `.env.full.example`).
-
----
-
-## License
+A template, not a framework: fork it, rename it, delete what you don't need.
 
 [MIT](LICENSE)
