@@ -73,14 +73,18 @@ nav a{color:var(--soft)}
 .topo-note b{color:var(--clay);font-weight:400}
 
 /* layers */
-.layers-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:30px}
-.layer{border:1px solid var(--line);border-left:3px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:13px 16px;margin-bottom:10px;cursor:default;transition:border-color .15s,background .15s}
-.layer .t{font:500 13.5px var(--mono);color:var(--head)}
+.layers-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:34px;margin-top:30px;align-items:start}
+.layer{border:1px solid var(--line);background:var(--raised);border-radius:4px;padding:13px 16px;cursor:default;transition:border-color .15s,background .15s,box-shadow .15s;position:relative}
+.layer .t{font:500 13.5px var(--mono);color:var(--head);transition:color .15s}
 .layer .d{font-size:12.5px;color:var(--faint);margin-top:3px}
-.layer:hover,.layer.hl{border-left-color:var(--brass);background:var(--raised-2)}
-.tree{font:400 12.5px/1.9 var(--mono);color:var(--faint);background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:18px 20px;overflow-x:auto}
-.tree span{transition:color .15s,background .15s;padding:0 3px;border-radius:2px}
-.tree span.on{color:var(--paper);background:var(--brass)}
+.layer:hover,.layer.hl{border-color:var(--line-bright);background:var(--raised-2);box-shadow:0 0 14px rgba(227,182,97,.10)}
+.layer:hover .t,.layer.hl .t{color:var(--brass)}
+.layer-arrow{display:flex;justify-content:center;font:400 11px/1 var(--mono);color:var(--faint);padding:5px 0;user-select:none}
+.layer-arrow em{font-style:normal;letter-spacing:1px}
+.tree{font:400 12.5px/2 var(--mono);color:var(--faint);background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:14px 20px;overflow-x:auto;white-space:pre}
+.tree .ln{display:block;transition:color .15s,background .15s;border-radius:2px;margin:0 -8px;padding:0 8px;border-left:2px solid transparent}
+.tree .ln.on{color:var(--brass);background:rgba(227,182,97,.07);border-left-color:var(--brass)}
+.tree .cm{color:#5c5142}
 .layers-note{font-size:12.5px;color:var(--faint);margin-top:14px}
 .layers-note code{font-family:var(--mono);color:var(--soft);font-size:12px}
 
@@ -192,21 +196,15 @@ footer a{color:var(--soft);font-family:var(--mono)}
     import-linter, not by convention.</p>
     <div class="layers-grid">
       <div>
-        <div class="layer" data-l="domain"><div class="t">domain/</div><div class="d">pure stdlib — aggregates, value objects, domain events</div></div>
-        <div class="layer" data-l="app"><div class="t">app/</div><div class="d">use cases + Protocol interfaces — orchestration, zero I/O</div></div>
-        <div class="layer" data-l="ports"><div class="t">ports/</div><div class="d">driving facades &amp; DTOs · driven repos implementing app interfaces</div></div>
         <div class="layer" data-l="adapters"><div class="t">adapters/</div><div class="d">controllers, engines, brokers, middleware — frameworks live here only</div></div>
+        <div class="layer-arrow"><em>│ imports ▼</em></div>
+        <div class="layer" data-l="ports"><div class="t">ports/</div><div class="d">driving facades &amp; DTOs · driven repos implementing app interfaces</div></div>
+        <div class="layer-arrow"><em>│ imports ▼</em></div>
+        <div class="layer" data-l="app"><div class="t">app/</div><div class="d">use cases + Protocol interfaces — orchestration, zero I/O</div></div>
+        <div class="layer-arrow"><em>│ imports ▼</em></div>
+        <div class="layer" data-l="domain"><div class="t">domain/</div><div class="d">pure stdlib — aggregates, value objects, domain events · imports nothing</div></div>
       </div>
-      <div class="tree"><pre style="background:none;border:none;padding:0;overflow:visible">media_example/
-├── <span data-l="domain">domain/video_agg.py</span>
-├── <span data-l="app">app/upload_video_uc.py</span>
-├── <span data-l="app">app/interfaces/i_video_repo.py</span>
-├── <span data-l="ports">ports/driving/media_facade.py</span>
-├── <span data-l="ports">ports/driven/sql_video_repo.py</span>
-├── <span data-l="adapters">adapters/driving/video_controller.py</span>
-├── <span data-l="adapters">adapters/lifespan_manager.py</span>
-├── provider.py   <span style="color:#5c5142">· DI wiring, the only place</span>
-└── config.py     <span style="color:#5c5142">· own env prefix</span></pre></div>
+      <div class="tree"><span class="ln">media_example/</span><span class="ln" data-l="domain">├── domain/video_agg.py</span><span class="ln" data-l="app">├── app/upload_video_uc.py</span><span class="ln" data-l="app">├── app/interfaces/i_video_repo.py</span><span class="ln" data-l="ports">├── ports/driving/media_facade.py</span><span class="ln" data-l="ports">├── ports/driven/sql_video_repo.py</span><span class="ln" data-l="adapters">├── adapters/driving/video_controller.py</span><span class="ln" data-l="adapters">├── adapters/lifespan_manager.py</span><span class="ln">├── provider.py   <span class="cm">· DI wiring, the only place</span></span><span class="ln">└── config.py     <span class="cm">· own env prefix</span></span></div>
     </div>
     <p class="layers-note">The rules are written down, not implied:
     <code>adapters → ports → app → domain</code>, siblings talk through ACLs,
@@ -374,7 +372,7 @@ ORDER BY created_at DESC, id DESC</pre>
 // layer hover <-> tree highlight
 document.querySelectorAll('.layer').forEach(function(el){
   var l = el.dataset.l;
-  var files = document.querySelectorAll('.tree span[data-l="'+l+'"]');
+  var files = document.querySelectorAll('.tree .ln[data-l="'+l+'"]');
   el.addEventListener('mouseenter', function(){ files.forEach(function(f){f.classList.add('on')}); el.classList.add('hl'); });
   el.addEventListener('mouseleave', function(){ files.forEach(function(f){f.classList.remove('on')}); el.classList.remove('hl'); });
 });
