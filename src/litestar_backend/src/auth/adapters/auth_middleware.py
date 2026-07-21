@@ -12,6 +12,7 @@ from ..ports.driving import AuthFacade
 
 _log = structlog.get_logger(__name__)
 _BEARER_RE = re.compile(r"^Bearer\s+(.+)$", re.IGNORECASE)
+_COOKIE_PATH_PREFIXES = ("/admin", "/api/v1/admin")
 _ANON = Principal(role=Role.UNKNOWN, token_id="anonymous")
 
 
@@ -67,10 +68,15 @@ def _extract_token(connection: ASGIConnection) -> str | None:
         if token and len(token) <= MAX_TOKEN_LEN:
             return token
 
-    cookie_token = connection.cookies.get(ADMIN_COOKIE_NAME)
-    if cookie_token and len(cookie_token) <= MAX_TOKEN_LEN:
-        cookie_token = cookie_token.strip()
-        if cookie_token:
-            return cookie_token
+    # The admin cookie authenticates ONLY the admin surface. Everything else
+    # requires a bearer credential -- otherwise a browser holding the cookie
+    # would silently authenticate CSRF-excluded API endpoints.
+    path = connection.url.path
+    if path.startswith(_COOKIE_PATH_PREFIXES):
+        cookie_token = connection.cookies.get(ADMIN_COOKIE_NAME)
+        if cookie_token and len(cookie_token) <= MAX_TOKEN_LEN:
+            cookie_token = cookie_token.strip()
+            if cookie_token:
+                return cookie_token
 
     return None

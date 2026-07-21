@@ -2,10 +2,11 @@ from datetime import UTC, datetime
 
 from dishka import Provider, Scope, provide
 
+from shared.app import IClock
 from shared.config import BaseAppConfig
 
-from .adapters.driven.build_info.git_build_info import resolve_build_meta
-from .app import RenderDashboardUc
+from .adapters.driven.git_build_info import resolve_build_meta
+from .app import RenderDashboardUC
 from .domain import BuildInfoVo
 from .ports.driving import AdminFacade
 
@@ -24,5 +25,14 @@ class AdminProvider(Provider):
             dirty=dirty,
         )
 
-    render_dashboard_uc = provide(RenderDashboardUc)
+    @provide
+    def render_dashboard_uc(
+        self, config: BaseAppConfig, clock: IClock, build_info: BuildInfoVo
+    ) -> RenderDashboardUC:
+        return RenderDashboardUC(
+            _app_env=config.app_env.value,
+            _clock=clock,
+            _build_info=build_info,
+        )
+
     admin_facade = provide(AdminFacade)

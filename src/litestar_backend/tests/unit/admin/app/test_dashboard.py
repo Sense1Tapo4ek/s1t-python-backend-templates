@@ -1,9 +1,7 @@
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
-from admin.app import RenderDashboardUc
+from admin.app import RenderDashboardUC
 from admin.domain import BuildInfoVo
-from shared.config import BaseAppConfig
 
 
 class _FrozenClock:
@@ -24,15 +22,14 @@ def _build(app_name: str, started: datetime) -> BuildInfoVo:
     )
 
 
-def test_dashboard_reports_uptime(tmp_path: Path) -> None:
-    config = BaseAppConfig(volume_path=tmp_path)
+def test_dashboard_reports_uptime() -> None:
     started = datetime(2026, 4, 29, 12, tzinfo=UTC)
     now = started + timedelta(minutes=5)
 
-    use_case = RenderDashboardUc(
-        _config=config,
+    use_case = RenderDashboardUC(
+        _app_env="dev",
         _clock=_FrozenClock(now),
-        _build_info=_build(config.app_name, started),
+        _build_info=_build("litestar-base", started),
     )
 
     view = use_case()

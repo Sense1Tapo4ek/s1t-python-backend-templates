@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 from uuid import UUID
 
-from shared.generics.errors import PortError
+import structlog
 
 from ..feed import VIDEOS_CHANNEL
+
+_log = structlog.get_logger("media_example.channels_feed_publisher")
 
 
 class _IChannels(Protocol):
@@ -18,10 +20,12 @@ class ChannelsFeedPublisher:
     _channels: _IChannels
 
     async def publish(self, video_id: UUID, status: str) -> None:
+        # Best-effort by contract (IFeedPublisher): a lost feed event only
+        # costs a live-browser update, so infra failures are swallowed here.
         try:
             self._channels.publish(
                 {"video_id": str(video_id), "status": status},
                 VIDEOS_CHANNEL,
             )
-        except Exception as exc:
-            raise PortError(f"feed publish failed for {video_id}: {exc}") from exc
+        except Exception:
+            _log.warning("feed publish failed", video_id=str(video_id), status=status)

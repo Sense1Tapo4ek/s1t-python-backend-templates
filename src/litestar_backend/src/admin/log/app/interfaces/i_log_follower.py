@@ -1,18 +1,18 @@
 from collections.abc import AsyncIterator
 from typing import Protocol
 
-from ...domain import LogEntryEnt
+from ...domain import LogEntryVO
 
 
 class ILogFollower(Protocol):
     """Live tail of the JSONL log file (tail -F semantics)."""
 
-    def follow(self, poll_ms: int) -> AsyncIterator[LogEntryEnt]:
+    def follow(self, poll_ms: int) -> AsyncIterator[LogEntryVO]:
         """Yield entries appended after the current EOF, oldest-first, forever.
 
         Starts at the current end of the file (existing history is NOT
         replayed) and polls every `poll_ms` milliseconds for new bytes,
-        yielding each newly-completed line parsed into a LogEntryEnt. The
+        yielding each newly-completed line parsed into a LogEntryVO. The
         generator never completes on its own; the caller stops it by closing
         the async iterator.
 

@@ -1,3 +1,3 @@
-from .render_dashboard_uc import RenderDashboardUc
+from .render_dashboard_uc import RenderDashboardUC
 
-__all__ = ["RenderDashboardUc"]
+__all__ = ["RenderDashboardUC"]

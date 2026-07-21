@@ -13,7 +13,7 @@ from shared.config import PostgresConfig
 from .adapters.auth_lifespan_manager import AuthLifespanManager
 from .adapters.driven import JwtCodec, JwtKey, build_jwt_key
 from .app import (
-    AuthenticateUc,
+    AuthenticateUC,
     DeactivateUserUC,
     GenerateApiKeyUC,
     IApiKeyRepo,
@@ -131,7 +131,7 @@ class AuthProvider(Provider):
             )
         )
 
-    authenticate_uc = provide(AuthenticateUc)
+    authenticate_uc = provide(AuthenticateUC)
     issue_uc = provide(IssueTokensUC)
     refresh_uc = provide(RefreshTokensUC)
     revoke_uc = provide(RevokeTokenUC)

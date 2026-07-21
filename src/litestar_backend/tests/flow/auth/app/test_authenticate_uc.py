@@ -2,17 +2,17 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from auth.app import AuthenticateUc
+from auth.app import AuthenticateUC
 from shared.domain.auth import Principal, Role
 
 
-class TestAuthenticateUc:
+class TestAuthenticateUC:
     @pytest.mark.asyncio
     async def test_resolver_returns_principal_passed_through(self) -> None:
         principal = Principal(role=Role.ADMIN, token_id="abc12345")
         resolver = AsyncMock()
         resolver.resolve = AsyncMock(return_value=principal)
-        uc = AuthenticateUc(_resolver=resolver)
+        uc = AuthenticateUC(_resolver=resolver)
 
         result = await uc("any-token")
 
@@ -23,7 +23,7 @@ class TestAuthenticateUc:
     async def test_resolver_returns_none_passed_through(self) -> None:
         resolver = AsyncMock()
         resolver.resolve = AsyncMock(return_value=None)
-        uc = AuthenticateUc(_resolver=resolver)
+        uc = AuthenticateUC(_resolver=resolver)
 
         result = await uc("bogus")
 

@@ -54,8 +54,11 @@ async def after_process(ctx: dict[str, Any]) -> None:
         _log.exception("on_job_failed hook failed", video_id=str(video_id))
 
 
+_root_config = RootConfig()
+_root_config.validate_prod_invariants()
+
 settings: dict[str, Any] = {
-    "queue": build_queue(RootConfig().valkey_url),
+    "queue": build_queue(_root_config.valkey_url),
     "functions": [stt, plagiarism, transcode],
     "concurrency": _config.worker_concurrency,
     "startup": startup,

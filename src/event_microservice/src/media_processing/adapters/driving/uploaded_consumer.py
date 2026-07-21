@@ -5,8 +5,7 @@ import structlog
 from faststream import Context
 from faststream.redis import RedisMessage, RedisRouter, StreamSub
 
-from ...ports.driving import MediaProcessingFacade, VideoUploadedSchema
-from ..driven.metrics import EVENTS_RECEIVED
+from ...ports.driving import EVENTS_RECEIVED, MediaProcessingFacade, VideoUploadedSchema
 
 VIDEO_UPLOADED_STREAM = "video_uploaded"
 CONSUMER_GROUP = "media_processing"

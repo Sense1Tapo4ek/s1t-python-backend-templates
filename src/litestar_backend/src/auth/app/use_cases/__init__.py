@@ -1,4 +1,4 @@
-from .authenticate_uc import AuthenticateUc
+from .authenticate_uc import AuthenticateUC
 from .deactivate_user_uc import DeactivateUserUC
 from .generate_api_key_uc import GenerateApiKeyUC
 from .issue_tokens_uc import IssueTokensUC
@@ -11,7 +11,7 @@ from .revoke_api_key_uc import RevokeApiKeyUC
 from .revoke_token_uc import RevokeTokenUC
 
 __all__ = [
-    "AuthenticateUc",
+    "AuthenticateUC",
     "DeactivateUserUC",
     "GenerateApiKeyUC",
     "IssueTokensUC",

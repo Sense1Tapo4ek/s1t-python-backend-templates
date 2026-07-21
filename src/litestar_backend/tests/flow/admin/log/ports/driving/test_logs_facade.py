@@ -3,22 +3,22 @@ from unittest.mock import create_autospec
 
 import pytest
 
-from admin.log.app import ExportLogsUc
-from admin.log.domain import Cursor, LogEntryEnt
+from admin.log.app import ExportLogsUC
+from admin.log.domain import Cursor, LogEntryVO
 from admin.log.ports.driving import LogsFacade
 
 
-def _entry() -> LogEntryEnt:
-    return LogEntryEnt.parse(
+def _entry() -> LogEntryVO:
+    return LogEntryVO.parse(
         '{"timestamp":"2026-06-01T00:00:00Z","level":"INFO","logger":"root","event":"hi","x":1}'
     )
 
 
 class _FakeReader:
-    async def read_tail(self, limit: int) -> tuple[list[LogEntryEnt], Cursor]:
+    async def read_tail(self, limit: int) -> tuple[list[LogEntryVO], Cursor]:
         return [_entry()], Cursor(inode=1, offset=0)
 
-    async def read_before(self, cursor: Cursor, limit: int) -> tuple[list[LogEntryEnt], Cursor]:
+    async def read_before(self, cursor: Cursor, limit: int) -> tuple[list[LogEntryVO], Cursor]:
         return [_entry()], cursor
 
     def stream_all(self) -> AsyncIterator[str]:  # pragma: no cover
@@ -26,14 +26,14 @@ class _FakeReader:
 
 
 class _FakeFollower:
-    async def follow(self, poll_ms: int) -> AsyncIterator[LogEntryEnt]:
+    async def follow(self, poll_ms: int) -> AsyncIterator[LogEntryVO]:
         if False:  # pragma: no cover - empty async generator
             yield _entry()
 
 
 @pytest.fixture
 def facade() -> LogsFacade:
-    export = create_autospec(ExportLogsUc, instance=True)
+    export = create_autospec(ExportLogsUC, instance=True)
     return LogsFacade(
         _reader=_FakeReader(),
         _follower=_FakeFollower(),

@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY tests/ ./tests/
 
-CMD ["sh", "-c", "ruff check . && mypy && pytest -q"]
+CMD ["sh", "-c", "ruff check . && mypy && lint-imports && pytest -q"]
 
 
 # --- Stage 2: runtime --------------------------------------------------------

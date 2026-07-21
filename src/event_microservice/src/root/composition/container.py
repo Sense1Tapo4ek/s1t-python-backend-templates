@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 
 import redis.asyncio as aioredis
 from dishka import AsyncContainer, Provider, Scope, make_async_container, provide
+from saq import Queue
 
 from media_processing import MediaProcessingProvider
 from root.config import RootConfig
@@ -22,6 +23,12 @@ class RootProvider(Provider):
             yield client
         finally:
             await client.aclose()
+
+    # Root owns the broker URL; contexts consume the ready Queue and never
+    # reach up into root.config.
+    @provide
+    def queue(self, config: RootConfig) -> Queue:
+        return Queue.from_url(config.valkey_url)
 
 
 def build_container() -> AsyncContainer:

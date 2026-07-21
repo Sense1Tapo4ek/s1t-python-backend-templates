@@ -2,8 +2,6 @@ import redis.asyncio as aioredis
 from dishka import Provider, Scope, provide
 from saq import Queue
 
-from root.config import RootConfig
-
 from .app import (
     CompleteJobUC,
     IEventPublisher,
@@ -29,10 +27,6 @@ class MediaProcessingProvider(Provider):
     @provide
     def config(self) -> MediaProcessingConfig:
         return MediaProcessingConfig()
-
-    @provide
-    def queue(self, root: RootConfig) -> Queue:
-        return Queue.from_url(root.valkey_url)
 
     @provide
     def job_queue(self, queue: Queue, config: MediaProcessingConfig) -> IJobQueue:

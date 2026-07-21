@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 from typing import Protocol
 
-from ...domain import Cursor, LogEntryEnt
+from ...domain import Cursor, LogEntryVO
 
 
 class ILogReader(Protocol):
@@ -15,7 +15,7 @@ class ILogReader(Protocol):
     async def read_tail(
         self,
         limit: int,
-    ) -> tuple[list[LogEntryEnt], Cursor]:
+    ) -> tuple[list[LogEntryVO], Cursor]:
         """Return the last `limit` entries, oldest-first, plus a back-cursor.
 
         Entries are ordered chronologically (oldest -> newest). The returned
@@ -32,7 +32,7 @@ class ILogReader(Protocol):
         self,
         cursor: Cursor,
         limit: int,
-    ) -> tuple[list[LogEntryEnt], Cursor]:
+    ) -> tuple[list[LogEntryVO], Cursor]:
         """Return up to `limit` entries ending just before `cursor`.
 
         Reads the slice strictly preceding the cursor offset, oldest-first,

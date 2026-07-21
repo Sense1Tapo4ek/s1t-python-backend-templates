@@ -3,8 +3,8 @@ from dataclasses import dataclass
 
 import orjson
 
-from ...app import ExportLogsUc, ILogFollower, ILogReader
-from ...domain import Cursor, LogEntryEnt
+from ...app import ExportLogsUC, ILogFollower, ILogReader
+from ...domain import Cursor, LogEntryVO
 from .log_schemas import LogEntrySchema
 
 # Promoted to top-level columns in LogEntrySchema; stripped from context_json
@@ -24,7 +24,7 @@ _PROMOTED_KEYS = frozenset(
 )
 
 
-def _to_entry_schema(ent: LogEntryEnt) -> LogEntrySchema:
+def _to_entry_schema(ent: LogEntryVO) -> LogEntrySchema:
     context = {k: v for k, v in ent.raw.items() if k not in _PROMOTED_KEYS}
     context_json = orjson.dumps(context).decode() if context else "{}"
     return LogEntrySchema(
@@ -51,7 +51,7 @@ class LogsFacade:
 
     _reader: ILogReader
     _follower: ILogFollower
-    _export_logs_uc: ExportLogsUc
+    _export_logs_uc: ExportLogsUC
 
     async def render_log_page(
         self,

@@ -1,24 +1,28 @@
+from __future__ import annotations
+
 import glob
 import os
 from typing import Any
 
 from litestar.plugins.prometheus import PrometheusController
+from litestar.types import Guard
 
-from auth.ports.driving import require_role
 from shared.config import MetricsConfig
-from shared.domain.auth import Role
 
 
-def build_prom_controller(config: MetricsConfig) -> type[PrometheusController]:
+def build_prom_controller(
+    config: MetricsConfig, guard: Guard | None = None
+) -> type[PrometheusController]:
     """Return a PrometheusController subclass with config values baked in.
 
     PrometheusController stores ``path`` as a class attribute, so a subclass
-    is created at wire time. Guards are omitted when ``prom_endpoint_public``
-    is True; otherwise the admin role is required.
+    is created at wire time. ``guard`` is applied unless
+    ``prom_endpoint_public`` is True; the caller (root composition) supplies
+    it -- shared/ stays context-agnostic.
     """
     attrs: dict[str, Any] = {"path": config.prom_endpoint_path, "tags": ["Metrics"]}
-    if not config.prom_endpoint_public:
-        attrs["guards"] = [require_role(Role.ADMIN)]
+    if not config.prom_endpoint_public and guard is not None:
+        attrs["guards"] = [guard]
     return type("ConfiguredPromController", (PrometheusController,), attrs)
 
 
