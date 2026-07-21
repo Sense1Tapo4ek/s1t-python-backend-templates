@@ -43,6 +43,7 @@
         <a class="btn-link" href="/health">/health <span class="arrow">&rarr;</span></a>
         <a class="btn-link" href="/ping">/ping <span class="arrow">&rarr;</span></a>
         <form method="post" action="/admin/logout" style="display:contents;">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
           <button type="submit" class="btn-link">
             logout <span class="arrow">&rarr;</span>
           </button>

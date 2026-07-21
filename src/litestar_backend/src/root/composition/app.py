@@ -1,3 +1,4 @@
+import secrets
 from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
@@ -7,6 +8,7 @@ from advanced_alchemy.exceptions import NotFoundError as AlchemyNotFoundError
 from litestar import Litestar
 from litestar.channels import ChannelsPlugin
 from litestar.channels.backends.redis import RedisChannelsStreamBackend
+from litestar.config.csrf import CSRFConfig
 from litestar.connection import Request
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.datastructures import CacheControlHeader
@@ -15,6 +17,7 @@ from litestar.exceptions import (
     PermissionDeniedException,
 )
 from litestar.middleware import DefineMiddleware
+from litestar.middleware.rate_limit import RateLimitConfig
 from litestar.openapi import OpenAPIConfig
 from litestar.openapi.spec import Contact, Server, Tag
 from litestar.plugins.problem_details import (
@@ -25,6 +28,7 @@ from litestar.plugins.problem_details import (
 from litestar.plugins.prometheus import PrometheusConfig
 from litestar.response import Response
 from litestar.static_files import create_static_files_router
+from litestar.stores.redis import RedisStore
 from litestar.template.config import TemplateConfig
 from snitchbot.integrations.litestar import install as install_snitchbot
 
@@ -128,6 +132,30 @@ def _build_plugins() -> list[Any]:
     ]
 
 
+# Credential endpoints only: brute-force surface, not the whole API. Safe
+# methods and everything else stay un-throttled.
+_THROTTLED_PATHS = frozenset({"/auth/login", "/auth/register", "/admin/login"})
+
+
+def _should_throttle(request: Request) -> bool:
+    return request.method == "POST" and request.url.path in _THROTTLED_PATHS
+
+
+def _build_rate_limit(config: RootConfig) -> RateLimitConfig:
+    return RateLimitConfig(
+        rate_limit=("minute", config.rate_limit_per_minute),
+        check_throttle_handler=_should_throttle,
+    )
+
+
+def _build_csrf(config: RootConfig) -> CSRFConfig:
+    secret = config.csrf_secret.get_secret_value() if config.csrf_secret else secrets.token_hex(32)
+    # Enforced ONLY under /admin (the browser form surface). Every other path
+    # is excluded: API clients authenticate per-request with bearer
+    # credentials, which cross-site forms cannot attach -- CSRF does not apply.
+    return CSRFConfig(secret=secret, exclude=["^/(?!admin)"])
+
+
 def _build_middleware(config: RootConfig, prom_config: PrometheusConfig) -> list[Any]:
     return [
         # Outermost -- covers responses from inner middleware that short-circuit.
@@ -137,6 +165,7 @@ def _build_middleware(config: RootConfig, prom_config: PrometheusConfig) -> list
             hsts_enabled=config.security_hsts_enabled,
         ),
         DefineMiddleware(TraceIdMiddleware),
+        _build_rate_limit(config).middleware,
         DefineMiddleware(AuthMiddleware),
         DefineMiddleware(AccessLogMiddleware),
         prom_config.middleware,
@@ -214,8 +243,9 @@ def build_app() -> Litestar:
     prom_controller = build_prom_controller(metrics_cfg)
 
     valkey_cfg = ValkeyConfig()
+    valkey_client = build_valkey_client(valkey_cfg.url)
     channels = ChannelsPlugin(
-        backend=RedisChannelsStreamBackend(history=0, redis=build_valkey_client(valkey_cfg.url)),
+        backend=RedisChannelsStreamBackend(history=0, redis=valkey_client),
         channels=[VIDEOS_CHANNEL],
     )
 
@@ -238,6 +268,9 @@ def build_app() -> Litestar:
             prom_controller,
         ],
         middleware=_build_middleware(config, prom_config),
+        csrf_config=_build_csrf(config),
+        # Rate-limit counters live in Valkey so the cap holds across workers.
+        stores={"rate_limit": RedisStore(redis=valkey_client, namespace="rate_limit")},
         plugins=[*_build_plugins(), channels],
         openapi_config=_build_openapi_config(config.app_name),
         # Single Jinja engine bound to the project's static/ root. Templates

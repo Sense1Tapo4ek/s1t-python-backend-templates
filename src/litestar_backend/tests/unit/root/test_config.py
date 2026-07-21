@@ -43,6 +43,7 @@ def test_root_config_should_reload_in_dev() -> None:
 def test_root_config_should_not_reload_in_prod(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_ENV", "prod")
     monkeypatch.setenv("AUTH_ADMIN_TOKEN", "prod-token")
+    monkeypatch.setenv("CSRF_SECRET", "csrf-signing-secret")
 
     config = RootConfig()
 

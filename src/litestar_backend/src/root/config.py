@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 
 from auth.config import AuthConfig
 from shared.config import AppEnv, BaseAppConfig
@@ -54,6 +54,25 @@ class RootConfig(BaseAppConfig):
         ),
         validation_alias="SECURITY_CSP",
     )
+    csrf_secret: SecretStr | None = Field(
+        default=None,
+        description=(
+            "HMAC secret signing the CSRF token cookie for /admin/* forms. "
+            "Unset -> a per-process random secret (dev-only: with several "
+            "workers each process would sign differently). Required in PROD."
+        ),
+        validation_alias="CSRF_SECRET",
+    )
+    rate_limit_per_minute: int = Field(
+        default=20,
+        ge=1,
+        description=(
+            "Per-client requests/minute allowed on the credential endpoints "
+            "(POST /auth/login, /auth/register, /admin/login). Counted in "
+            "Valkey, so the cap holds across workers."
+        ),
+        validation_alias="RATE_LIMIT_PER_MINUTE",
+    )
     security_hsts_enabled: bool = Field(
         default=False,
         description=(
@@ -74,6 +93,8 @@ class RootConfig(BaseAppConfig):
             token = AuthConfig().admin_token
             if token is None or not token.get_secret_value().strip():
                 raise ValueError("AUTH_ADMIN_TOKEN must be set when APP_ENV=prod")
+            if self.csrf_secret is None or not self.csrf_secret.get_secret_value().strip():
+                raise ValueError("CSRF_SECRET must be set when APP_ENV=prod")
         return self
 
     @property

@@ -126,10 +126,14 @@ AUTH_POOL_SIZE=5                   # SQLAlchemy pool for the auth engine
 - The middleware never raises. Authorization belongs to `require_role`.
 - `MAX_TOKEN_LEN = 4096` caps input before `compare_digest` to prevent
   pathological-length sinks.
-- No CSRF token on the login form. Token knowledge is the gate; once
-  per-user sessions land, CSRF protection becomes mandatory.
-- No rate-limit on `/admin/login`, `/auth/login`, or `/auth/register`. Add at
-  the proxy or as middleware before real traffic.
+- CSRF protection (Litestar `CSRFConfig`) is enforced on `/admin/*` only:
+  admin forms carry `_csrf_token`; every other path is excluded because API
+  clients authenticate per-request with bearer credentials. `CSRF_SECRET` is
+  required in PROD (per-process random otherwise breaks multi-worker).
+- Credential endpoints (`POST /auth/login|register`, `/admin/login`) are
+  rate-limited (`RATE_LIMIT_PER_MINUTE`, default 20) with counters in Valkey,
+  so the cap holds across workers. Behind a proxy, add client-IP middleware
+  or the limit keys on the proxy's address.
 - Deactivating a user blocks login and refresh immediately; already-issued
   access tokens live out their TTL (<= 15 min). Unknown-email logins burn a
   dummy argon2 verify so timing does not leak account existence.
