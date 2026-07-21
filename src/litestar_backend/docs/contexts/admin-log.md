@@ -26,7 +26,7 @@ structlog -> JSON line --+--> StreamHandler  -> stdout
                                                        |
                               facade -> use cases -> controller
                                   |                          |
-        GET /api/v1/admin/logs/ (tail N)        GET .../stream (SSE, follow)
+        GET /api/v1/admin/logs (tail N)         GET .../stream (SSE, follow)
                                   |
                           static/admin/log (UI)
           level filter . substring . load more . drilldown  (client-side)
@@ -41,11 +41,11 @@ same file. Rotation is external; the reader follows `tail -F` semantics.
 
 | Path | Method | Purpose |
 |:---|:---|:---|
-| `/admin/logs/` | GET | HTML viewer (`Template`). |
-| `/api/v1/admin/logs/` | GET | Tail page: `{entries, cursor}` (last `LOG_TAIL_LINES`). |
+| `/admin/logs` | GET | HTML viewer (`Template`). |
+| `/api/v1/admin/logs` | GET | Tail page: `{entries, cursor}` (last `LOG_TAIL_LINES`). |
 | `/api/v1/admin/logs/older` | GET | Older page; `cursor=<base64>` from a previous page. |
 | `/api/v1/admin/logs/stream` | GET | Server-Sent Events live tail (`ServerSentEvent`). |
-| `/api/v1/admin/logs/export/` | GET | Stream the file as a download; `format=ndjson\|csv`. |
+| `/api/v1/admin/logs/export` | GET | Stream the file as a download; `format=ndjson\|csv`. |
 
 All require `Role.ADMIN`.
 

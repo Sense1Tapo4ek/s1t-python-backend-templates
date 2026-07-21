@@ -42,8 +42,10 @@ pending-entry list and do not steal each other's messages.
 - **Malformed payload** (`msgspec.MsgspecError`): logged at WARNING and
   ACKed immediately. The entry is never redelivered (poison-pill drop).
 - **Transient failures** (`PortError` or other exceptions): propagate
-  without ACK, leaving the entry in the pending-entries list for
-  redelivery by SAQ's retry mechanism.
+  without ACK, leaving the entry in the Valkey Stream pending-entry list
+  (PEL); FastStream's ack semantics redeliver it to a group consumer.
+  See [docs/contract/video_status.md](../../../../docs/contract/video_status.md)
+  for the delivery-guarantee layers.
 - In both cases `msg.ack()` is called **after** the handler returns,
   ensuring the happy-path entry is also ACKed exactly once.
 

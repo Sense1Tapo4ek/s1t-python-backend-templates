@@ -25,25 +25,19 @@ unchanged. Root `docs/` holds only platform + cross-service pages
 reference pages live under `src/litestar_backend/docs/` and
 `src/event_microservice/docs/`.
 
-### Wire contract: `video_uploaded`
+### Wire contracts
 
-Valkey Stream. Producer: `litestar_backend` outbox relay. Consumer:
-`event_microservice`. Fields: `event_id`, `event_type`, `payload` (JSON:
-`video_id`, `source_key`, `uploaded_at`, `version`). The consumer defines its
-OWN inbound schema and never imports the producer's integration-event type;
-idempotency is by `event_id`.
-
-Full field-by-field contract: [contract/video_uploaded.md](contract/video_uploaded.md).
-
-### Wire contract: `video_status`
-
-Valkey Stream. Producer: `event_microservice` (direct XADD, no outbox).
-Consumer: `litestar_backend` media_example XREADGROUP lifespan task. Carries
-three event types: `video_processing_started`, `video_processed`,
-`video_processing_failed`. The consumer group is `media_example`; duplicate
-deliveries are absorbed by the Video status machine's `InvalidTransition`.
-
-Full field-by-field contract: [contract/video_status.md](contract/video_status.md).
+Two Valkey Streams connect the services. `video_uploaded` (forward):
+`litestar_backend`'s outbox relay publishes upload events; the
+`event_microservice` consumer defines its OWN inbound schema and never
+imports the producer's integration-event type. `video_status` (return):
+`event_microservice` publishes processing-status events (direct XADD, no
+outbox); a `media_example` lifespan task consumes them and drives the video
+status machine. All field names, event types, group names, and delivery
+guarantees live ONLY in the contract pages:
+[contract/video_uploaded.md](contract/video_uploaded.md),
+[contract/video_status.md](contract/video_status.md). End-to-end map:
+[features/video-pipeline.md](features/video-pipeline.md).
 
 ---
 
@@ -221,6 +215,10 @@ Things that, if you change them, will break the app silently or in production.
   values go in kwargs (`log.info("user paid", user_id=x)`).
 - **Static config in code, not env, when it doesn't vary per deployment.**
   CSP defaults live in `RootConfig` with override-by-env, not required-by-env.
+- **Example surfaces ship unauthenticated on purpose.** `POST/DELETE /videos`,
+  the `/videos/feed` SSE stream, and the `db_example_litestar` CRUD carry no
+  guard so the template is explorable. Before any real deployment add
+  `require_role(...)` guards to them (or delete the example contexts).
 
 ---
 
@@ -295,6 +293,7 @@ is a bug.
 
 ## 11. Pointers
 
+- Video pipeline end-to-end: [features/video-pipeline.md](features/video-pipeline.md)
 - Per-context detail: [litestar_backend/docs/contexts/](../src/litestar_backend/docs/contexts/)
 - Cross-cutting subsystems: [litestar_backend/docs/subsystems/](../src/litestar_backend/docs/subsystems/)
 - Infra/tool reference: [litestar_backend/docs/infra/](../src/litestar_backend/docs/infra/)

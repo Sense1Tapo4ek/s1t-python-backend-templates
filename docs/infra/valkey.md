@@ -34,8 +34,11 @@ reused across contexts.
 - `src/shared/config.py` — `ValkeyConfig` (env prefix `VALKEY_`, `url` property).
 - `src/shared/adapters/driven/valkey/engine.py` — `build_valkey_client(url, *, max_connections, socket_timeout)` returns `redis.asyncio.Redis.from_url(url, decode_responses=True, ...)`.
 - `src/root/composition/app.py` — `build_app` constructs `ChannelsPlugin(backend=RedisChannelsStreamBackend(history=0, redis=build_valkey_client(valkey_cfg.url)), channels=[VIDEOS_CHANNEL])`. This client is owned by the plugin and started/stopped via the app lifecycle.
-- `src/media_example/adapters/driven/outbox_relay.py` — `OutboxRelay` calls `valkey.xadd(VIDEO_UPLOADED_STREAM, ...)` to publish drained outbox rows to the `video_uploaded` Valkey Stream.
-- Future phases (FastStream consumer, SAQ): those will inject `aioredis.Redis` from the DI-managed client in `SharedProvider`.
+- `src/litestar_backend/src/shared/adapters/driven/outbox_relay.py` — the generic `OutboxRelay` XADDs drained outbox rows to a Valkey Stream (`video_uploaded`, `user_registered`).
+- `src/litestar_backend/src/media_example/adapters/driving/status_consumer.py` — XREADGROUP lifespan consumer of the `video_status` stream.
+- `src/litestar_backend/src/auth/ports/driven/valkey_denylist.py` — JWT `jti` denylist (revocation), TTL = remaining token life.
+- `src/litestar_backend/src/root/composition/app.py` — rate-limit counters in a `RedisStore` (`rate_limit` namespace), so the per-minute cap holds across workers.
+- `src/event_microservice/src/media_processing/ports/driven/` — `valkey_join_store.py` (per-video SAQ job join state), `valkey_inbox_store.py` (`event_id` dedup/idempotency), `valkey_event_publisher.py` (publishes `video_status`).
 
 ## Two clients, on purpose
 

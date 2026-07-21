@@ -2,7 +2,7 @@
 
 Audience: contributor working on the HTTP API service.
 
-Litestar 2.23+ app, strict S-DDD per bounded context, Dishka DI. Owns
+Litestar 2.24+ app, strict S-DDD per bounded context, Dishka DI. Owns
 Postgres, the admin UI (Jinja), role-based auth (JWT + API keys + static
 admin token), Prometheus metrics, and the outbox relay that publishes
 `video_uploaded` to the event pipeline. Cross-service topology and wire

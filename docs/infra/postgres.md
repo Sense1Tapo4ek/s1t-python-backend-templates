@@ -9,13 +9,15 @@ Audience: contributor / operator.
 ```
             one Postgres database (litestar_base)
             +-----------------------------------+
+  auth  --->| schema auth                       |  search_path = auth
   media --->| schema media                      |  search_path = media
   dbex ---->| schema db_example_litestar        |  search_path = db_example_litestar
             +-----------------------------------+
 ```
 
-Both contexts speak SQLAlchemy over the asyncpg driver. One database, one
-schema per bounded context. Each engine sets its own `search_path` to its
+All three contexts speak SQLAlchemy over the asyncpg driver. One database, one
+schema per bounded context. The `auth` schema holds `users`, `api_keys`, and
+`outbox_messages` (see `migrations/auth/`). Each engine sets its own `search_path` to its
 context schema, so unqualified table names resolve there and contexts never
 collide. No cross-schema queries.
 
@@ -31,12 +33,12 @@ DSNs from the same host/port/user/password/db, one per driver:
 
 | Property | Scheme | Used by |
 |:---|:---|:---|
-| `alchemy_url` | `postgresql+asyncpg://` | both contexts' runtime (SQLAlchemy async engine) |
-| `yoyo_url` | `postgresql+psycopg://` | `media_example` migrations (yoyo, psycopg3 sync backend) |
+| `alchemy_url` | `postgresql+asyncpg://` | every context's runtime (SQLAlchemy async engine) |
+| `yoyo_url` | `postgresql+psycopg://` | `auth` and `media_example` migrations (yoyo, psycopg3 sync backend) |
 | `asyncpg_dsn` | `postgresql://` | no runtime user; kept for raw-asyncpg tooling (e.g. the container smoke test) |
 
-Both contexts run on the SQLAlchemy async engine (`postgresql+asyncpg`).
-`media_example` uses plain SQLAlchemy 2.0; `db_example_litestar` uses
+All DB contexts run on the SQLAlchemy async engine (`postgresql+asyncpg`).
+`auth` and `media_example` use plain SQLAlchemy 2.0; `db_example_litestar` uses
 advanced-alchemy. Migrations go through psycopg3 (via yoyo).
 
 ## Environment
@@ -48,9 +50,11 @@ advanced-alchemy. Migrations go through psycopg3 (via yoyo).
 | `POSTGRES_USER` | `postgres` | role |
 | `POSTGRES_PASSWORD` | `postgres` | password |
 | `POSTGRES_DB` | `litestar_base` | database name |
-| `MEDIA_SCHEMA_NAME` | `media` | media_example context schema |
-| `MEDIA_POOL_SIZE` | `4` | SQLAlchemy engine pool size |
 | `DB_EXAMPLE_LITESTAR_SCHEMA_NAME` | `db_example_litestar` | litestar context schema |
+
+Per-context schema/pool knobs (`MEDIA_*`, `AUTH_*`) are documented on the
+owning context pages ([media_example](../../src/litestar_backend/docs/contexts/media_example.md),
+[auth](../../src/litestar_backend/docs/contexts/auth.md)).
 
 `.env.full.example` is the contract. No env vars in business logic -- config flows
 through Pydantic Settings into Dishka providers.
@@ -74,7 +78,8 @@ context.
 
 | Context | Tool | Where |
 |:---|:---|:---|
-| media_example | yoyo (psycopg3 sync backend, run in a thread) | `migrations/media/*.sql`, applied by the shared `run_migrations` at lifespan start |
+| auth | yoyo (psycopg3 sync backend, run in a thread) | `migrations/auth/*.sql`, applied by the shared `run_migrations` at lifespan start (first of the managers) |
+| media_example | yoyo (same runner) | `migrations/media/*.sql`, applied at lifespan start |
 | db_example_litestar | `create_all` at lifespan startup | none (schema built from ORM metadata) |
 
 One shared runner (`shared/adapters/driven/postgres/migrations.py::run_migrations`)

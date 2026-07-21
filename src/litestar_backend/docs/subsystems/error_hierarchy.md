@@ -12,9 +12,10 @@ Exception
     └── AdapterError     → 500 Internal       (EXCEPTION)
 ```
 
-The full discipline (when to wrap, when to pass through, what to log) lives
-in `~/.claude/rules/s-ddd_python/errors.md`. This page documents the
-project-specific wiring.
+The discipline in one line: raise semantic errors named after the violated
+invariant, wrap raw infrastructure exceptions at driven ports, log only at
+the adapter boundary that maps the error to a response. This page documents
+the project-specific wiring; the raise/catch table below is the contract.
 
 ## Raise / catch contract
 
@@ -109,4 +110,3 @@ hand-written `HTTPException` catch-all.
   `src/admin/adapters/driving/error_handlers.py` (401/403 SSR handlers).
 - Wire contract: [../../../../docs/contract/errors.md](../../../../docs/contract/errors.md).
 - ADR: [../adr/0018-rfc9457-problem-details.md](../adr/0018-rfc9457-problem-details.md).
-- Discipline: `~/.claude/rules/s-ddd_python/errors.md`.

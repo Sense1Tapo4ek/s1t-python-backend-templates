@@ -1,8 +1,8 @@
 # Glossary
 
 One-sentence definitions of the S-DDD terms used across this repo. Authoritative
-detail lives in `~/.claude/rules/s-ddd_python/` and `docs/architecture.md`; this
-page is a quick lookup, not a substitute.
+detail lives in [architecture.md](architecture.md); this page is a quick
+lookup, not a substitute.
 
 ## Layers
 

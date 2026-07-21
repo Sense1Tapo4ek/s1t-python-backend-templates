@@ -63,6 +63,11 @@ live-browser update).
 
 `POST /videos` increments the `videos_uploaded_total` Prometheus counter.
 
+These routes are **intentionally unauthenticated** — an explorable example
+surface, like the `db_example_litestar` CRUD. Before any real deployment add
+`require_role(...)` guards to `POST`/`DELETE /videos` and the SSE feed (or
+delete the context).
+
 `GET /videos/feed` opens a subscription on the `videos` Litestar channel.
 Each status transition broadcasts `{"video_id": "...", "status": "..."}` to
 connected subscribers.

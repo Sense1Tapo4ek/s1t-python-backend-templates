@@ -91,8 +91,10 @@ never drift from the toolchain pins above. gitleaks is a standalone scanner, pin
 by tag.
 
 Notes:
-- You cannot bypass the gate with `git commit --no-verify` — a repo hook blocks it.
-  Fix the finding instead (`task fmt` for formatting), then re-commit.
+- `git commit --no-verify` skips the hook (it is client-side; nothing can stop
+  it), but bypassing is treated as breaking the gate — fix the finding instead
+  (`task fmt` for formatting), then re-commit. CI (being added) is the backstop
+  that catches bypassed commits.
 - Stale hook tag? `pre-commit autoupdate`.
 - A broken `task arch` is a real S-DDD violation (one bounded context importing
   another's internals); route it through `shared/` or an ACL.
@@ -127,3 +129,4 @@ Every non-trivial change walks the same path, docs at both ends:
 
 - [architecture.md](architecture.md) — layers, error hierarchy, DI, invariants.
 - [glossary.md](glossary.md) — S-DDD terms in one place.
+- [adopting.md](adopting.md) — rename the template, delete the example contexts.

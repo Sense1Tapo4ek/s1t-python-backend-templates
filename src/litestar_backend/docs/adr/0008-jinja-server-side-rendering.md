@@ -25,8 +25,8 @@ resolve as `<context>/<file>.html`.
 - + Single static mount, single template engine — no per-context wiring.
 - + Asset path == URL path; mental model is one-to-one.
 - − Adds `jinja2` (+`markupsafe`) to runtime deps (~600KB).
-- − Designers and Python share a directory; convention rule §1.3 in
-  `~/.claude/rules/s-ddd_python/structure.md` keeps it ordered.
+- − Designers and Python share a directory; the repo convention (one static
+  root mirroring the context tree, no context prefixes) keeps it ordered.
 
 ## Alternatives considered
 - **Mako / fastTemplate** — smaller, but ecosystem and Litestar integration
@@ -36,4 +36,4 @@ resolve as `<context>/<file>.html`.
 - **Per-context templates folder under `adapters/driving/templates/`** —
   proposed first. User feedback: violates the project's principle that
   browser-served assets are wire-level UI, parallel to `docs/` and
-  `tests/`, not S-DDD layers. Captured as rule §1.3.
+  `tests/`, not S-DDD layers. Now the repo-wide convention.

@@ -48,8 +48,6 @@ terminal wrapper.
 
 ## Logging conventions
 
-Per `~/.claude/rules/s-ddd_python/logging.md`:
-
 ```python
 log.info("user paid", user_id=user_id, amount=amount, currency=currency)
 ```
@@ -95,5 +93,4 @@ log.info("user paid", user_id=user_id, amount=amount, currency=currency)
 
 - Code: `src/shared/logging.py`
 - Consumer: [contexts/admin-log.md](../contexts/admin-log.md)
-- Conventions: `~/.claude/rules/s-ddd_python/logging.md`
 - structlog docs: <https://www.structlog.org/en/stable/>

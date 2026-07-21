@@ -181,7 +181,8 @@ See ADR 0025.
 - `create_all` is idempotent on existing tables. It does not apply column
   changes — schema changes require dropping and recreating the tables in dev.
 - advanced-alchemy's `NamedDependency` API requires Litestar >= 2.23.0.
-  The project version floor moved from 2.21 to 2.23 for this reason.
+  The floor moved from 2.21 to 2.23 for this reason (ADR 0013) and has since
+  moved to >= 2.24.0 (`pyproject.toml` is authoritative).
 
 ## Pointers
 
@@ -190,7 +191,7 @@ See ADR 0025.
 - [docs/adr/0014-db-example-litestar-facade-as-public-api.md](db_example_litestar/adr/0014-db-example-litestar-facade-as-public-api.md) — facade as single public API for HTTP + code
 - [docs/adr/0016-db-example-litestar-orm-model-in-ports-root.md](db_example_litestar/adr/0016-db-example-litestar-orm-model-in-ports-root.md) — ORM model at `ports/` root (used by both branches); supersedes 0015
 - [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](db_example_litestar/adr/0015-db-example-litestar-orm-model-in-domain.md) — (superseded by 0016) ORM model in domain/
-- [docs/adr/0013-litestar-2.23-floor.md](../adr/0013-litestar-2.23-floor.md) — version bump rationale
+- [docs/adr/0013-litestar-2.23-floor.md](../adr/0013-litestar-2.23-floor.md) — version bump rationale (the floor has since moved to 2.24)
 - [docs/contexts/media_example.md](media_example.md) — plain-SQLAlchemy counterpart (golden context)
 - [docs/infra/postgres.md](../../../../docs/infra/postgres.md) — Postgres wiring (schemas, DSNs, search_path)
 - [docs/architecture.md](../../../../docs/architecture.md) — S-DDD layers and DI scopes
