@@ -138,7 +138,8 @@ deploys ignore the override: `docker compose -f docker-compose.yml up`.
 - **APP-scope DI is lazy.** The first HTTP request resolves the graph.
   Tests using env-isolation autouse fixtures must warm DI eagerly first
   — see `tests/e2e/conftest.py::e2e_client`.
-- **`.env` is gitignored.** `.env.example` is the contract.
+- **`.env` is gitignored.** `.env.full.example` is the full contract;
+  `.env.example` is the minimal quick-start subset of it.
 - **Test env isolation.** `tests/conftest.py::_isolate_environment` is
   autouse and deletes APP_NAME et al. before every test. Module-scoped
   fixtures must set env BEFORE that and warm DI.

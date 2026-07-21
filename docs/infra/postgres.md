@@ -52,7 +52,7 @@ advanced-alchemy. Migrations go through psycopg3 (via yoyo).
 | `MEDIA_POOL_SIZE` | `4` | SQLAlchemy engine pool size |
 | `DB_EXAMPLE_LITESTAR_SCHEMA_NAME` | `db_example_litestar` | litestar context schema |
 
-`.env.example` is the contract. No env vars in business logic -- config flows
+`.env.full.example` is the contract. No env vars in business logic -- config flows
 through Pydantic Settings into Dishka providers.
 
 ## Schema isolation via search_path

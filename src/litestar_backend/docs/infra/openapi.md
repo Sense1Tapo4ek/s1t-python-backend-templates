@@ -95,7 +95,7 @@ is [../../../../docs/contract/errors.md](../../../../docs/contract/errors.md).
   default `SECURITY_CSP` (`script-src 'self'`) blocks both, rendering a blank
   page. For local exploration set a dev `SECURITY_CSP` in `.env` allowing
   `https://cdn.jsdelivr.net` and `'unsafe-inline'` for script/style (see the
-  commented example in `.env.example`). Prod keeps the strict default -- either
+  commented example in `.env.full.example`). Prod keeps the strict default -- either
   self-host the UI assets or rely on `/schema/openapi.json` + an external tool.
 - **advanced-alchemy field docs are limited.** `SQLAlchemyDTO` (advanced-alchemy
   1.11) has no clean per-field OpenAPI description/example hook, so the
