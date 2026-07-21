@@ -29,9 +29,9 @@ controllers.
 
 ## Scopes
 
-- `Scope.APP` — process-wide singletons. Default for everything in this
+- `Scope.APP` -- process-wide singletons. Default for everything in this
   project. Resolved lazily on first request.
-- `Scope.REQUEST` — per-request resources (DB session, UoW). Created
+- `Scope.REQUEST` -- per-request resources (DB session, UoW). Created
   automatically by the Litestar integration; available in handlers via
   `FromDishka[...]`.
 
@@ -56,7 +56,7 @@ class AdminLogWebProvider(Provider):
 Rules:
 - Map concretes to interfaces with `provides=`. The provider is the only
   place that knows the binding.
-- Never import another context's `provider.py` — the root container is
+- Never import another context's `provider.py` -- the root container is
   the only assembly point.
 
 ## Container access from adapters
@@ -64,7 +64,7 @@ Rules:
 | Caller | Pattern |
 |:---|:---|
 | Controller | `FromDishka[Dep]` + `@inject` decorator |
-| Middleware (APP-scope dep) | `await container.get(Dep)` via `connection.app.state.container` — but **stash it once at lifespan**, don't resolve per request |
+| Middleware (APP-scope dep) | `await container.get(Dep)` via `connection.app.state.container` -- but **stash it once at lifespan**, don't resolve per request |
 | Middleware (REQUEST-scope dep) | `connection.scope["state"]["dishka_container"].get(Dep)` |
 | Lifespan / startup | `await container.get(Dep)` via app instance |
 | Worker / CLI | `async with container() as request_container: …` |

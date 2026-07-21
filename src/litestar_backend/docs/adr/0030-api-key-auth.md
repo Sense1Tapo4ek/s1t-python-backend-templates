@@ -1,4 +1,4 @@
-# 0030 — DB-backed hashed API keys
+# 0030 -- DB-backed hashed API keys
 
 Status: accepted
 Date: 2026-06-15
@@ -31,6 +31,6 @@ outage surfaces as `PortError` -> middleware fail-closes to anonymous.
 
 ## Alternatives considered
 
-- bcrypt/argon2 hashing — unnecessary for 256-bit keys; SHA-256 suffices.
-- Valkey storage — no relational audit trail or list query.
-- Config-file keys — no runtime mint/revoke, no per-key metadata.
+- bcrypt/argon2 hashing -- unnecessary for 256-bit keys; SHA-256 suffices.
+- Valkey storage -- no relational audit trail or list query.
+- Config-file keys -- no runtime mint/revoke, no per-key metadata.

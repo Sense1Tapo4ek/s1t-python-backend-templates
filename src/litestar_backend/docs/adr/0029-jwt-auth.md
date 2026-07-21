@@ -1,4 +1,4 @@
-# 0029 — Layer JWT auth on the static admin token
+# 0029 -- Layer JWT auth on the static admin token
 
 Status: accepted
 Date: 2026-06-15
@@ -29,6 +29,6 @@ life), checked on every JWT request. Refresh is one-time rotation: the old
 
 ## Alternatives considered
 
-- PyJWT — less RFC-complete (JWS/JWE/JWK) than `joserfc`.
-- Pure-stateless JWT — no revocation; a leaked access token lives out its TTL.
-- Fail-open on denylist outage — revoked tokens slip through during an outage.
+- PyJWT -- less RFC-complete (JWS/JWE/JWK) than `joserfc`.
+- Pure-stateless JWT -- no revocation; a leaked access token lives out its TTL.
+- Fail-open on denylist outage -- revoked tokens slip through during an outage.

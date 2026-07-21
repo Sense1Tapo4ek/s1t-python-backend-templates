@@ -32,5 +32,5 @@ Both must be green. CI runs the same gates.
 
 ## Workflow details
 
-See [docs/development.md](docs/development.md) — toolchain, Taskfile surface,
+See [docs/development.md](docs/development.md) -- toolchain, Taskfile surface,
 pre-commit gate, feature workflow.

@@ -11,6 +11,7 @@ from shared.adapters.driven.postgres import SqlUoW, build_engine, build_sessionm
 from shared.app import IClock
 from shared.config import PostgresConfig
 
+from .adapters.driving.feed_limiter import FeedLimiter
 from .adapters.driving.status_consumer import VideoStatusConsumer
 from .adapters.lifespan_manager import MediaLifespanManager
 from .app import (
@@ -56,6 +57,10 @@ class MediaInfraProvider(Provider):
     config = provide(MediaConfig)
 
     channels = from_context(provides=ChannelsPlugin, scope=Scope.APP)
+
+    @provide
+    def feed_limiter(self, config: MediaConfig) -> FeedLimiter:
+        return FeedLimiter(config.feed_max_connections)
 
     @provide
     async def db(self, pg: PostgresConfig, config: MediaConfig) -> AsyncIterator[MediaDb]:

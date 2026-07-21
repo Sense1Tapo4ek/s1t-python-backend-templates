@@ -73,7 +73,7 @@ them is what kills the template's ability to grow.
 ```
 <context>/
 ├── domain/              # Pure stdlib. Aggregates, VOs, domain events, domain errors.
-├── app/                 # Use cases. Orchestration only — no I/O, no frameworks.
+├── app/                 # Use cases. Orchestration only -- no I/O, no frameworks.
 │   └── interfaces/      # Protocol definitions for every driven port.
 ├── ports/
 │   ├── driving/         # Facades + Pydantic schemas (the public API).
@@ -83,7 +83,7 @@ them is what kills the template's ability to grow.
 │   ├── driven/          # DB engines, broker clients, workers, file sources.
 │   ├── middleware/      # Context-owned ASGI middleware.
 │   └── lifespan/        # Optional lifespan managers (e.g. outbox relay).
-├── provider.py          # Dishka Provider — the only place mapping concretes to interfaces.
+├── provider.py          # Dishka Provider -- the only place mapping concretes to interfaces.
 └── config.py            # Pydantic Settings with a unique env_prefix.
 ```
 
@@ -92,8 +92,8 @@ them is what kills the template's ability to grow.
 ## 3. Error hierarchy
 
 Defined in `src/litestar_backend/src/shared/generics/errors.py`. Four subtypes of `LayerError`
-map to HTTP status codes (DomainError → 409, AppError → 422, PortError → 503,
-AdapterError → 500). Every error renders as RFC 9457 `application/problem+json`
+map to HTTP status codes (DomainError -> 409, AppError -> 422, PortError -> 503,
+AdapterError -> 500). Every error renders as RFC 9457 `application/problem+json`
 (ADR 0018). 5xx never carries a traceback.
 
 Full hierarchy, raise/catch contract, handler registration, snitchbot
@@ -112,7 +112,7 @@ one `Provider`. The root assembly lives in
 Rules:
 - Root imports only `provider.py` from each context. Never internals.
 - Concrete-to-interface mapping happens in the provider, never anywhere else.
-- APP-scope graph resolves lazily on the first request — see §6.
+- APP-scope graph resolves lazily on the first request -- see §6.
 
 Current provider list, scopes, and container-access patterns:
 [litestar_backend/docs/infra/dishka.md](../src/litestar_backend/docs/infra/dishka.md).
@@ -126,19 +126,19 @@ For the *why*, see [adr/0001-dishka-for-di.md](adr/0001-dishka-for-di.md).
 registered from `build_app`.
 
 Order of operations on startup:
-1. `RootConfig()` — fail fast on misconfig (PROD without admin token).
-2. `snitchbot.init(...)` — crash reporter armed.
-3. `build_container(channels=...)` — providers wired; the `ChannelsPlugin`
+1. `RootConfig()` -- fail fast on misconfig (PROD without admin token).
+2. `snitchbot.init(...)` -- crash reporter armed.
+3. `build_container(channels=...)` -- providers wired; the `ChannelsPlugin`
    instance enters the container as Dishka context.
-4. `configure_structlog()` — JSON logger, two stdlib handlers:
+4. `configure_structlog()` -- JSON logger, two stdlib handlers:
    `StreamHandler` (stdout) + `WatchedFileHandler(LOG_FILE_PATH)`. No queue.
-5. `app.state.auth_facade = await container.get(AuthFacade)` — middleware-bound
+5. `app.state.auth_facade = await container.get(AuthFacade)` -- middleware-bound
    singletons resolved once.
-6. `AuthLifespanManager.start()` — runs the `auth` schema migration
+6. `AuthLifespanManager.start()` -- runs the `auth` schema migration
    (`api_keys` table). First of the three managers.
-7. `DbExampleLitestarLifespanManager.start()` — `create_all` for the
+7. `DbExampleLitestarLifespanManager.start()` -- `create_all` for the
    advanced-alchemy example.
-8. `MediaLifespanManager.start()` — media migrations, then two background
+8. `MediaLifespanManager.start()` -- media migrations, then two background
    tasks: the outbox relay and the `video_status` consumer.
 
 Shutdown unwinds in reverse, each in `try/finally` so one component's failure
@@ -208,7 +208,7 @@ Things that, if you change them, will break the app silently or in production.
 - **Cookie auth contract.** `ADMIN_COOKIE_NAME` lives in `auth/config.py`.
   Cookie is `HttpOnly`, `SameSite=Strict`, `Secure` only over HTTPS.
 - **Errors propagate; adapters catch.** Domain/app code never catches
-  `LayerError` to "convert" it — the problem+json plugin (framework
+  `LayerError` to "convert" it -- the problem+json plugin (framework
   `HTTPException`s) and the converters in `shared/adapters/problem_details.py`
   (`LayerError` subtypes) do.
 - **No emoji or filler in logs.** Event names are stable literals; dynamic
@@ -228,8 +228,8 @@ Things that, if you change them, will break the app silently or in production.
 
 1. `src/<name>/{domain,app,ports/{driving,driven},adapters/{driving,driven}}/`
    with `__init__.py` re-exporting the public API via `__all__`.
-2. `<name>/config.py` — Pydantic Settings, unique `env_prefix`.
-3. `<name>/provider.py` — Dishka `Provider`, `Scope.APP`, maps concretes to
+2. `<name>/config.py` -- Pydantic Settings, unique `env_prefix`.
+3. `<name>/provider.py` -- Dishka `Provider`, `Scope.APP`, maps concretes to
    `app/interfaces/` Protocols.
 4. Register the provider in `src/litestar_backend/src/root/composition/container.py`.
 5. Register controllers (and middleware/lifespan if needed) in
@@ -246,7 +246,7 @@ Postgres 18, schema-per-context via `search_path` ([infra/postgres.md](infra/pos
 1. Copy `docs/adr/template.md` to `docs/adr/NNNN-<decision>.md` with the
    next number.
 2. ≤40 lines. One decision per file. Status: `accepted`. Date today.
-3. Never renumber. Supersede with a new ADR — keep the old one in tree.
+3. Never renumber. Supersede with a new ADR -- keep the old one in tree.
 
 ---
 
@@ -280,8 +280,8 @@ name+types, MADR ADRs <=40 lines) is the baseline. Project-specific overrides:
   reference lives in `src/<svc>/docs/{contexts,subsystems,infra,adr}/`. A page
   goes in the narrowest tree whose blast radius contains it. Do not add new
   top-level folders.
-- **One page per technology**: platform substrate (Postgres, Valkey) →
-  `docs/infra/<tool>.md`; service-exclusive tech (Jinja, SAQ) →
+- **One page per technology**: platform substrate (Postgres, Valkey) ->
+  `docs/infra/<tool>.md`; service-exclusive tech (Jinja, SAQ) ->
   `src/<svc>/docs/infra/<tool>.md`. Don't duplicate vendor docs; link them.
 - **Voice**: terse, declarative, no marketing words. Match the existing
   pages.

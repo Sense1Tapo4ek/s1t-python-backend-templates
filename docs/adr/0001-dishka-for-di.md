@@ -1,4 +1,4 @@
-# 0001 — Dishka for dependency injection
+# 0001 -- Dishka for dependency injection
 Status: accepted
 Date: 2026-05-06
 
@@ -14,7 +14,7 @@ Use Dishka. One `Provider` per bounded context, registered in
 `APP`; per-request resources (sessions, UoW) get `Scope.REQUEST`.
 
 ## Consequences
-- + Lazy resolution — graph builds on first request, not at import.
+- + Lazy resolution -- graph builds on first request, not at import.
 - + One-line concrete-to-interface mapping in providers; tests override by
   swapping providers.
 - + Explicit `Scope.APP` vs `Scope.REQUEST` separation maps cleanly to ASGI.
@@ -23,8 +23,8 @@ Use Dishka. One `Provider` per bounded context, registered in
   isolation fixtures.
 
 ## Alternatives considered
-- punq / dependency-injector — synchronous-first; awkward with async deps.
-- Manual constructor wiring — fine until the graph hits ~20 nodes; then it
+- punq / dependency-injector -- synchronous-first; awkward with async deps.
+- Manual constructor wiring -- fine until the graph hits ~20 nodes; then it
   becomes the bottleneck for adding contexts.
-- FastAPI-style `Depends` — couples DI to the request handler, no clean
+- FastAPI-style `Depends` -- couples DI to the request handler, no clean
   way to share an APP-scope graph with workers and CLI.

@@ -56,7 +56,7 @@ user-bound pair re-checks the user is active, so deactivation cuts rotation
 while old tokens are still unexpired.
 
 Env vars (prefix `AUTH_`, `auth/config.py`) are documented once on the
-context page: [contexts/auth.md — Configuration](../contexts/auth.md#configuration).
+context page: [contexts/auth.md -- Configuration](../contexts/auth.md#configuration).
 
 ## Invariants and gotchas
 

@@ -1,4 +1,4 @@
-# NNNN — <decision in active voice>
+# NNNN -- <decision in active voice>
 Status: accepted
 Date: YYYY-MM-DD
 
@@ -13,4 +13,4 @@ Date: YYYY-MM-DD
 - − <cost>
 
 ## Alternatives considered
-- <option> — <one-line reason for rejection>
+- <option> -- <one-line reason for rejection>

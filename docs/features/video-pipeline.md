@@ -1,7 +1,7 @@
 # Feature map: video pipeline
 
 How a video upload travels through both services and comes back as a live
-status update. Entry point only — every fact lives on the linked pages.
+status update. Entry point only -- every fact lives on the linked pages.
 
 ## Flow
 

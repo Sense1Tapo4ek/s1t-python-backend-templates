@@ -12,7 +12,7 @@ within a week.
 
 This is a template. The auth stack (JWT, API keys, admin token, argon2id
 hashing, CSRF, rate limiting) is in scope. Deployment hardening of forks is
-the fork owner's responsibility — see the PROD checklist in `.env.example`
+the fork owner's responsibility -- see the PROD checklist in `.env.example`
 and the deliberately-open example endpoints noted in
 [docs/architecture.md](docs/architecture.md).
 

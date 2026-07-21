@@ -1,4 +1,4 @@
-# 0004 — Static bearer/cookie auth for admin surfaces
+# 0004 -- Static bearer/cookie auth for admin surfaces
 Status: accepted
 Date: 2026-05-06
 
@@ -20,7 +20,7 @@ boot); empty token in PROD is rejected at startup by `RootConfig`.
   (`StaticTokenResolver`), one middleware.
 - + Token-cap (`MAX_TOKEN_LEN=4096`) + constant-time compare bound the
   blast radius of pathological inputs.
-- − Single static token per role — no per-user identity, no audit trail
+- − Single static token per role -- no per-user identity, no audit trail
   of who acted.
 - − No CSRF token on the login form; mitigated by token knowledge gate
   but must be added when sessions become per-user.
@@ -28,6 +28,6 @@ boot); empty token in PROD is rejected at startup by `RootConfig`.
   in any real deployment.
 
 ## Alternatives considered
-- JWT — needs key rotation, refresh flow; overshoots the starter's job.
-- OIDC — separate identity service required.
-- Session table in DB — meaningful only once we have users to put in it.
+- JWT -- needs key rotation, refresh flow; overshoots the starter's job.
+- OIDC -- separate identity service required.
+- Session table in DB -- meaningful only once we have users to put in it.

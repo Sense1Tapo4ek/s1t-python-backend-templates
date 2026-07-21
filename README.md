@@ -1,7 +1,7 @@
 # s1t-python-backend-templates
 
 **An architecture you can read.** Two services, zero shared code, strict DDD
-in every context — a production-shaped monorepo template where the patterns
+in every context -- a production-shaped monorepo template where the patterns
 are the product and the features exist to prove them.
 
 [![CI](https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/actions/workflows/ci.yml/badge.svg)](https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/actions/workflows/ci.yml)
@@ -9,7 +9,7 @@ are the product and the features exist to prove them.
 [![Litestar 2.24+](https://img.shields.io/badge/litestar-2.24%2B-e3b661)](https://litestar.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9bda8)](LICENSE)
 
-**[→ The landing page](https://sense1tapo4ek.github.io/s1t-python-backend-templates/)**
+**[-> The landing page](https://sense1tapo4ek.github.io/s1t-python-backend-templates/)**
 tells this story visually.
 
 ---
@@ -18,30 +18,29 @@ tells this story visually.
 
 ```
 ┌──────────────────────┐   video_uploaded (stream)   ┌──────────────────────┐
-│   litestar_backend   │ ──────────────────────────▶ │  event_microservice  │
+│   litestar_backend   │ ────────────────────────--> │  event_microservice  │
 │  HTTP · Postgres     │                             │  FastStream · SAQ    │
-│  outbox · auth · SSE │ ◀────────────────────────── │  Valkey join · jobs  │
+│  outbox · auth · SSE │ <--──────────────────────── │  Valkey join · jobs  │
 └──────────────────────┘    video_status (stream)    └──────────────────────┘
 ```
 
-Only wire contracts cross the boundary — not a single shared import. Each
+Only wire contracts cross the boundary -- not a single shared import. Each
 service is a standalone uv project (own `pyproject.toml`, lock, Dockerfile)
 you could extract to its own repo unchanged. Contracts:
 [docs/contract/](docs/contract/README.md).
 
 ## Anatomy of a context
 
-Every bounded context keeps the same four layers; imports point inward only —
-context boundaries and layer direction are enforced by import-linter in CI,
+Every bounded context keeps the same four layers; imports point inward only -- context boundaries and layer direction are enforced by import-linter in CI,
 pre-commit, and the Docker test gate:
 
 ```
-adapters ──▶ ports ──▶ app ──▶ domain
+adapters --> ports --> app --> domain
 controllers  facades   use cases  pure stdlib
 engines      repos     Protocols  aggregates, VOs, events
 ```
 
-Plus `provider.py` (Dishka DI — the only wiring point) and `config.py` (own
+Plus `provider.py` (Dishka DI -- the only wiring point) and `config.py` (own
 env prefix). Siblings talk through ACLs; every decision has an ADR. Full
 rules: [docs/architecture.md](docs/architecture.md).
 
@@ -51,7 +50,7 @@ rules: [docs/architecture.md](docs/architecture.md).
 |---|---|---|
 | Transactional outbox | row + event commit atomically; relay drains to a Valkey Stream | [`shared/adapters/driven/outbox_relay.py`](src/litestar_backend/src/shared/adapters/driven/outbox_relay.py) · [ADR 0031](src/litestar_backend/docs/adr/0031-shared-generic-patterns.md) |
 | Inbox dedup | at-least-once delivery, exactly-once effect via `event_id` inbox | [delivery-guarantees.md](src/event_microservice/docs/subsystems/delivery-guarantees.md) |
-| Composite auth chain | JWT → API-key → static token, first match wins, fail-closed | [`auth/ports/driven/composite_token_resolver.py`](src/litestar_backend/src/auth/ports/driven/composite_token_resolver.py) · [ADR 0032](src/litestar_backend/docs/adr/0032-user-identity-model.md) |
+| Composite auth chain | JWT -> API-key -> static token, first match wins, fail-closed | [`auth/ports/driven/composite_token_resolver.py`](src/litestar_backend/src/auth/ports/driven/composite_token_resolver.py) · [ADR 0032](src/litestar_backend/docs/adr/0032-user-identity-model.md) |
 | Keyset pagination | opaque cursors, stable pages under writes, one generic `Page[T]` | [`shared/generics/pagination.py`](src/litestar_backend/src/shared/generics/pagination.py) |
 | Integration-event envelope | `event_id` + `version` + `occurred_at` on every wire event by construction | [`shared/generics/integration_event.py`](src/litestar_backend/src/shared/generics/integration_event.py) |
 | Graceful drain | lifespan managers own their background tasks and stop them inside the grace window | [`media_example/adapters/lifespan_manager.py`](src/litestar_backend/src/media_example/adapters/lifespan_manager.py) |
@@ -70,7 +69,7 @@ The API writes the video row + outbox message in one transaction; a relay
 publishes `video_uploaded` to a Valkey Stream; the consumer enqueues three
 SAQ jobs (stt, plagiarism, transcode); the worker joins their completion in
 Valkey and publishes `video_status` back; the backend drives the video
-through PENDING → PROCESSING → DONE/FAILED and broadcasts each transition to
+through PENDING -> PROCESSING -> DONE/FAILED and broadcasts each transition to
 the SSE feed at `/videos/feed`. Watch it in the SAQ panel and the admin log
 viewer.
 
@@ -91,14 +90,14 @@ Production ignores it: `docker compose -f docker-compose.yml up`.
 | What | URL |
 |---|---|
 | API | `http://localhost:8000` |
-| Admin login → dashboard + log viewer | `http://localhost:8000/admin/login` |
-| OpenAPI UI | `http://localhost:8000/schema/swagger` — needs one line: copy `SECURITY_CSP` (dev variant) from `.env.full.example` into `.env` |
+| Admin login -> dashboard + log viewer | `http://localhost:8000/admin/login` |
+| OpenAPI UI | `http://localhost:8000/schema/swagger` -- needs one line: copy `SECURITY_CSP` (dev variant) from `.env.full.example` into `.env` |
 | Backend Prometheus metrics | `http://localhost:8000/metrics` |
 | SAQ admin panel (jobs, retry/abort) | `http://localhost:8081` |
 | Consumer / worker metrics | `http://localhost:9101/metrics`, `http://localhost:9102/metrics` |
 
 Admin auth: paste `AUTH_ADMIN_TOKEN` at `/admin/login` (HttpOnly cookie,
-SameSite=Strict). Empty token disables auth with a startup warning — dev
+SameSite=Strict). Empty token disables auth with a startup warning -- dev
 only; `APP_ENV=prod` rejects it at boot. The SAQ panel takes
 `SAQ_WEB_PASSWORD` for HTTP Basic (user `admin`); details:
 [saq.md](src/event_microservice/docs/infra/saq.md).
@@ -117,7 +116,7 @@ src/
 │   │   └── db_example_litestar/  Hybrid CRUD example: advanced-alchemy + SQLAlchemyDTO
 │   ├── migrations/           yoyo migrations, one folder per context
 │   ├── static/               Jinja templates + assets, mirrors the context tree
-│   └── tests/                unit / flow / integration / e2e — mirrors src/
+│   └── tests/                unit / flow / integration / e2e -- mirrors src/
 └── event_microservice/       FastStream consumer + SAQ worker (own pyproject + lock)
     ├── src/
     │   ├── shared/           Own Valkey client, logging, base errors
@@ -136,7 +135,7 @@ levels). Use **`db_example_litestar`** only for thin CRUD with no invariants.
 |---|---|---|
 | Litestar 2.24+ | `litestar_backend` adapters | HTTP controllers, SSE, guards, exception handlers |
 | Dishka | `provider.py` per context, `root/composition` | All wiring; business code never builds its dependencies |
-| Pydantic / pydantic-settings | `ports/driving` schemas, `config.py` | HTTP boundary validation and env config — nowhere else |
+| Pydantic / pydantic-settings | `ports/driving` schemas, `config.py` | HTTP boundary validation and env config -- nowhere else |
 | msgspec | outbox payloads, wire events | Dataclass-shaped wire payloads (faster than json/Pydantic) |
 | SQLAlchemy 2.0 (plain) | `media_example` | The default DB pattern to copy: explicit session, mappers, outbox |
 | advanced-alchemy | `db_example_litestar` only | Thin CRUD where a repository/service + `SQLAlchemyDTO` suffice |
@@ -150,7 +149,7 @@ levels). Use **`db_example_litestar`** only for thin CRUD with no invariants.
 
 ## Tests
 
-Canonical path is Docker Compose — same toolchain as the app images:
+Canonical path is Docker Compose -- same toolchain as the app images:
 
 ```bash
 docker compose run --rm litestar_backend_test                       # ruff + mypy + pytest
@@ -162,14 +161,14 @@ Local `uv` inner loop (from the service root, e.g. `src/litestar_backend/`):
 
 ```bash
 uv run pytest tests/unit tests/flow   # instant, no DB
-uv run pytest                         # full suite — needs Docker (testcontainers)
+uv run pytest                         # full suite -- needs Docker (testcontainers)
 uv run ruff check . && uv run mypy
 ```
 
 Test layout mirrors `src/`: `unit/` (domain, no mocks), `flow/` (use cases,
 mocked interfaces), `integration/` (real Postgres/Valkey), `e2e/` (full app).
 The [`Taskfile`](Taskfile.yml) wraps these (`task test`, `task be:unit`) and
-`pre-commit` runs ruff/mypy/gitleaks on every commit — see
+`pre-commit` runs ruff/mypy/gitleaks on every commit -- see
 [docs/development.md](docs/development.md).
 
 ## Documentation

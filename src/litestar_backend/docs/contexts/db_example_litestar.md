@@ -15,7 +15,7 @@ both CRUD orchestration and repository access, leaving the ORM model,
 repo/service subclasses, a thin facade, DTOs, controllers, and config.
 
 The ORM model is used by **both** sides of ports (driving serialises it, driven
-persists it), so it lives at the **`ports/` root** (`ports/orm_models.py`) — not
+persists it), so it lives at the **`ports/` root** (`ports/orm_models.py`) -- not
 under `driving/` or `driven/`, which keeps it out of a `driving <-> driven`
 crossing. `ports/driving` re-exports it so controllers (which may import only
 `ports/driving`) get the type for their `SQLAlchemyDTO` generics. The facade in
@@ -55,20 +55,20 @@ facades (driving) and repos, services (driven) all import them from
 |---|---|---|---|---|
 | POST | `/db-example-litestar/authors` | `AuthorWriteDTO` | `AuthorReadDTO` | 201 |
 | POST | `/db-example-litestar/authors/bulk` | `list[AuthorModel]` (collection) | `Sequence[AuthorModel]` | 201 |
-| GET | `/db-example-litestar/authors` | — | `OffsetPagination[AuthorModel]` | 200 |
-| GET | `/db-example-litestar/authors/{author_id:uuid}` | — | `AuthorReadDTO` | 200 |
+| GET | `/db-example-litestar/authors` | -- | `OffsetPagination[AuthorModel]` | 200 |
+| GET | `/db-example-litestar/authors/{author_id:uuid}` | -- | `AuthorReadDTO` | 200 |
 | PATCH | `/db-example-litestar/authors/{author_id:uuid}` | `AuthorPatchDTO` | `AuthorReadDTO` | 200 |
-| DELETE | `/db-example-litestar/authors/{author_id:uuid}` | — | — | 204 |
+| DELETE | `/db-example-litestar/authors/{author_id:uuid}` | -- | -- | 204 |
 | POST | `/db-example-litestar/books` | `BookWriteDTO` | `BookReadDTO` | 201 |
-| GET | `/db-example-litestar/books` | — | `OffsetPagination[BookModel]` | 200 |
+| GET | `/db-example-litestar/books` | -- | `OffsetPagination[BookModel]` | 200 |
 
 Author list query params: `search` (substring, case-insensitive, on `name`),
 `limit` (default 50), `offset` (default 0).
 
-### Facades (`ports/driving/`) — programmatic CRUD
+### Facades (`ports/driving/`) -- programmatic CRUD
 
 The same CRUD is callable from code without HTTP. Facades are REQUEST-scoped
-(they wrap the REQUEST-scoped service) — resolve them from the request-scoped
+(they wrap the REQUEST-scoped service) -- resolve them from the request-scoped
 Dishka container, or construct directly over an `AsyncSession` (see
 `tests/integration/db_example_litestar/test_facades.py`).
 
@@ -96,7 +96,7 @@ All are `SQLAlchemyDTO` subclasses using `SQLAlchemyDTOConfig`.
 
 | DTO | Excluded fields | Partial |
 |---|---|---|
-| `AuthorReadDTO` | — (max_nested_depth=1) | No |
+| `AuthorReadDTO` | -- (max_nested_depth=1) | No |
 | `AuthorWriteDTO` | `id`, `created_at`, `updated_at`, `books` | No |
 | `AuthorPatchDTO` | `id`, `created_at`, `updated_at`, `books` | Yes |
 | `BookReadDTO` | `created_at`, `updated_at`, `author` | No |
@@ -140,16 +140,15 @@ Remaining deliberate relaxations, both narrow and documented:
 - the facade holds the service (`driving -> driven`) so the CRUD has a single
   public entry point usable from HTTP and code (ADR 0014);
 - the lifespan manager (at `adapters/`) imports `ports.orm_models` once for
-  `create_all` table registration — a pure side-effect import;
-- the model is a SQLAlchemy ORM type rather than a framework-free dataclass —
-  acceptable because the context has no business logic (ADR 0012).
+  `create_all` table registration -- a pure side-effect import;
+- the model is a SQLAlchemy ORM type rather than a framework-free dataclass -- acceptable because the context has no business logic (ADR 0012).
 
 ## Schema management
 
 `UUIDAuditBase.metadata.create_all` is called on lifespan start, after the
 context's Postgres schema is created (`build_engine(alchemy_url, schema)` sets
 `search_path`, so tables land in `db_example_litestar`). There are no migration
-files for this context — this is deliberate. `create_all` is appropriate for
+files for this context -- this is deliberate. `create_all` is appropriate for
 demo/prototype contexts where schema drift is not a concern. Production contexts
 should use yoyo (see `media_example`) or Alembic.
 
@@ -179,19 +178,19 @@ See ADR 0025.
   are also REQUEST-scoped; they share the same session instance within one
   request.
 - `create_all` is idempotent on existing tables. It does not apply column
-  changes — schema changes require dropping and recreating the tables in dev.
+  changes -- schema changes require dropping and recreating the tables in dev.
 - advanced-alchemy's `NamedDependency` API requires Litestar >= 2.23.0.
   The floor moved from 2.21 to 2.23 for this reason (ADR 0013) and has since
   moved to >= 2.24.0 (`pyproject.toml` is authoritative).
 
 ## Pointers
 
-- `src/db_example_litestar/` — full context source
-- [docs/adr/0012-db-example-litestar-advanced-alchemy-dishka.md](db_example_litestar/adr/0012-db-example-litestar-advanced-alchemy-dishka.md) — advanced-alchemy + hybrid layering + create_all decision
-- [docs/adr/0014-db-example-litestar-facade-as-public-api.md](db_example_litestar/adr/0014-db-example-litestar-facade-as-public-api.md) — facade as single public API for HTTP + code
-- [docs/adr/0016-db-example-litestar-orm-model-in-ports-root.md](db_example_litestar/adr/0016-db-example-litestar-orm-model-in-ports-root.md) — ORM model at `ports/` root (used by both branches); supersedes 0015
-- [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](db_example_litestar/adr/0015-db-example-litestar-orm-model-in-domain.md) — (superseded by 0016) ORM model in domain/
-- [docs/adr/0013-litestar-2.23-floor.md](../adr/0013-litestar-2.23-floor.md) — version bump rationale (the floor has since moved to 2.24)
-- [docs/contexts/media_example.md](media_example.md) — plain-SQLAlchemy counterpart (golden context)
-- [docs/infra/postgres.md](../../../../docs/infra/postgres.md) — Postgres wiring (schemas, DSNs, search_path)
-- [docs/architecture.md](../../../../docs/architecture.md) — S-DDD layers and DI scopes
+- `src/db_example_litestar/` -- full context source
+- [docs/adr/0012-db-example-litestar-advanced-alchemy-dishka.md](db_example_litestar/adr/0012-db-example-litestar-advanced-alchemy-dishka.md) -- advanced-alchemy + hybrid layering + create_all decision
+- [docs/adr/0014-db-example-litestar-facade-as-public-api.md](db_example_litestar/adr/0014-db-example-litestar-facade-as-public-api.md) -- facade as single public API for HTTP + code
+- [docs/adr/0016-db-example-litestar-orm-model-in-ports-root.md](db_example_litestar/adr/0016-db-example-litestar-orm-model-in-ports-root.md) -- ORM model at `ports/` root (used by both branches); supersedes 0015
+- [docs/adr/0015-db-example-litestar-orm-model-in-domain.md](db_example_litestar/adr/0015-db-example-litestar-orm-model-in-domain.md) -- (superseded by 0016) ORM model in domain/
+- [docs/adr/0013-litestar-2.23-floor.md](../adr/0013-litestar-2.23-floor.md) -- version bump rationale (the floor has since moved to 2.24)
+- [docs/contexts/media_example.md](media_example.md) -- plain-SQLAlchemy counterpart (golden context)
+- [docs/infra/postgres.md](../../../../docs/infra/postgres.md) -- Postgres wiring (schemas, DSNs, search_path)
+- [docs/architecture.md](../../../../docs/architecture.md) -- S-DDD layers and DI scopes

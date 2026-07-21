@@ -2,7 +2,7 @@
 
 Audience: consumer of the account-creation event feed (a sibling service, a
 worker, an analytics pipeline). Producer: `litestar_backend` auth context via
-its transactional outbox — the event commits atomically with the user row.
+its transactional outbox -- the event commits atomically with the user row.
 
 ## Stream entry (outer fields)
 
@@ -25,7 +25,7 @@ Each `XADD user_registered * ...` entry carries three fields:
 | `user_id` | string (UUID) | yes | the created user's id |
 | `role` | string | yes | role granted at registration; `"user"` today |
 
-The payload deliberately carries NO email or profile data — PII stays out of
+The payload deliberately carries NO email or profile data -- PII stays out of
 the stream. A consumer needing profile fields must fetch them through an API
 with access control.
 

@@ -71,8 +71,7 @@ Child templates `{% extends "shared/_base.html" %}` and override blocks.
 ## Gotchas
 
 - `Template` from exception handlers works (Litestar attaches the engine
-  on the response at send time), but the request must reach the handler —
-  middleware short-circuits before that don't render templates.
+  on the response at send time), but the request must reach the handler -- middleware short-circuits before that don't render templates.
 - Static-mount cache headers: 1h `max_age` is set in `build_app`. For
   designer iterations, hard-reload the browser or temporarily drop the
   `cache_control=` argument.

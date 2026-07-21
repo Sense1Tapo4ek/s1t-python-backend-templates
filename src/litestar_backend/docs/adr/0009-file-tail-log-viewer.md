@@ -1,4 +1,4 @@
-# 0009 — File-tail log viewer supersedes the out-of-process sink
+# 0009 -- File-tail log viewer supersedes the out-of-process sink
 Status: accepted
 Date: 2026-06-01
 
@@ -27,6 +27,6 @@ retention workers are removed. One process; Valkey stays only for metrics.
 - − Retention is the rotation policy's job (logrotate / docker), not the app's.
 
 ## Alternatives considered
-- Keep SQLite+sink — over-engineered for a template (the problem above).
-- In-memory ring buffer — loses history on restart; no back-scroll.
-- Per-line DB without FTS — still a writer process and a schema to maintain.
+- Keep SQLite+sink -- over-engineered for a template (the problem above).
+- In-memory ring buffer -- loses history on restart; no back-scroll.
+- Per-line DB without FTS -- still a writer process and a schema to maintain.

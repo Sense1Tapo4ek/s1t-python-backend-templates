@@ -4,7 +4,7 @@ Date: 2026-06-02
 
 ## Context
 ADR 0015 placed the ORM model in `domain/` to avoid `driving <-> driven`
-imports. But the model is not a domain type — it carries no business logic; it
+imports. But the model is not a domain type -- it carries no business logic; it
 is a translation type, the persistence-side analog of the DTO schemas. The
 project rule (structure.md §2.2) places a model by *who uses it*. This model is
 used by **both** ports branches (driving DTOs/facade serialize it, driven
@@ -23,12 +23,12 @@ Supersedes ADR 0015.
     `driving <-> driven` model import.
 - + No framework-bound type sits in `domain/`; the context simply has no
     `domain/`.
-- - `ports/` gains a root-level module (neither driving nor driven) — a small
+- - `ports/` gains a root-level module (neither driving nor driven) -- a small
     departure from the strict two-subfolder ports split, justified for a
     both-branches translation type.
 
 ## Alternatives considered
-- `domain/` (ADR 0015) — treats an ORM row as a domain entity; rejected, no
+- `domain/` (ADR 0015) -- treats an ORM row as a domain entity; rejected, no
   business logic lives on it.
-- `ports/driven/` — only correct if the model never surfaced to driving; here
+- `ports/driven/` -- only correct if the model never surfaced to driving; here
   the DTOs need it, so it would reintroduce a `driving -> driven` import.

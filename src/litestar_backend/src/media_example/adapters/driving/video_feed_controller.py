@@ -11,14 +11,12 @@ from litestar.types import SSEData
 
 from ...config import MediaConfig
 from ...ports.driving import VIDEOS_CHANNEL
-
-# Module-level counter is safe: handlers run on one event loop per worker;
-# the cap is per-process, which is the resource actually being protected.
-_active_feeds = 0
+from .feed_limiter import FeedLimiter
 
 
-async def _event_stream(channels: ChannelsPlugin, heartbeat: float) -> AsyncIterator[SSEData]:
-    global _active_feeds
+async def _event_stream(
+    channels: ChannelsPlugin, limiter: FeedLimiter, heartbeat: float
+) -> AsyncIterator[SSEData]:
     try:
         async with channels.start_subscription(VIDEOS_CHANNEL) as subscriber:
             events = subscriber.iter_events()
@@ -32,7 +30,7 @@ async def _event_stream(channels: ChannelsPlugin, heartbeat: float) -> AsyncIter
                 except StopAsyncIteration:
                     return
     finally:
-        _active_feeds -= 1
+        limiter.release()
 
 
 class VideoFeedController(Controller):
@@ -42,10 +40,11 @@ class VideoFeedController(Controller):
     @get("/", summary="Live video feed (SSE)")
     @inject
     async def feed(
-        self, channels: ChannelsPlugin, config: FromDishka[MediaConfig]
+        self,
+        channels: ChannelsPlugin,
+        config: FromDishka[MediaConfig],
+        limiter: FromDishka[FeedLimiter],
     ) -> ServerSentEvent:
-        global _active_feeds
-        if _active_feeds >= config.feed_max_connections:
+        if not limiter.try_acquire():
             raise ServiceUnavailableException(detail="feed connection limit reached")
-        _active_feeds += 1
-        return ServerSentEvent(_event_stream(channels, config.feed_heartbeat_seconds))
+        return ServerSentEvent(_event_stream(channels, limiter, config.feed_heartbeat_seconds))
