@@ -45,7 +45,7 @@ from admin.log.adapters.driving.api import (
 from auth.adapters import AuthMiddleware
 from auth.adapters.driving.api import ApiKeyController, TokenController, UserController
 from auth.app import JwtDisabledError
-from auth.ports.driving import SECURITY_COMPONENTS
+from auth.ports.driving import SECURITY_COMPONENTS, require_role
 from db_example_litestar.adapters.driving import AuthorController, BookController
 from media_example import VIDEOS_CHANNEL
 from media_example.adapters.driving import VideoController, VideoFeedController
@@ -69,6 +69,7 @@ from shared.adapters.problem_details import (
     unexpected_to_problem,
 )
 from shared.config import AppEnv, BaseAppConfig, MetricsConfig, ValkeyConfig
+from shared.domain.auth import Role
 from shared.generics.config import PROJECT_ROOT
 from shared.generics.errors import AdapterError, AppError, DomainError, NotFoundError, PortError
 
@@ -132,9 +133,13 @@ def _build_plugins() -> list[Any]:
     ]
 
 
-# Credential endpoints only: brute-force surface, not the whole API. Safe
-# methods and everything else stay un-throttled.
-_THROTTLED_PATHS = frozenset({"/auth/login", "/auth/register", "/admin/login"})
+# Brute-force and unauthenticated-write surface. Safe methods and everything
+# else stay un-throttled. Behind a reverse proxy configure real-IP forwarding
+# (see RATE_LIMIT_PER_MINUTE in .env.full.example) or all clients share one
+# bucket keyed on the proxy's address.
+_THROTTLED_PATHS = frozenset(
+    {"/auth/login", "/auth/register", "/auth/refresh", "/admin/login", "/videos"}
+)
 
 
 def _should_throttle(request: Request) -> bool:
@@ -152,7 +157,9 @@ def _build_csrf(config: RootConfig) -> CSRFConfig:
     secret = config.csrf_secret.get_secret_value() if config.csrf_secret else secrets.token_hex(32)
     # Enforced ONLY under /admin (the browser form surface). Every other path
     # is excluded: API clients authenticate per-request with bearer
-    # credentials, which cross-site forms cannot attach -- CSRF does not apply.
+    # credentials, and AuthMiddleware accepts the admin cookie only on the
+    # admin surface (SameSite=Strict on top) -- cross-site forms can attach
+    # no credential to the excluded paths.
     return CSRFConfig(secret=secret, exclude=["^/(?!admin)"])
 
 
@@ -240,7 +247,7 @@ def build_app() -> Litestar:
         buckets=list[str | float](metrics_cfg.http_buckets),
         exclude=[metrics_cfg.prom_endpoint_path],
     )
-    prom_controller = build_prom_controller(metrics_cfg)
+    prom_controller = build_prom_controller(metrics_cfg, guard=require_role(Role.ADMIN))
 
     valkey_cfg = ValkeyConfig()
     valkey_client = build_valkey_client(valkey_cfg.url)

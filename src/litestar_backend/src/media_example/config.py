@@ -14,3 +14,5 @@ class MediaConfig(BaseAppConfig):
     status_batch: int = Field(default=100, ge=1, le=1000)
     status_block_ms: int = Field(default=1000, ge=100, le=30000)
     status_claim_idle_ms: int = Field(default=60_000, ge=0)
+    feed_max_connections: int = Field(default=100, ge=1, le=10_000)
+    feed_heartbeat_seconds: float = Field(default=15.0, ge=1.0, le=300.0)

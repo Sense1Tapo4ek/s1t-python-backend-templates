@@ -1,8 +1,8 @@
-from .export_logs_uc import ExportLogsUc
+from .export_logs_uc import ExportLogsUC
 from .interfaces import ILogFollower, ILogReader
 
 __all__ = [
-    "ExportLogsUc",
+    "ExportLogsUC",
     "ILogFollower",
     "ILogReader",
 ]

@@ -10,9 +10,9 @@ class IFeedPublisher(Protocol):
         replay; subscribers connected at publish time receive the event.
         Called only AFTER the status transition is committed.
 
-        Raises:
-            PortError: the channel plugin is not running or its queue
-                rejected the message. Callers treat this as best-effort:
-                log and continue -- the transition is already committed.
+        Best-effort by contract: NEVER raises. At-most-once delivery --
+        implementations catch and log their own infra failures, so a lost
+        feed event costs only a live-browser update and never fails the
+        caller.
         """
         ...

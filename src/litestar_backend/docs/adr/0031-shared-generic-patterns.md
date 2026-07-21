@@ -1,4 +1,4 @@
-# 0031 — Promote outbox, keyset pagination, and event envelope into shared
+# 0031 -- Promote outbox, keyset pagination, and event envelope into shared
 Status: accepted
 Date: 2026-07-21
 
@@ -12,10 +12,10 @@ subtle logic (SKIP LOCKED draining, tuple keyset comparison, dedup fields).
 Move the generic halves into `shared`, contexts keep only their specifics:
 `OutboxMixin` + stream-parameterized `OutboxRelay` (postgres/valkey adapters),
 `Page[T]` + cursor codec (`generics/pagination.py`), `keyset_older_than`
-(postgres), and `IntegrationEvent` base — `event_id`, `occurred_at`,
-`version` — in `generics/integration_event.py`. `media_example` is re-wired
+(postgres), and `IntegrationEvent` base -- `event_id`, `occurred_at`,
+`version` -- in `generics/integration_event.py`. `media_example` is re-wired
 onto them; the wire gains only the additive `occurred_at` field. The worker
-still defines its own inbound schema — no shared code across services.
+still defines its own inbound schema -- no shared code across services.
 
 ## Consequences
 - + One implementation of each pattern; identity reuses instead of forking.
@@ -24,5 +24,5 @@ still defines its own inbound schema — no shared code across services.
     consumers and need the full pyramid.
 
 ## Alternatives considered
-- Copy patterns per context — divergence of locking/keyset subtleties.
-- A separate library package — overhead unjustified inside one service.
+- Copy patterns per context -- divergence of locking/keyset subtleties.
+- A separate library package -- overhead unjustified inside one service.

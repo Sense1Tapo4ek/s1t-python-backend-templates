@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ...app import RenderDashboardUc
+from ...app import RenderDashboardUC
 from ...domain import DashboardViewVo
 
 
@@ -13,7 +13,7 @@ class AdminFacade:
     value, holding no logic of its own.
     """
 
-    _render_dashboard_uc: RenderDashboardUc
+    _render_dashboard_uc: RenderDashboardUC
 
     def render_dashboard(self) -> DashboardViewVo:
         """Build the dashboard view (app name + git build metadata).

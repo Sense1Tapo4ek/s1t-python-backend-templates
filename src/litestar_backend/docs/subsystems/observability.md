@@ -59,7 +59,7 @@ GitHub Actions setup, response shape, and the rationale for `BuildInfoVo`.
 `/health` (liveness) and `/health/ready` (readiness; probes log dir writability,
 Postgres, and Valkey concurrently; returns a per-dependency `checks` map; 503
 when any check fails, removing the replica from the LB pool without restarting
-it) — semantics in [contexts/admin.md](../contexts/admin.md#two-tier-health).
+it) -- semantics in [contexts/admin.md](../contexts/admin.md#two-tier-health).
 `/ping` is a sync heartbeat with no I/O.
 
 ## Crash reporting

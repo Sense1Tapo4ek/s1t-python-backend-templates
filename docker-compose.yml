@@ -88,7 +88,7 @@ services:
       start_period: 20s
       retries: 3
 
-  # Test/CI runner — full green gate (ruff + mypy + pytest) in the same uv
+  # Test/CI runner -- full green gate (ruff + mypy + pytest) in the same uv
   # toolchain as the app, with the `dev` dependency group + tests/ layered on.
   # Profile-gated so `docker compose up` never starts it.
   #   docker compose run --rm litestar_backend_test                      # full gate
@@ -129,8 +129,10 @@ services:
       context: ./src/event_microservice
     image: event-microservice:local
     restart: unless-stopped
+    # Loopback-only: metrics are unauthenticated; Prometheus scrapes over the
+    # compose network, host access is for local debugging.
     ports:
-      - "9101:9100"
+      - "127.0.0.1:9101:9100"
     environment:
       VALKEY_URL: redis://valkey:6379/0
     depends_on:
@@ -155,13 +157,16 @@ services:
     restart: unless-stopped
     # --web serves the SAQ monitoring panel (queues, jobs, retry/abort) on
     # container port 8080 -> host 8081. Protected by HTTP Basic auth when
-    # SAQ_WEB_PASSWORD is set in .env (user "admin"); empty = no auth, dev only.
+    # SAQ_WEB_PASSWORD is set in .env (user "admin"); empty = no auth, dev
+    # only -- APP_ENV=prod refuses to start with an empty password.
+    # Loopback-only bindings: panel and metrics are not for the open network.
     command: ["saq", "root.entrypoints.saq_worker.settings", "--web", "--port", "8080"]
     ports:
-      - "9102:9100"
-      - "8081:8080"
+      - "127.0.0.1:9102:9100"
+      - "127.0.0.1:8081:8080"
     environment:
       VALKEY_URL: redis://valkey:6379/0
+      APP_ENV: ${APP_ENV:-dev}
       AUTH_PASSWORD: ${SAQ_WEB_PASSWORD:-}
     depends_on:
       valkey:

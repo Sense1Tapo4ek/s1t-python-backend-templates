@@ -6,7 +6,7 @@ from ..interfaces import ITokenResolver
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class AuthenticateUc:
+class AuthenticateUC:
     _resolver: ITokenResolver
 
     async def __call__(self, token: str) -> Principal | None:

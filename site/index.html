@@ -3,10 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>s1t-litestar-template — an architecture you can read</title>
+<title>s1t-python-backend-templates · an architecture you can read</title>
 <meta name="description" content="Production-shaped Litestar monorepo template: strict DDD, transactional outbox, event-driven two-service topology.">
-<meta property="og:title" content="s1t-litestar-template">
+<meta property="og:title" content="s1t-python-backend-templates">
 <meta property="og:description" content="Two services, zero shared code, strict DDD in every context. Patterns first, features as proof.">
+<meta property="og:url" content="https://sense1tapo4ek.github.io/s1t-python-backend-templates/">
+<meta property="og:image" content="https://sense1tapo4ek.github.io/s1t-python-backend-templates/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://sense1tapo4ek.github.io/s1t-python-backend-templates/social-preview.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23211c16'/%3E%3Cpath d='M32 15 L51 49 L13 49 Z' fill='none' stroke='%23e3b661' stroke-width='5' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -146,7 +150,7 @@ footer a{color:var(--soft);font-family:var(--mono)}
 
 <header>
   <div class="container">
-    <span class="wordmark">s1t-litestar-template<b>.</b></span>
+    <span class="wordmark">s1t-python-backend-templates<b>.</b></span>
     <nav>
       <a href="#patterns">patterns</a>
       <a href="#scenario">pipeline</a>
@@ -161,10 +165,10 @@ footer a{color:var(--soft);font-family:var(--mono)}
     <div class="overline"><i class="geo g-brass">▵</i>production-shaped python monorepo</div>
     <h1>An architecture<br>you can <em>read</em>.</h1>
     <p>Two services, zero shared code, strict DDD in every context. A Litestar
-    API and an event worker bound only by wire contracts — patterns first,
+    API and an event worker bound only by wire contracts · patterns first,
     features as proof.</p>
     <div class="cta">
-      <a class="btn btn-brass" href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates">Use this template</a>
+      <a class="btn btn-brass" href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/generate">Use this template</a>
       <a class="btn btn-ghost" href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/architecture.md">Read the architecture&nbsp;→</a>
     </div>
   </div>
@@ -187,7 +191,7 @@ footer a{color:var(--soft);font-family:var(--mono)}
         Valkey join store · inbox dedup · no Postgres</div>
       </div>
     </div>
-    <p class="topo-note">only wire contracts cross the boundary — <b>not a single shared import</b>.
+    <p class="topo-note">only wire contracts cross the boundary · <b>not a single shared import</b>.
     Each service is a standalone uv project you could extract to its own repo unchanged.</p>
   </div>
 </section>
@@ -195,19 +199,19 @@ footer a{color:var(--soft);font-family:var(--mono)}
 <section>
   <div class="container">
     <div class="overline"><i class="geo g-clay">◇</i>anatomy of a context</div>
-    <h2>A symmetric hexagon — everything depends on the core.</h2>
+    <h2>A symmetric hexagon · everything depends on the core.</h2>
     <p class="lede">Requests climb the driving side into the core; effects
     flow down the driven side out of it. The domain sits on top and imports
     nothing. Hover a layer to see where it lives in the tree. Context
-    boundaries are enforced by import-linter; layer direction is the
-    reviewed convention.</p>
+    boundaries and layer direction are both enforced by import-linter ·
+    in CI, pre-commit, and the Docker test gate.</p>
     <div class="layers-grid">
       <div class="hex">
-        <div class="layer core span2" data-l="domain"><div class="t">domain/</div><div class="d">pure stdlib — aggregates, value objects, domain events · imports nothing</div></div>
+        <div class="layer core span2" data-l="domain"><div class="t">domain/</div><div class="d">pure stdlib · aggregates, value objects, domain events · imports nothing</div></div>
         <div class="hex-arrow span2">▲</div>
-        <div class="layer span2" data-l="app"><div class="t">app/</div><div class="d">use cases + Protocol interfaces — orchestration, zero I/O</div></div>
+        <div class="layer span2" data-l="app"><div class="t">app/</div><div class="d">use cases + Protocol interfaces · orchestration, zero I/O</div></div>
         <div class="hex-arrow">▲</div><div class="hex-arrow">▼</div>
-        <div class="layer" data-l="ports-driving"><div class="t">ports/driving/</div><div class="d">facades &amp; DTOs — the public API</div></div>
+        <div class="layer" data-l="ports-driving"><div class="t">ports/driving/</div><div class="d">facades &amp; DTOs · the public API</div></div>
         <div class="layer" data-l="ports-driven"><div class="t">ports/driven/</div><div class="d">repos implementing app interfaces</div></div>
         <div class="hex-arrow">▲</div><div class="hex-arrow">▼</div>
         <div class="layer" data-l="adapters-driving"><div class="t">adapters/driving/</div><div class="d">controllers, consumers</div></div>
@@ -262,7 +266,7 @@ INSERT outbox ─┘   └─▶ relay ─▶ stream</pre>
 first match wins · fail-closed</pre>
         <div class="why">Registered users (argon2id), service API keys and a
         break-glass admin token resolve through one middleware chain. Every
-        request gets a Principal — anonymous just means UNKNOWN.</div>
+        request gets a Principal · anonymous just means UNKNOWN.</div>
         <div class="links">
           <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/auth/ports/driven/composite_token_resolver.py">code →</a>
           <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/adr/0032-user-identity-model.md">ADR 0032 →</a>
@@ -273,7 +277,7 @@ first match wins · fail-closed</pre>
         <div class="t">Keyset pagination</div>
         <pre>WHERE (created_at,id) &lt; (:ts,:id)
 ORDER BY created_at DESC, id DESC</pre>
-        <div class="why">Opaque cursors over a composite index — stable pages
+        <div class="why">Opaque cursors over a composite index · stable pages
         under concurrent writes, no OFFSET drift. One generic
         <span class="mono">Page[T]</span> envelope for every list endpoint.</div>
         <div class="links">
@@ -288,7 +292,7 @@ ORDER BY created_at DESC, id DESC</pre>
  version, occurred_at, ...payload}</pre>
         <div class="why">Every event on the wire carries identity, a schema
         version and a producer timestamp by construction. Consumers define
-        their own inbound schema — producer types never cross the boundary.</div>
+        their own inbound schema · producer types never cross the boundary.</div>
         <div class="links">
           <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/shared/generics/integration_event.py">code →</a>
           <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/contract/README.md">contracts →</a>
@@ -299,8 +303,8 @@ ORDER BY created_at DESC, id DESC</pre>
         <div class="t">Graceful drain</div>
         <pre>SIGTERM ─▶ cancel tasks ─▶ await each
 ─▶ flush ─▶ exit before SIGKILL</pre>
-        <div class="why">Lifespan managers own their background tasks —
-        outbox relay, stream consumers — and shut them down cleanly inside
+        <div class="why">Lifespan managers own their background tasks ·
+        outbox relay, stream consumers · and shut them down cleanly inside
         the orchestrator's grace window.</div>
         <div class="links">
           <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/media_example/adapters/lifespan_manager.py">code →</a>
@@ -316,7 +320,7 @@ ORDER BY created_at DESC, id DESC</pre>
   <div class="container">
     <div class="overline"><i class="geo g-moss">▢</i>end-to-end</div>
     <h2>One request, every pattern.</h2>
-    <p class="lede">The shipped video pipeline exercises the whole catalog —
+    <p class="lede">The shipped video pipeline exercises the whole catalog ·
     watch a request travel through both services and come back as an SSE event.</p>
     <div class="flow"><div class="flow-inner" id="flow">
       <div class="step"><div class="s-t">POST /videos</div><div class="s-p">202 accepted</div></div>
@@ -336,7 +340,7 @@ ORDER BY created_at DESC, id DESC</pre>
       <div class="step"><div class="s-t">SSE feed</div><div class="s-p">to the browser</div></div>
     </div></div>
     <p class="flow-caption">at-least-once everywhere, duplicates absorbed at
-    each edge — the full field-by-field contracts live in
+    each edge · the full field-by-field contracts live in
     <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/tree/main/docs/contract">docs/contract/&nbsp;→</a></p>
   </div>
 </section>
@@ -349,9 +353,10 @@ ORDER BY created_at DESC, id DESC</pre>
       <div class="term">
 <span class="p">$</span> git clone https://github.com/Sense1Tapo4ek/s1t-python-backend-templates<br>
 <span class="p">$</span> cp .env.example .env<br>
+<span class="p">$</span> openssl rand -hex 32   <span class="c"># paste into AUTH_ADMIN_TOKEN=</span><br>
 <span class="p">$</span> docker compose up --build<br>
 <span class="c"># API :8000 · admin :8000/admin · SAQ panel :8081</span><br>
-<span class="c"># 364 tests: docker compose run --rm litestar_backend_test</span>
+<span class="c"># full test gate: docker compose run --rm litestar_backend_test</span>
       </div>
       <div class="docmap">
         <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/architecture.md">architecture.md <span class="k">topology · layers · invariants</span></a>
@@ -374,7 +379,7 @@ ORDER BY created_at DESC, id DESC</pre>
 <footer>
   <div class="container">
     <span><span class="g-brass">▵</span> <span class="g-moss">▢</span> <span class="g-clay">◇</span> · drafted in ink</span>
-    <span>part of the <a href="https://sense1tapo4ek.com">s1t</a> template family · <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates">github ↗</a></span>
+    <span>an <a href="https://sense1tapo4ek.com">s1t</a> project · <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates">github ↗</a></span>
   </div>
 </footer>
 

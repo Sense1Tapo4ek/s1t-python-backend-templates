@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Protocol
 
-from ...domain import Cursor, LogEntryEnt, MalformedLogLine
+from ...domain import Cursor, LogEntryVO, MalformedLogLine
 
 
 class ILogFileSource(Protocol):
@@ -19,12 +19,12 @@ class FileLogReader:
 
     _source: ILogFileSource
 
-    async def read_tail(self, limit: int) -> tuple[list[LogEntryEnt], Cursor]:
+    async def read_tail(self, limit: int) -> tuple[list[LogEntryVO], Cursor]:
         lines, offset, inode = await self._source.read_last_lines(limit)
         entries = self._map(lines)
         return entries, Cursor(inode=inode, offset=offset)
 
-    async def read_before(self, cursor: Cursor, limit: int) -> tuple[list[LogEntryEnt], Cursor]:
+    async def read_before(self, cursor: Cursor, limit: int) -> tuple[list[LogEntryVO], Cursor]:
         live_inode = await self._source.current_inode()
         if cursor.inode != live_inode:
             return [], cursor
@@ -36,19 +36,19 @@ class FileLogReader:
         async for line in self._source.iter_all_lines():
             yield line
 
-    async def follow(self, poll_ms: int) -> AsyncIterator[LogEntryEnt]:
+    async def follow(self, poll_ms: int) -> AsyncIterator[LogEntryVO]:
         async for line in self._source.iter_new_lines(poll_ms):
             try:
-                yield LogEntryEnt.parse(line)
+                yield LogEntryVO.parse(line)
             except MalformedLogLine:
                 continue
 
     @staticmethod
-    def _map(lines: list[str]) -> list[LogEntryEnt]:
-        entries: list[LogEntryEnt] = []
+    def _map(lines: list[str]) -> list[LogEntryVO]:
+        entries: list[LogEntryVO] = []
         for line in lines:
             try:
-                entries.append(LogEntryEnt.parse(line))
+                entries.append(LogEntryVO.parse(line))
             except MalformedLogLine:
                 continue
         return entries

@@ -58,10 +58,15 @@ live-browser update).
 |:---|:---|:---|:---|:---|
 | POST | `/videos` | `UploadVideoRequest` (source_key, optional `document` JSONB) | `VideoModel` (incl. `document`) | 202 |
 | GET | `/videos` | `?limit=1-200` (default 50), `?cursor=<token>` (optional) | `Page[VideoModel] {items, next_cursor}` | 200, 400 on bad cursor |
-| DELETE | `/videos/{id}` | — | — | 204, 404 unknown id |
-| GET | `/videos/feed` | — | SSE stream | 200 |
+| DELETE | `/videos/{id}` | -- | -- | 204, 404 unknown id |
+| GET | `/videos/feed` | -- | SSE stream | 200 |
 
 `POST /videos` increments the `videos_uploaded_total` Prometheus counter.
+
+These routes are **intentionally unauthenticated** -- an explorable example
+surface, like the `db_example_litestar` CRUD. Before any real deployment add
+`require_role(...)` guards to `POST`/`DELETE /videos` and the SSE feed (or
+delete the context).
 
 `GET /videos/feed` opens a subscription on the `videos` Litestar channel.
 Each status transition broadcasts `{"video_id": "...", "status": "..."}` to
@@ -161,20 +166,20 @@ key collision).
 
 ## Pointers
 
-- `src/media_example/` — full context source
-- `src/media_example/adapters/driving/status_consumer.py` — XREADGROUP consumer
-- `src/media_example/ports/driven/channels_feed_publisher.py` — SSE broadcast
-- `src/media_example/ports/driving/status_events.py` — inbound event schema
-- `src/media_example/ports/feed.py` — `VIDEOS_CHANNEL` constant
-- `migrations/media/001-create-videos.sql` — schema DDL
-- `migrations/media/002-videos-keyset-index.sql` — composite index for keyset pagination
-- `migrations/media/003-videos-audit-softdelete.sql` — audit columns + soft-delete + partial index
-- `migrations/media/004-videos-document-jsonb.sql` — JSONB document column + GIN index
-- [docs/contract/video_status.md](../../../../docs/contract/video_status.md) — wire contract for the return stream
-- [docs/infra/valkey.md](../../../../docs/infra/valkey.md) — Valkey wiring (outbox relay + Channels backend)
-- [docs/infra/postgres.md](../../../../docs/infra/postgres.md) — SQLAlchemy engine, search_path, migrations
-- [docs/adr/0022-video-pipeline-transport-roles.md](../../../../docs/adr/0022-video-pipeline-transport-roles.md) — transport role decision
-- [docs/adr/0024-media-example-golden-context.md](../adr/0024-media-example-golden-context.md) — why this replaced orders + db_example_sddd
-- [docs/adr/0025-standardize-on-sqlalchemy.md](../adr/0025-standardize-on-sqlalchemy.md) — single DB stack; plain SQLAlchemy here
-- [docs/adr/0028-video-status-return-path.md](../../../../docs/adr/0028-video-status-return-path.md) — why direct-publish over outbox for the return path
-- [docs/architecture.md](../../../../docs/architecture.md) — S-DDD layers, DI scopes, how to add a context
+- `src/media_example/` -- full context source
+- `src/media_example/adapters/driving/status_consumer.py` -- XREADGROUP consumer
+- `src/media_example/ports/driven/channels_feed_publisher.py` -- SSE broadcast
+- `src/media_example/ports/driving/status_events.py` -- inbound event schema
+- `src/media_example/ports/feed.py` -- `VIDEOS_CHANNEL` constant
+- `migrations/media/001-create-videos.sql` -- schema DDL
+- `migrations/media/002-videos-keyset-index.sql` -- composite index for keyset pagination
+- `migrations/media/003-videos-audit-softdelete.sql` -- audit columns + soft-delete + partial index
+- `migrations/media/004-videos-document-jsonb.sql` -- JSONB document column + GIN index
+- [docs/contract/video_status.md](../../../../docs/contract/video_status.md) -- wire contract for the return stream
+- [docs/infra/valkey.md](../../../../docs/infra/valkey.md) -- Valkey wiring (outbox relay + Channels backend)
+- [docs/infra/postgres.md](../../../../docs/infra/postgres.md) -- SQLAlchemy engine, search_path, migrations
+- [docs/adr/0022-video-pipeline-transport-roles.md](../../../../docs/adr/0022-video-pipeline-transport-roles.md) -- transport role decision
+- [docs/adr/0024-media-example-golden-context.md](../adr/0024-media-example-golden-context.md) -- why this replaced orders + db_example_sddd
+- [docs/adr/0025-standardize-on-sqlalchemy.md](../adr/0025-standardize-on-sqlalchemy.md) -- single DB stack; plain SQLAlchemy here
+- [docs/adr/0028-video-status-return-path.md](../../../../docs/adr/0028-video-status-return-path.md) -- why direct-publish over outbox for the return path
+- [docs/architecture.md](../../../../docs/architecture.md) -- S-DDD layers, DI scopes, how to add a context

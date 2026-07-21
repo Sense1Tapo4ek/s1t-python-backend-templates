@@ -7,7 +7,7 @@ from .errors import MalformedLogLine
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class LogEntryEnt:
+class LogEntryVO:
     timestamp: str
     level: str
     logger: str
@@ -15,7 +15,7 @@ class LogEntryEnt:
     raw: dict[str, Any]
 
     @classmethod
-    def parse(cls, line: str) -> "LogEntryEnt":
+    def parse(cls, line: str) -> "LogEntryVO":
         text = line.rstrip("\r")
         if not text:
             raise MalformedLogLine(preview=line)

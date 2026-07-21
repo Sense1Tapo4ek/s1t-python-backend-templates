@@ -1,7 +1,7 @@
 """Module-scoped E2E app + client.
 
 Each E2E module that opts in by requesting `e2e_client` gets a single
-Litestar app and a single TestClient for the whole module — the lifespan
+Litestar app and a single TestClient for the whole module -- the lifespan
 runs once, not once per test. Lifespan boots Postgres, runs migrations,
 opens channels, and resolves the DI graph; doing it 50x per file is the
 dominant cost of the e2e suite.
@@ -44,7 +44,7 @@ def e2e_app(
 ) -> Iterator[Litestar]:
     """Module-scoped Litestar app with isolated VOLUME_PATH and admin token.
 
-    Uses `pytest.MonkeyPatch` directly — the function-scoped `monkeypatch`
+    Uses `pytest.MonkeyPatch` directly -- the function-scoped `monkeypatch`
     fixture is unusable at module scope.
     """
     mp = pytest.MonkeyPatch()
@@ -66,7 +66,7 @@ def e2e_app(
 
 @pytest.fixture(scope="module")
 def e2e_client(e2e_app: Litestar) -> Iterator[TestClient]:
-    """Module-scoped TestClient — lifespan runs ONCE per module.
+    """Module-scoped TestClient -- lifespan runs ONCE per module.
 
     Warms up the DI graph by hitting /health so APP-scope dependencies
     (BuildInfoVo, BaseAppConfig) resolve while module-fixture env vars

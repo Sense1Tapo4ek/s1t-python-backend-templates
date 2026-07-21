@@ -43,7 +43,7 @@ redelivery.
 
 ### Producer-side guarantees
 
-**`video_processing_started` — at-least-once via FastStream redelivery of the
+**`video_processing_started` -- at-least-once via FastStream redelivery of the
 inbound message.**
 `OnVideoUploadedUC` runs inside the FastStream `video_uploaded` consumer
 (`adapters/driving/uploaded_consumer.py`). A `PortError` from `publish_started`
@@ -51,13 +51,13 @@ propagates out of the use case and out of the handler; FastStream leaves the
 `video_uploaded` message unacked and redelivers it. On redelivery the jobs are
 re-enqueued (the join store tolerates duplicates) and `started` is re-published.
 
-**`video_processed` — at-least-once via SAQ job retry.**
+**`video_processed` -- at-least-once via SAQ job retry.**
 `CompleteJobUC` runs inside a SAQ job (`adapters/driving/saq_jobs.py`). A
 `PortError` from `publish_processed` propagates and fails the job; SAQ retries
 it (requires job retries >= 1; `MediaProcessingConfig.job_retries` defaults to
 3). On retry the idempotent join re-detects completion and re-publishes.
 
-**`video_processing_failed` — at-most-once.**
+**`video_processing_failed` -- at-most-once.**
 The event is published from SAQ's `after_process` hook
 (`root/entrypoints/saq_worker.py`), which is not retried. `OnJobFailedUC` logs
 a publish failure and continues to clear the join store. A lost `failed` event

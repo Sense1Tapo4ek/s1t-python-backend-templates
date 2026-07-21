@@ -1,6 +1,6 @@
 """End-to-end tests for AuthMiddleware + login flow.
 
-The middleware no longer rejects requests directly — it always sets a
+The middleware no longer rejects requests directly -- it always sets a
 Principal (UNKNOWN if no/invalid credentials). Authorization happens via
 `require_role` guards on protected controllers.
 
@@ -84,7 +84,7 @@ def test_static_assets_no_token_required() -> None:
     app = create_app()
     with TestClient(app=app) as client:
         response = client.get("/static/admin/log/style.css")
-    # 200 if the file exists, 404 if not — the point is: NOT a redirect/401.
+    # 200 if the file exists, 404 if not -- the point is: NOT a redirect/401.
     assert response.status_code != HTTP_401_UNAUTHORIZED
     assert response.status_code != HTTP_303_SEE_OTHER
 

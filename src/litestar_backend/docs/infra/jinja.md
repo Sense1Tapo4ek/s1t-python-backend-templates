@@ -28,8 +28,12 @@ Currently four places:
 ## Layout
 
 All templates and browser assets live under one project-root `static/`
-folder, mirroring the context tree. See structure rule §1.3
-(`~/.claude/rules/s-ddd_python/structure.md`) for the full convention.
+folder, mirroring the context tree. The convention: one static root for the
+whole service (no per-context `adapters/driving/static/` folders); a single
+Litestar mount `/static/...` and a single `TemplateConfig(directory="static")`;
+template names are paths relative to that root (`"admin/log/index.html"`);
+`shared/` holds layout used by two or more contexts; file names inside a
+sub-folder carry no context prefix (the folder already encodes it).
 
 ```
 static/
@@ -67,8 +71,7 @@ Child templates `{% extends "shared/_base.html" %}` and override blocks.
 ## Gotchas
 
 - `Template` from exception handlers works (Litestar attaches the engine
-  on the response at send time), but the request must reach the handler —
-  middleware short-circuits before that don't render templates.
+  on the response at send time), but the request must reach the handler -- middleware short-circuits before that don't render templates.
 - Static-mount cache headers: 1h `max_age` is set in `build_app`. For
   designer iterations, hard-reload the browser or temporarily drop the
   `cache_control=` argument.

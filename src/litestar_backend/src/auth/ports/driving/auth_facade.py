@@ -6,7 +6,7 @@ from shared.domain.auth import Principal, Role
 from shared.generics.pagination import Page, encode_cursor
 
 from ...app import (
-    AuthenticateUc,
+    AuthenticateUC,
     DeactivateUserUC,
     GenerateApiKeyUC,
     IssueTokensUC,
@@ -31,7 +31,7 @@ class AuthFacade:
     the token methods.
     """
 
-    _authenticate_uc: AuthenticateUc
+    _authenticate_uc: AuthenticateUC
     _issue_uc: IssueTokensUC
     _refresh_uc: RefreshTokensUC
     _revoke_uc: RevokeTokenUC

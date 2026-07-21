@@ -80,7 +80,7 @@ ignore = [
 "tests/**/*.py" = ["B011", "SIM117"]  # asserts and nested with-blocks are fine in tests
 
 [tool.ruff.lint.isort]
-known-first-party = ["admin", "auth", "root", "shared"]
+known-first-party = ["admin", "auth", "db_example_litestar", "media_example", "root", "shared"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -109,18 +109,54 @@ ignore_missing_imports = true
 [tool.importlinter]
 root_packages = ["admin", "auth", "db_example_litestar", "media_example", "root", "shared"]
 
-# Single rule: leaf bounded contexts are mutually independent (no context imports
-# another's internals, directly or transitively). The only sanctioned cross-context
-# channels are: shared/ (open to all), an ACL
-# (<ctx>.ports.driven.acl -> <other>.ports.driving), and framework guards
-# (<other>.ports.driving.guards, ports.md 1.5). root/ (composition shell, imports
-# everything) and shared/ (kernel, imported by everyone) are intentionally excluded.
+# Bounded contexts are mutually independent. Sanctioned cross-context channels:
+# shared/ (open to all), ACLs (<ctx>.ports.driven.acl -> <other>.ports.driving),
+# and framework guards/middleware from <other>.ports.driving / adapters
+# (ports.md 1.5) -- each seam is recorded in ignore_imports with a citation.
+# root/ (composition shell) is excluded: it imports everything by design.
 [[tool.importlinter.contracts]]
 name = "leaf bounded contexts are mutually independent"
 type = "independence"
 modules = ["auth", "admin", "media_example", "db_example_litestar"]
-# Each legitimate cross-context seam is recorded here, reviewed, with a rule citation:
-# ignore_imports = [
-#     "admin.adapters.driving.api.* -> auth.ports.driving.guards",   # guard: ports.md 1.5
-#     "media_example.ports.driven.acl.* -> billing.ports.driving",   # ACL: structure.md 4
-# ]
+ignore_imports = [
+    # guards + auth middleware on admin surfaces: ports.md 1.5
+    "admin.adapters.driving.api.* -> auth.ports.driving",
+    "admin.log.adapters.driving.api.* -> auth.ports.driving",
+]
+
+# shared/ is the kernel: it never imports a bounded context (structure.md 1.1).
+[[tool.importlinter.contracts]]
+name = "shared imports no bounded context"
+type = "forbidden"
+source_modules = ["shared"]
+forbidden_modules = ["auth", "admin", "media_example", "db_example_litestar"]
+
+# Nothing imports root/ -- it is the outermost shell (structure.md 4).
+[[tool.importlinter.contracts]]
+name = "root is imported by nobody"
+type = "forbidden"
+source_modules = ["auth", "admin", "media_example", "db_example_litestar", "shared"]
+forbidden_modules = ["root"]
+
+# Layer direction inside each context: adapters -> ports -> app -> domain
+# (structure.md 4). db_example_litestar is a sanctioned hybrid (no domain/,
+# DTOs reference the ORM model) so it gets no layers contract -- see its ADRs.
+[[tool.importlinter.contracts]]
+name = "auth layers"
+type = "layers"
+layers = ["auth.adapters", "auth.ports", "auth.app", "auth.domain"]
+
+[[tool.importlinter.contracts]]
+name = "media_example layers"
+type = "layers"
+layers = ["media_example.adapters", "media_example.ports", "media_example.app", "media_example.domain"]
+
+[[tool.importlinter.contracts]]
+name = "admin layers"
+type = "layers"
+layers = ["admin.adapters", "admin.ports", "admin.app"]
+
+[[tool.importlinter.contracts]]
+name = "admin.log layers"
+type = "layers"
+layers = ["admin.log.adapters", "admin.log.ports", "admin.log.app", "admin.log.domain"]

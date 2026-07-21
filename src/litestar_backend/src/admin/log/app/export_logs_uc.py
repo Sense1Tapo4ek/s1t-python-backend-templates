@@ -3,7 +3,7 @@ import io
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
-from ..domain import LogEntryEnt, MalformedLogLine
+from ..domain import LogEntryVO, MalformedLogLine
 from .interfaces import ILogReader
 
 _CSV_HEADER = ("timestamp", "level", "logger", "event")
@@ -14,7 +14,7 @@ _FORMULA_TRIGGERS = ("=", "+", "-", "@")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ExportLogsUc:
+class ExportLogsUC:
     """Streams the file as a download (NDJSON raw lines or parsed CSV).
 
     Backed by ILogReader.stream_all (a point-in-time snapshot of the file
@@ -37,7 +37,7 @@ class ExportLogsUc:
 
         async for line in self._reader.stream_all():
             try:
-                entry = LogEntryEnt.parse(line)
+                entry = LogEntryVO.parse(line)
             except MalformedLogLine:
                 continue
             buf.seek(0)
@@ -46,7 +46,7 @@ class ExportLogsUc:
             yield buf.getvalue()
 
     @staticmethod
-    def _row(entry: LogEntryEnt) -> tuple[str, str, str, str]:
+    def _row(entry: LogEntryVO) -> tuple[str, str, str, str]:
         return (
             _defuse(entry.timestamp),
             _defuse(entry.level),

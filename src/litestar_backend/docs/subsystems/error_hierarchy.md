@@ -6,15 +6,16 @@ exception handlers. Defined in `src/shared/generics/errors.py`.
 ```
 Exception
 └── LayerError
-    ├── DomainError      → 409 Conflict       (WARNING)
-    ├── AppError         → 422 Unprocessable  (WARNING)
-    ├── PortError        → 503 Unavailable    (ERROR + traceback)
-    └── AdapterError     → 500 Internal       (EXCEPTION)
+    ├── DomainError      -> 409 Conflict       (WARNING)
+    ├── AppError         -> 422 Unprocessable  (WARNING)
+    ├── PortError        -> 503 Unavailable    (ERROR + traceback)
+    └── AdapterError     -> 500 Internal       (EXCEPTION)
 ```
 
-The full discipline (when to wrap, when to pass through, what to log) lives
-in `~/.claude/rules/s-ddd_python/errors.md`. This page documents the
-project-specific wiring.
+The discipline in one line: raise semantic errors named after the violated
+invariant, wrap raw infrastructure exceptions at driven ports, log only at
+the adapter boundary that maps the error to a response. This page documents
+the project-specific wiring; the raise/catch table below is the contract.
 
 ## Raise / catch contract
 
@@ -22,8 +23,8 @@ project-specific wiring.
 |:---|:---|:---|:---|
 | Domain | `DomainError` | nothing | nothing |
 | App | `AppError` | `DomainError` (only to change context) | rare |
-| Ports/driven | `PortError` | infra exceptions (asyncpg, httpx) | infra → `PortError` |
-| Adapters/driving | — | all `LayerError` subtypes | error → HTTP response |
+| Ports/driven | `PortError` | infra exceptions (asyncpg, httpx) | infra -> `PortError` |
+| Adapters/driving | -- | all `LayerError` subtypes | error -> HTTP response |
 
 Domain and app errors propagate **unchanged** through ports up to adapters.
 Driven ports are the wrap point for raw infrastructure exceptions.
@@ -86,7 +87,7 @@ class OrderAlreadyPaid(DomainError):
 
 - **DEV** (`APP_ENV=dev`): `Litestar(debug=True)` renders full tracebacks
   on 500. The catch-all `Exception -> unexpected_to_problem` is **not**
-  registered — Litestar's debug renderer wins.
+  registered -- Litestar's debug renderer wins.
 - **PROD**: `debug=False`; `unexpected_to_problem` returns a problem+json
   500 with a generic `detail`. Tracebacks never reach the client; full
   context goes to the `root.errors` logger.
@@ -109,4 +110,3 @@ hand-written `HTTPException` catch-all.
   `src/admin/adapters/driving/error_handlers.py` (401/403 SSR handlers).
 - Wire contract: [../../../../docs/contract/errors.md](../../../../docs/contract/errors.md).
 - ADR: [../adr/0018-rfc9457-problem-details.md](../adr/0018-rfc9457-problem-details.md).
-- Discipline: `~/.claude/rules/s-ddd_python/errors.md`.

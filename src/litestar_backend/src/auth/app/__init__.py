@@ -9,7 +9,7 @@ from .interfaces import (
     IUserRepo,
 )
 from .use_cases import (
-    AuthenticateUc,
+    AuthenticateUC,
     DeactivateUserUC,
     GenerateApiKeyUC,
     IssueTokensUC,
@@ -24,7 +24,7 @@ from .use_cases import (
 
 __all__ = [
     "ApiKeyNotFound",
-    "AuthenticateUc",
+    "AuthenticateUC",
     "DeactivateUserUC",
     "GenerateApiKeyUC",
     "IApiKeyRepo",

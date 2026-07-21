@@ -12,8 +12,7 @@ from litestar.params import Body
 from litestar.response import Redirect, Template
 from litestar.status_codes import HTTP_303_SEE_OTHER
 
-from auth.config import ADMIN_COOKIE_NAME, MAX_TOKEN_LEN
-from auth.ports.driving import AuthFacade
+from auth.ports.driving import ADMIN_COOKIE_NAME, MAX_TOKEN_LEN, AuthFacade
 from shared.domain.auth import Role
 
 from ....ports.driving import BuildInfoVo

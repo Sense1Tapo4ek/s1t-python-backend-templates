@@ -1,4 +1,4 @@
-# 0010 — Prometheus multiprocess mode replaces Valkey cross-worker aggregation; metrics UI removed
+# 0010 -- Prometheus multiprocess mode replaces Valkey cross-worker aggregation; metrics UI removed
 Status: accepted
 Date: 2026-06-01
 
@@ -27,6 +27,6 @@ when the context is composed.
   not compatible with network filesystems.
 
 ## Alternatives considered
-- **Keep Valkey, remove UI only** — still requires an external service;
+- **Keep Valkey, remove UI only** -- still requires an external service;
   rejected because the primary cost was the service dependency.
-- **Statsd sidecar** — adds a second external dependency; rejected.
+- **Statsd sidecar** -- adds a second external dependency; rejected.

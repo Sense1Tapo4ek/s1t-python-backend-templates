@@ -17,6 +17,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     # Shared monorepo toolchain: ruff/mypy pinned IDENTICALLY in litestar_backend.
+    "import-linter>=2.1",
     "mypy==2.3.0",
     "pytest>=9.0.2",
     "pytest-asyncio>=0.24",
@@ -73,3 +74,35 @@ module = "tests.*"
 disallow_untyped_defs = false
 check_untyped_defs = false
 
+
+[tool.importlinter]
+root_packages = ["media_processing", "root", "shared"]
+
+# shared/ is the kernel: it never imports the bounded context (structure.md 1.1).
+[[tool.importlinter.contracts]]
+name = "shared imports no bounded context"
+type = "forbidden"
+source_modules = ["shared"]
+forbidden_modules = ["media_processing"]
+
+# Nothing imports root/ -- the outermost shell (structure.md 4).
+[[tool.importlinter.contracts]]
+name = "root is imported by nobody"
+type = "forbidden"
+source_modules = ["media_processing", "shared"]
+forbidden_modules = ["root"]
+
+# Layer direction: adapters -> ports -> app -> domain (structure.md 4).
+# ignore_imports = the sanctioned ports -> adapters/driven seams
+# (structure.md 4: PORTS/driven may import adapters/driven; the module-level
+# prometheus counters live in adapters and are re-exported through
+# ports/driving for the SAQ job surface).
+[[tool.importlinter.contracts]]
+name = "media_processing layers"
+type = "layers"
+layers = ["media_processing.adapters", "media_processing.ports", "media_processing.app", "media_processing.domain"]
+ignore_imports = [
+    "media_processing.ports.driven.valkey_event_publisher -> media_processing.adapters.driven.metrics",
+    "media_processing.ports.driving.saq_support -> media_processing.adapters.driven.metrics",
+    "media_processing.ports.driving.saq_support -> media_processing.adapters.driven.executors",
+]

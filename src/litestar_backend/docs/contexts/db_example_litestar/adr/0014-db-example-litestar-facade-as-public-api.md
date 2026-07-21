@@ -5,7 +5,7 @@ Date: 2026-06-01
 ## Context
 The hybrid layering of db_example_litestar (ADR 0012) initially let HTTP
 controllers call the advanced-alchemy service directly. That left the CRUD
-reachable only over HTTP — in-process callers had no entry point — and gave
+reachable only over HTTP -- in-process callers had no entry point -- and gave
 the context no public surface analogous to other contexts' facades.
 
 ## Decision
@@ -20,7 +20,7 @@ public API for both HTTP and code.
 - + One CRUD entry point; the same operations work from HTTP and from code.
 - + Controllers import only `ports/driving/` (plus the ORM model for DTO
     generics), restoring the layer boundary the service-direct call broke.
-- - The facade crosses `driving -> driven` (it holds the service) — a
+- - The facade crosses `driving -> driven` (it holds the service) -- a
     deliberate relaxation, documented, not to be copied into a strict context.
 
 ## Alternatives considered

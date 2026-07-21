@@ -69,7 +69,7 @@ def e2e_client(e2e_app: Litestar) -> Iterator[TestClient]:
     # Warm DI while the module-fixture env (VOLUME_PATH, AUTH_ADMIN_TOKEN) is
     # still set: the autouse `_isolate_environment` wipes env before each test,
     # but APP-scope Dishka deps (BaseAppConfig, AdminLogConfig, the file reader)
-    # cache here and survive. Hitting the log API — not just /health — forces
+    # cache here and survive. Hitting the log API -- not just /health -- forces
     # AdminLogConfig + the reader to resolve against the seeded VOLUME_PATH.
     headers = {"Authorization": f"Bearer {E2E_ADMIN_TOKEN}"}
     with TestClient(app=e2e_app) as client:

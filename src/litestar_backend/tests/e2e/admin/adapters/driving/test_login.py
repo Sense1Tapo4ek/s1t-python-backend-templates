@@ -121,7 +121,7 @@ def test_login_next_smuggle_attempts_coerce_to_dashboard(evil_next: str) -> None
         )
     assert response.status_code == HTTP_303_SEE_OTHER
     location = response.headers["location"]
-    assert location == "/admin/", f"smuggle {evil_next!r} → {location}"
+    assert location == "/admin/", f"smuggle {evil_next!r} -> {location}"
 
 
 def test_login_xss_in_next_is_escaped() -> None:
@@ -141,7 +141,7 @@ def test_login_xss_in_next_is_escaped() -> None:
 
 def test_login_xss_in_error_is_escaped() -> None:
     """If the error path ever receives HTML, it must be escaped."""
-    # Trigger the empty-token branch — the message itself is hardcoded so we
+    # Trigger the empty-token branch -- the message itself is hardcoded so we
     # only assert it does not contain unescaped HTML.
     app = create_app()
     with TestClient(app=app) as client:
@@ -192,7 +192,7 @@ def test_protected_admin_html_unauthenticated_redirects_with_next() -> None:
 
 
 def test_login_after_redirect_round_trip() -> None:
-    """Full login → cookie → access protected page round-trip."""
+    """Full login -> cookie -> access protected page round-trip."""
     app = create_app()
     with TestClient(app=app) as client:
         login = client.post(

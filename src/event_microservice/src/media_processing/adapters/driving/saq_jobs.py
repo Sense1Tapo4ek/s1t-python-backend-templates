@@ -2,9 +2,13 @@ import asyncio
 from typing import Any
 from uuid import UUID
 
-from ...domain import JobKind
-from ..driven.executors import plagiarism_blocking, transcode_cpu
-from ..driven.metrics import JOB_DURATION, JOBS_PROCESSED
+from ...ports.driving import (
+    JOB_DURATION,
+    JOBS_PROCESSED,
+    JobKind,
+    plagiarism_blocking,
+    transcode_cpu,
+)
 
 
 async def stt(ctx: dict[str, Any], *, video_id: str) -> None:

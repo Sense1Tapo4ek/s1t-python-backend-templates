@@ -26,7 +26,7 @@ structlog -> JSON line --+--> StreamHandler  -> stdout
                                                        |
                               facade -> use cases -> controller
                                   |                          |
-        GET /api/v1/admin/logs/ (tail N)        GET .../stream (SSE, follow)
+        GET /api/v1/admin/logs (tail N)         GET .../stream (SSE, follow)
                                   |
                           static/admin/log (UI)
           level filter . substring . load more . drilldown  (client-side)
@@ -41,11 +41,11 @@ same file. Rotation is external; the reader follows `tail -F` semantics.
 
 | Path | Method | Purpose |
 |:---|:---|:---|
-| `/admin/logs/` | GET | HTML viewer (`Template`). |
-| `/api/v1/admin/logs/` | GET | Tail page: `{entries, cursor}` (last `LOG_TAIL_LINES`). |
+| `/admin/logs` | GET | HTML viewer (`Template`). |
+| `/api/v1/admin/logs` | GET | Tail page: `{entries, cursor}` (last `LOG_TAIL_LINES`). |
 | `/api/v1/admin/logs/older` | GET | Older page; `cursor=<base64>` from a previous page. |
 | `/api/v1/admin/logs/stream` | GET | Server-Sent Events live tail (`ServerSentEvent`). |
-| `/api/v1/admin/logs/export/` | GET | Stream the file as a download; `format=ndjson\|csv`. |
+| `/api/v1/admin/logs/export` | GET | Stream the file as a download; `format=ndjson\|csv`. |
 
 All require `Role.ADMIN`.
 
@@ -55,7 +55,7 @@ All require `Role.ADMIN`.
 |:---|:---|:---|
 | `LogsFacade` | `ports/driving/logs_facade.py` | render / older / stream / export. Thin. |
 | `ILogReader` | `app/interfaces/` | `read_tail`, `read_before`, `stream_all`. |
-| `ILogFollower` | `app/interfaces/` | `follow(poll_ms)` — yields appended entries. |
+| `ILogFollower` | `app/interfaces/` | `follow(poll_ms)` -- yields appended entries. |
 | `FileLogReader` | `ports/driven/file_log_reader.py` | implements both; maps lines, owns cursor. |
 | `LogFileSource` | `adapters/driven/log_file_source.py` | raw I/O: open, stat, reverse-read, rotation. |
 | `LogEntryEnt` | `domain/` | parsed line: `timestamp, level, logger, event, raw`. |
@@ -76,15 +76,15 @@ cursor also means the start of the file is reached.
 
 All client-side except "load more":
 
-- **Level chips** — filter the loaded rows by level.
-- **Substring search** — case-insensitive match over event, logger, level,
+- **Level chips** -- filter the loaded rows by level.
+- **Substring search** -- case-insensitive match over event, logger, level,
   and serialised context of the loaded rows.
-- **Load more** — calls `/older?cursor=` to pull `LOG_LOAD_MORE_LINES` more
+- **Load more** -- calls `/older?cursor=` to pull `LOG_LOAD_MORE_LINES` more
   lines from the file; they then become filterable.
-- **Drilldown** — expand a row to see Context / JSON / Exception.
+- **Drilldown** -- expand a row to see Context / JSON / Exception.
 
 Live frames arrive via SSE and prepend to the top. Entries are de-duplicated
-client-side by `(timestamp, logger, event)` — file-tail lines have no id.
+client-side by `(timestamp, logger, event)` -- file-tail lines have no id.
 
 ## Configuration
 
@@ -109,7 +109,7 @@ client-side by `(timestamp, logger, event)` — file-tail lines have no id.
   Prevents torn JSON and corrupt cursors during a concurrent append.
 - **Malformed lines are skipped.** `LogEntryEnt.parse` raises
   `MalformedLogLine` (a `DomainError`); the port catches it per line, skips,
-  and counts. The optional warning is logged in the adapter only — ports
+  and counts. The optional warning is logged in the adapter only -- ports
   never log.
 - **Missing/unreadable file -> `LogReadError`** (a `PortError`, 503).
 - **Live tail is best-effort across rotation.** On size-shrink

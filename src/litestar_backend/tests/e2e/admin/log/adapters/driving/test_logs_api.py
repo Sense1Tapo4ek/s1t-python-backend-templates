@@ -129,7 +129,7 @@ async def _capture_response_start(
     The endpoint returns an infinite poll generator; Litestar (and the
     httpx-backed TestClient) only flush `http.response.start` once the
     generator yields its first frame, and the test transport buffers the
-    body — so `client.stream` would block forever waiting for completion.
+    body -- so `client.stream` would block forever waiting for completion.
     Driving the ASGI callable directly lets us read the status + headers
     off the first `http.response.start` message and cancel immediately. A
     background appender writes a fresh line so the tail-follow generator

@@ -3,7 +3,7 @@
 Version: per `pyproject.toml`. Documentation: <https://www.structlog.org/>.
 
 Configured once at startup in `src/shared/logging.py::configure_structlog`.
-structlog renders JSON; two stdlib `logging` handlers emit it — a
+structlog renders JSON; two stdlib `logging` handlers emit it -- a
 `StreamHandler` to stdout and a `WatchedFileHandler(LOG_FILE_PATH)` to the
 JSONL file the admin log UI reads.
 
@@ -14,19 +14,19 @@ For the broader signal model, see [subsystems/observability.md](../subsystems/ob
 
 In order:
 
-1. `structlog.contextvars.merge_contextvars` — pulls `trace_id` /
+1. `structlog.contextvars.merge_contextvars` -- pulls `trace_id` /
    `span_id` from the contextvars set by `TraceIdMiddleware`.
 2. `structlog.stdlib.add_log_level`.
 3. `structlog.stdlib.add_logger_name`.
 4. `structlog.processors.TimeStamper(fmt="iso", utc=True)`.
 5. `structlog.processors.StackInfoRenderer`.
-6. `CallsiteParameterAdder([PATHNAME, LINENO, FUNC_NAME])` — code location
+6. `CallsiteParameterAdder([PATHNAME, LINENO, FUNC_NAME])` -- code location
    for navigation in the dashboard.
-7. `structlog.processors.dict_tracebacks` — exceptions become a
+7. `structlog.processors.dict_tracebacks` -- exceptions become a
    structured dict, never a string.
-8. `make_structlog_processor()` from `snitchbot` — forwards selected
+8. `make_structlog_processor()` from `snitchbot` -- forwards selected
    events to Telegram when configured.
-9. `structlog.stdlib.ProcessorFormatter.wrap_for_formatter` — terminal
+9. `structlog.stdlib.ProcessorFormatter.wrap_for_formatter` -- terminal
    processor handing the event dict to the stdlib formatter.
 
 `logger_factory=structlog.stdlib.LoggerFactory()`; the stdlib root logger
@@ -38,7 +38,7 @@ terminal wrapper.
 ## File handler & rotation
 
 - `WatchedFileHandler` re-`stat()`s the file before every emit and reopens it
-  if the inode changed — so external rotation (logrotate / docker) is picked
+  if the inode changed -- so external rotation (logrotate / docker) is picked
   up without restarting the app. POSIX-only; on non-POSIX fall back to plain
   `FileHandler` (no rotation detection).
 - The app never rotates or deletes its own file. Rotation is operational.
@@ -47,8 +47,6 @@ terminal wrapper.
 - A write-side processor caps each rendered line at `LOG_MAX_LINE_BYTES`.
 
 ## Logging conventions
-
-Per `~/.claude/rules/s-ddd_python/logging.md`:
 
 ```python
 log.info("user paid", user_id=user_id, amount=amount, currency=currency)
@@ -87,7 +85,7 @@ log.info("user paid", user_id=user_id, amount=amount, currency=currency)
   `shared_processors` list is annotated `list[Any]` to keep the spread
   below readable.
 - **Bind context with `contextvars`, not bound loggers**, when crossing
-  async tasks — bound loggers don't propagate across task boundaries.
+  async tasks -- bound loggers don't propagate across task boundaries.
 - **No PII in raw values.** If a field is sensitive, redact in a
   structlog processor before `JSONRenderer`.
 
@@ -95,5 +93,4 @@ log.info("user paid", user_id=user_id, amount=amount, currency=currency)
 
 - Code: `src/shared/logging.py`
 - Consumer: [contexts/admin-log.md](../contexts/admin-log.md)
-- Conventions: `~/.claude/rules/s-ddd_python/logging.md`
 - structlog docs: <https://www.structlog.org/en/stable/>

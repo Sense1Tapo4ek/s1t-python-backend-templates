@@ -3,7 +3,7 @@
 # Monorepo gate covering BOTH services. ruff / ruff-format / mypy run via EACH
 # service's own uv venv (local hooks) so the pinned tool versions never drift from
 # `task lint` / `task type`. Both services pin the SAME toolchain
-# (ruff==0.15.16, mypy==2.1.0) -- keep them in sync (see CLAUDE.md "Toolchain").
+# (see each service pyproject.toml for the pinned versions) -- keep them in sync (see CLAUDE.md "Toolchain").
 # gitleaks scans the whole repo for secrets.
 #
 # NOTE: this environment had core.hooksPath set; it was unset (local, == the default
@@ -42,6 +42,14 @@ repos:
         pass_filenames: false
         files: ^src/litestar_backend/
 
+      - id: arch-litestar-backend
+        name: import-linter (litestar_backend)
+        entry: bash -c 'cd src/litestar_backend && uv run lint-imports'
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^src/litestar_backend/
+
       # ---- event_microservice ----
       - id: ruff-event-microservice
         name: ruff (event_microservice)
@@ -62,6 +70,14 @@ repos:
       - id: mypy-event-microservice
         name: mypy (event_microservice)
         entry: bash -c 'cd src/event_microservice && uv run mypy'
+        language: system
+        types: [python]
+        pass_filenames: false
+        files: ^src/event_microservice/
+
+      - id: arch-event-microservice
+        name: import-linter (event_microservice)
+        entry: bash -c 'cd src/event_microservice && uv run lint-imports'
         language: system
         types: [python]
         pass_filenames: false

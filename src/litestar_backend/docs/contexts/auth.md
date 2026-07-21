@@ -1,8 +1,7 @@
 # auth
 
 Bearer/cookie authentication for admin surfaces. Three credential families
-resolve behind one middleware — JWT, API key, and a static admin token —
-plus role-based authorization and redirect-vs-401 selection by `Accept`.
+resolve behind one middleware -- JWT, API key, and a static admin token -- plus role-based authorization and redirect-vs-401 selection by `Accept`.
 
 For the *why*, see the ADRs: [0004 static bearer/cookie](../adr/0004-static-bearer-cookie-auth.md),
 [0029 JWT](../adr/0029-jwt-auth.md), [0030 API key](../adr/0030-api-key-auth.md).
@@ -12,31 +11,31 @@ this page is the context overview.
 ## Mental model
 
 Every request gets a `Principal(role, token_id)`. Anonymous callers get
-`Role.UNKNOWN` — there is no "no principal" branch downstream. Public
+`Role.UNKNOWN` -- there is no "no principal" branch downstream. Public
 endpoints declare no guard; protected ones declare
 `require_role(Role.ADMIN)`.
 
 `AuthMiddleware` reads one bearer credential (header or `admin_token` cookie)
-and resolves it through a **composite chain** — order JWT -> API-key ->
+and resolves it through a **composite chain** -- order JWT -> API-key ->
 static, first non-`None` wins. Each resolver shape-gates first, so a token
 reaches at most one verifier: JWT = two dots, API-key = `ak_` prefix, static
 = the fallback. The middleware never raises; any failure (incl. Valkey/DB
-outage — fail-closed) yields `Role.UNKNOWN`.
+outage -- fail-closed) yields `Role.UNKNOWN`.
 
 ```
 HTTP request
     │
-    ▼
+    v
 AuthMiddleware ─── reads Bearer header / admin_token cookie
-    │              resolves via CompositeTokenResolver → Principal
+    │              resolves via CompositeTokenResolver -> Principal
     │                ├─ JwtTokenResolver     (2 dots: verify + jti denylist)
     │                ├─ ApiKeyResolver       ("ak_": DB lookup by hash)
     │                └─ StaticTokenResolver  (opaque: compare_digest)
-    ▼
+    v
 controller.guards = [require_role(Role.ADMIN)]
-    │              UNKNOWN → NotAuthorizedException
-    │              wrong role → PermissionDeniedException
-    ▼
+    │              UNKNOWN -> NotAuthorizedException
+    │              wrong role -> PermissionDeniedException
+    v
 handler runs
 ```
 
@@ -57,12 +56,12 @@ api-keys, register/login users, list/deactivate users).
 
 ### Endpoints
 
-- `GET /admin/login`, `POST /admin/login` — render form / submit. `LoginController`.
-- `POST /admin/logout` — clears cookie, 303 → `/admin/login`.
-- `POST /auth/{token,refresh,revoke}` — JWT pair mint / rotate / revoke. `TokenController`.
-- `/auth/api-keys` CRUD (POST, GET, DELETE) — ADMIN-guarded. `ApiKeyController`.
+- `GET /admin/login`, `POST /admin/login` -- render form / submit. `LoginController`.
+- `POST /admin/logout` -- clears cookie, 303 -> `/admin/login`.
+- `POST /auth/{token,refresh,revoke}` -- JWT pair mint / rotate / revoke. `TokenController`.
+- `/auth/api-keys` CRUD (POST, GET, DELETE) -- ADMIN-guarded. `ApiKeyController`.
 - `POST /auth/{register,login}`, `GET /auth/me`, `GET /auth/users` (keyset
-  `Page[UserResponse]`), `DELETE /auth/users/{id}` — `UserController`.
+  `Page[UserResponse]`), `DELETE /auth/users/{id}` -- `UserController`.
   Registration is open; `/me` needs any authenticated role; the users admin
   surface is ADMIN-guarded.
 
@@ -73,8 +72,8 @@ Endpoint contracts (status codes, payload shapes, claim layout) live in
 
 | Situation | API caller (`Accept: application/json`) | Browser under `/admin/*` |
 |:---|:---|:---|
-| `UNKNOWN` on protected route | 401 | 303 → `/admin/login?next=...` |
-| Wrong role | 403 | 303 → `/admin/login?next=...` |
+| `UNKNOWN` on protected route | 401 | 303 -> `/admin/login?next=...` |
+| Wrong role | 403 | 303 -> `/admin/login?next=...` |
 
 Selection lives in `admin/adapters/driving/error_handlers.py`. The handler
 sniffs `Accept` and `path.startswith("/admin")`.
@@ -84,15 +83,14 @@ sniffs `Accept` and `path.startswith("/admin")`.
 `POST /admin/login` accepts `token=<value>&next=<path>`. On success:
 - Sets `admin_token` cookie: `HttpOnly`, `SameSite=Strict`, `Secure` only
   when the request was HTTPS.
-- 303 → `next` (whitelisted to `/admin/*` to prevent open-redirect).
+- 303 -> `next` (whitelisted to `/admin/*` to prevent open-redirect).
 
 `ADMIN_COOKIE_NAME` is the single source of truth in `auth/config.py`.
 
 ## Database
 
 The context owns a Postgres schema (`auth`, default) holding `api_keys`
-(SHA-256 hashes only), `users` (argon2id `password_hash`, role, soft-delete —
-the active-email unique index is partial, so a deactivated address can
+(SHA-256 hashes only), `users` (argon2id `password_hash`, role, soft-delete -- the active-email unique index is partial, so a deactivated address can
 re-register), and `outbox_messages` (the `user_registered` staging table,
 drained by the shared `OutboxRelay`). `AuthLifespanManager`
 applies `migrations/auth/` on startup **before** the alchemy and media managers
@@ -112,17 +110,16 @@ AUTH_SCHEMA_NAME=auth              # Postgres schema for api_keys
 AUTH_POOL_SIZE=5                   # SQLAlchemy pool for the auth engine
 ```
 
-- `AUTH_ADMIN_TOKEN` empty in `dev` → auth disabled, warning logged at startup.
+- `AUTH_ADMIN_TOKEN` empty in `dev` -> auth disabled, warning logged at startup.
   UNKNOWN principals still get 401/redirect on protected routes.
-- `AUTH_ADMIN_TOKEN` empty in `PROD` → `RootConfig._validate_prod_invariants`
+- `AUTH_ADMIN_TOKEN` empty in `PROD` -> `RootConfig._validate_prod_invariants`
   rejects boot.
-- `AUTH_JWT_SECRET` empty → JWT verify yields `None` and `POST /auth/token`
+- `AUTH_JWT_SECRET` empty -> JWT verify yields `None` and `POST /auth/token`
   returns `503`; only the static + api-key paths work.
 
 ## Invariants & gotchas
 
-- `AuthMiddleware` runs on **every** request, including public ones —
-  attaching `Principal` is its only job.
+- `AuthMiddleware` runs on **every** request, including public ones -- attaching `Principal` is its only job.
 - The middleware never raises. Authorization belongs to `require_role`.
 - `MAX_TOKEN_LEN = 4096` caps input before `compare_digest` to prevent
   pathological-length sinks.

@@ -1,6 +1,6 @@
 import pytest
 
-from admin.log.domain import LogEntryEnt, MalformedLogLine
+from admin.log.domain import LogEntryVO, MalformedLogLine
 
 
 class TestLogEntryParse:
@@ -15,7 +15,7 @@ class TestLogEntryParse:
             '"logger": "app", "event": "started", "extra": 1}'
         )
 
-        ent = LogEntryEnt.parse(line)
+        ent = LogEntryVO.parse(line)
 
         assert ent.timestamp == "2026-05-31T10:00:00Z"
         assert ent.level == "INFO"
@@ -37,7 +37,7 @@ class TestLogEntryParse:
         """
         line = '{"timestamp": "t", "level": "INFO", "logger": "a", "event": "e"}\r'
 
-        ent = LogEntryEnt.parse(line)
+        ent = LogEntryVO.parse(line)
 
         assert ent.event == "e"
 
@@ -47,7 +47,7 @@ class TestLogEntryParse:
         When parsed,
         Then defaults fill the promoted fields and raw keeps the original.
         """
-        ent = LogEntryEnt.parse('{"event": "only-event"}')
+        ent = LogEntryVO.parse('{"event": "only-event"}')
 
         assert ent.event == "only-event"
         assert ent.level == "INFO"
@@ -62,7 +62,7 @@ class TestLogEntryParse:
         Then MalformedLogLine is raised.
         """
         with pytest.raises(MalformedLogLine):
-            LogEntryEnt.parse("not json at all")
+            LogEntryVO.parse("not json at all")
 
     def test_parse_non_object_json_raises(self) -> None:
         """
@@ -71,7 +71,7 @@ class TestLogEntryParse:
         Then MalformedLogLine is raised.
         """
         with pytest.raises(MalformedLogLine):
-            LogEntryEnt.parse("[1, 2, 3]")
+            LogEntryVO.parse("[1, 2, 3]")
 
     def test_parse_empty_line_raises(self) -> None:
         """
@@ -80,4 +80,4 @@ class TestLogEntryParse:
         Then MalformedLogLine is raised.
         """
         with pytest.raises(MalformedLogLine):
-            LogEntryEnt.parse("")
+            LogEntryVO.parse("")

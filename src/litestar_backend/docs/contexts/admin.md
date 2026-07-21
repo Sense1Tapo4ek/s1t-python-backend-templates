@@ -19,7 +19,7 @@ src/admin/
 │   ├── login_controller.py      # /admin/login, /admin/logout
 │   └── admin_controller.py      # /admin/  (dashboard)
 ├── domain/                      # BuildInfoVo
-└── log/                         # sub-context — see admin-log.md
+└── log/                         # sub-context -- see admin-log.md
 ```
 
 ## Public surface
@@ -30,8 +30,8 @@ src/admin/
 | `/health/ready` | GET | none | Readiness; verifies the log directory is writable and probes Postgres + Valkey; returns a per-dependency `checks` map. 503 when any check fails. |
 | `/ping` | GET | none | Minimal heartbeat (sync handler). |
 | `/admin/login` | GET | none | Renders the login form. |
-| `/admin/login` | POST | none | Validates token, sets cookie, 303 → `next`. |
-| `/admin/logout` | POST | none | Clears cookie, 303 → `/admin/login`. |
+| `/admin/login` | POST | none | Validates token, sets cookie, 303 -> `next`. |
+| `/admin/logout` | POST | none | Clears cookie, 303 -> `/admin/login`. |
 | `/admin/` | GET | `ADMIN` | Dashboard overview + build info panel. |
 
 ## Build info
@@ -40,11 +40,11 @@ src/admin/
 once at startup by `admin/adapters/driven/build_info/git_build_info.py`.
 
 Resolution order:
-1. **Env vars** — if `GIT_COMMIT_SHA` is set, use it together with
+1. **Env vars** -- if `GIT_COMMIT_SHA` is set, use it together with
    `GIT_BRANCH` and `GIT_DIRTY`. Docker/CI path.
-2. **`git` subprocess** — `git rev-parse HEAD`, `--abbrev-ref HEAD`,
+2. **`git` subprocess** -- `git rev-parse HEAD`, `--abbrev-ref HEAD`,
    `git status --porcelain`. Dev checkout path.
-3. **Fallback** — `commit_sha="unknown"`, `branch=None`, `dirty=False`.
+3. **Fallback** -- `commit_sha="unknown"`, `branch=None`, `dirty=False`.
 
 `/health` response:
 
@@ -62,9 +62,9 @@ Resolution order:
 ## Two-tier health
 
 Kubernetes-style separation:
-- `/health` → liveness. Always 200 while the process is alive. Failing
+- `/health` -> liveness. Always 200 while the process is alive. Failing
   this restarts the pod.
-- `/health/ready` → readiness. 503 when the config fails to resolve, the log
+- `/health/ready` -> readiness. 503 when the config fails to resolve, the log
   directory is not writable, or Postgres/Valkey are unreachable; returns a
   per-dependency `checks` map. Failing this removes the replica from the LB
   pool but does **not** trigger a restart.
@@ -104,7 +104,7 @@ env:
 - The dashboard at `/admin/` requires the `ADMIN` role; the login flow
   itself does not (it'd be unreachable otherwise).
 - `BuildInfoVo` is a single VO because all five fields describe one process
-  instance — splitting per field is noise.
+  instance -- splitting per field is noise.
 
 ## Pointers
 

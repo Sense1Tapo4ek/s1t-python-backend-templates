@@ -38,7 +38,7 @@ class TestRequireRoleGuard:
     def test_authenticated_but_wrong_role_raises_forbidden(self) -> None:
         # Simulate a future role by using an unrelated value.
         # We can't add roles dynamically; use UNKNOWN-vs-ADMIN pair already covered.
-        # This test documents intent: when more roles exist, mismatch → 403.
+        # This test documents intent: when more roles exist, mismatch -> 403.
         guard = require_role(Role.UNKNOWN)
         with pytest.raises(PermissionDeniedException):
             guard(_connection(Principal(role=Role.ADMIN, token_id="x")), MagicMock())

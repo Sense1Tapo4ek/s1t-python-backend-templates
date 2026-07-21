@@ -8,8 +8,8 @@ explanation of the shared envelope.
 
 ## Media type
 
-Every error response — framework-level (validation, routing) and
-application-level — is `application/problem+json`, the RFC 9457
+Every error response -- framework-level (validation, routing) and
+application-level -- is `application/problem+json`, the RFC 9457
 problem-details format. There is one body shape across all status codes.
 
 ## Body fields
@@ -40,16 +40,16 @@ presence of `type`:
 
 | Field | Semantics |
 |:---|:---|
-| `type` | Stable, **non-dereferenceable** URN identifying the problem class. Match on it as a string; do **not** HTTP-fetch it. **Present on typed errors** (`LayerError` + auth 401/403) — absent on raw validation (400). See the registry below. |
+| `type` | Stable, **non-dereferenceable** URN identifying the problem class. Match on it as a string; do **not** HTTP-fetch it. **Present on typed errors** (`LayerError` + auth 401/403) -- absent on raw validation (400). See the registry below. |
 | `title` | Short human summary. On typed errors it is the status phrase (`"Conflict"`, `"Not Found"`, `"Unauthorized"`). On a raw validation error (400) it is a generic `"Validation failed for <METHOD> <path>"` summary; the per-field messages live in `extra`. |
 | `status` | The HTTP status code, repeated in the body. Always present. |
-| `detail` | On typed 4xx: the domain/app/auth message. On 5xx: a fixed generic string — internals never leak. On raw validation (400): the generic status phrase (e.g. `"Bad Request"`). |
+| `detail` | On typed 4xx: the domain/app/auth message. On 5xx: a fixed generic string -- internals never leak. On raw validation (400): the generic status phrase (e.g. `"Bad Request"`). |
 | `instance` | The request path of this occurrence. Present on typed errors (incl. 401/403); **absent on raw validation (400)**. |
 | `extra` | Present **only on raw validation errors (400)**: an array of `{message, key, source}` objects, one per offending field. Absent on typed errors. |
 
 Branch your logic on `status` (always present) and, for typed errors, `type`.
-`type` is absent on raw validation (400) — do not rely on it there; read
-`extra` instead. Never parse `detail` or `title` — they are prose and may change.
+`type` is absent on raw validation (400) -- do not rely on it there; read
+`extra` instead. Never parse `detail` or `title` -- they are prose and may change.
 
 ## Observable status codes
 
@@ -91,7 +91,7 @@ add new URNs; existing ones stay stable.
 
 ## Worked examples
 
-404 — resource not found (application error: `type` + `instance` present):
+404 -- resource not found (application error: `type` + `instance` present):
 
 ```json
 {
@@ -103,7 +103,7 @@ add new URNs; existing ones stay stable.
 }
 ```
 
-400 — validation failure (raw validation: no `type`, no `instance`; the
+400 -- validation failure (raw validation: no `type`, no `instance`; the
 per-field messages land in `extra`, `title` is a generic summary):
 
 ```json

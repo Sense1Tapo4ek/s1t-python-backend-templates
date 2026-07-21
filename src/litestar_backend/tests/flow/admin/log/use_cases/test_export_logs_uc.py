@@ -1,6 +1,6 @@
 import pytest
 
-from admin.log.app.export_logs_uc import ExportLogsUc
+from admin.log.app.export_logs_uc import ExportLogsUC
 
 
 class _FakeReader:
@@ -32,7 +32,7 @@ class TestExportNdjson:
                 '{"event": "b", "level": "WARNING"}',
             ]
         )
-        uc = ExportLogsUc(_reader=reader)
+        uc = ExportLogsUC(_reader=reader)
 
         out = "".join([chunk async for chunk in uc.export_ndjson()])
 
@@ -52,7 +52,7 @@ class TestExportCsv:
                 '{"timestamp": "t1", "level": "INFO", "logger": "a", "event": "started"}',
             ]
         )
-        uc = ExportLogsUc(_reader=reader)
+        uc = ExportLogsUC(_reader=reader)
 
         out = "".join([chunk async for chunk in uc.export_csv()])
         rows = out.strip().splitlines()
@@ -73,7 +73,7 @@ class TestExportCsv:
                 '{"timestamp": "t", "level": "INFO", "logger": "l", "event": "ok"}',
             ]
         )
-        uc = ExportLogsUc(_reader=reader)
+        uc = ExportLogsUC(_reader=reader)
 
         out = "".join([chunk async for chunk in uc.export_csv()])
         rows = out.strip().splitlines()
@@ -93,7 +93,7 @@ class TestExportCsv:
                 '{"timestamp": "t", "level": "INFO", "logger": "l", "event": "=SUM(A1)"}',
             ]
         )
-        uc = ExportLogsUc(_reader=reader)
+        uc = ExportLogsUC(_reader=reader)
 
         out = "".join([chunk async for chunk in uc.export_csv()])
 

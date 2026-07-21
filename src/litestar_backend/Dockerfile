@@ -44,7 +44,7 @@ COPY tests/ ./tests/
 
 # Default: the full local green gate. Override per-invocation, e.g.
 #   docker compose run --rm test pytest tests/unit -q
-CMD ["sh", "-c", "ruff check . && mypy && pytest -q"]
+CMD ["sh", "-c", "ruff check . && mypy && lint-imports && pytest -q"]
 
 
 # ─── Stage 2: runtime ────────────────────────────────────────────────────────

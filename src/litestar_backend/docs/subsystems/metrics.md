@@ -5,7 +5,7 @@
 
 ## Purpose
 
-`GET /metrics` — Prometheus-formatted scrape endpoint. Aggregates per-worker
+`GET /metrics` -- Prometheus-formatted scrape endpoint. Aggregates per-worker
 counters / gauges / histograms via `prometheus_client` native multiprocess
 mode. Gated by an admin guard unless `METRICS_PROM_ENDPOINT_PUBLIC=true`.
 
@@ -14,7 +14,7 @@ multiprocess bootstrap, and `MetricsConfig` live in `shared`. Custom metrics
 are plain `prometheus_client` module-level constants declared in the adapter
 that owns the measurement (e.g. `videos_uploaded_total` in `media_example`).
 
-## Mental model — multiprocess mode
+## Mental model -- multiprocess mode
 
 ```
 master process
@@ -100,9 +100,9 @@ over plain HTTP unless you add TLS termination upstream.
 
 ## Pointers
 
-- `src/shared/adapters/metrics.py` — `build_prom_controller`, `bootstrap_multiproc`, `mark_dead`
-- `src/shared/config.py::MetricsConfig` — all `METRICS_` settings
-- [docs/adr/0010-prometheus-multiprocess.md](../adr/0010-prometheus-multiprocess.md) — multiprocess mode decision
-- [docs/adr/0023-delete-metrics-context.md](../adr/0023-delete-metrics-context.md) — why the metrics context was dissolved
+- `src/shared/adapters/metrics.py` -- `build_prom_controller`, `bootstrap_multiproc`, `mark_dead`
+- `src/shared/config.py::MetricsConfig` -- all `METRICS_` settings
+- [docs/adr/0010-prometheus-multiprocess.md](../adr/0010-prometheus-multiprocess.md) -- multiprocess mode decision
+- [docs/adr/0023-delete-metrics-context.md](../adr/0023-delete-metrics-context.md) -- why the metrics context was dissolved
 - Litestar Prometheus plugin: upstream `litestar.plugins.prometheus` docs
 - `prometheus_client` multiprocess guide: upstream docs

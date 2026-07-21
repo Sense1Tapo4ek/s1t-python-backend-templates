@@ -55,20 +55,14 @@ Claim shape (HS256, `joserfc`): `iss`, `sub`, `role`, `type` (access|refresh),
 user-bound pair re-checks the user is active, so deactivation cuts rotation
 while old tokens are still unexpired.
 
-Env vars (prefix `AUTH_`, `auth/config.py`):
-
-| Var | Default | Meaning |
-|:---|:---|:---|
-| `AUTH_JWT_SECRET` | unset | HS256 signing secret. Empty disables JWT. |
-| `AUTH_JWT_ISSUER` | `litestar-base` | `iss` claim, verified on decode. |
-| `AUTH_JWT_ACCESS_TTL_SECONDS` | `900` | Access lifetime (short by design). |
-| `AUTH_JWT_REFRESH_TTL_SECONDS` | `1209600` | Refresh lifetime (14 days). |
+Env vars (prefix `AUTH_`, `auth/config.py`) are documented once on the
+context page: [contexts/auth.md -- Configuration](../contexts/auth.md#configuration).
 
 ## Invariants and gotchas
 
-- **Composite order is JWT then static, first non-None wins.** Wired in
-  `auth/provider.py`. Order matters only for performance (shape gate skips
-  most work), not correctness -- the two families never collide.
+- **Composite order is JWT -> API-key -> static, first non-None wins.** Wired
+  in `auth/provider.py`. Order matters only for performance (shape gate skips
+  most work), not correctness -- the three families never collide.
 - **Revocation is via the denylist, keyed by `jti`, TTL = remaining life.**
   Access tokens are short-lived but not instantly expirable on their own; the
   denylist makes revocation immediate. `revoke_token` and refresh rotation both
