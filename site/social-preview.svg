@@ -43,11 +43,11 @@
 
   <!-- footer -->
   <line x1="96" y1="562" x2="1184" y2="562" stroke="#4c4234"/>
-  <text x="96" y="602" font-family="serif" font-size="27" fill="#f4ecdc">s1t-litestar-template<tspan fill="#e3b661">.</tspan></text>
+  <text x="96" y="602" font-family="serif" font-size="27" fill="#f4ecdc">s1t-python-backend-templates<tspan fill="#e3b661">.</tspan></text>
 
   <!-- footer glyphs drawn -->
-  <path d="M 420 596 L 427 584 L 434 596 Z" fill="none" stroke="#e3b661" stroke-width="1.6"/>
-  <rect x="446" y="585" width="11" height="11" fill="none" stroke="#9cc48c" stroke-width="1.6"/>
-  <path d="M 475 590.5 L 482 583 L 489 590.5 L 482 598 Z" fill="none" stroke="#d98f70" stroke-width="1.6"/>
+  <path d="M 530 596 L 537 584 L 544 596 Z" fill="none" stroke="#e3b661" stroke-width="1.6"/>
+  <rect x="556" y="585" width="11" height="11" fill="none" stroke="#9cc48c" stroke-width="1.6"/>
+  <path d="M 585 590.5 L 592 583 L 599 590.5 L 592 598 Z" fill="none" stroke="#d98f70" stroke-width="1.6"/>
   <text x="1184" y="600" font-family="monospace" font-size="16" fill="#796e5e" text-anchor="end">strict DDD &#183; transactional outbox &#183; event-driven</text>
 </svg>

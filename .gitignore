@@ -227,3 +227,6 @@ __marimo__/
 # Template-evolution working notes (agent research reports, synthesis,
 # implementation plans). On-disk reference; never ships to a forker.
 /planning/
+
+# working docs never committed
+docs/superpowers/

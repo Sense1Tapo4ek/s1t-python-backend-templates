@@ -1,12 +1,12 @@
-# s1t-litestar-template
+# s1t-python-backend-templates
 
 **An architecture you can read.** Two services, zero shared code, strict DDD
 in every context — a production-shaped monorepo template where the patterns
 are the product and the features exist to prove them.
 
+[![CI](https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/actions/workflows/ci.yml/badge.svg)](https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/actions/workflows/ci.yml)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-e3b661)](https://www.python.org/)
 [![Litestar 2.24+](https://img.shields.io/badge/litestar-2.24%2B-e3b661)](https://litestar.dev/)
-[![Tests](https://img.shields.io/badge/tests-364-9cc48c)](#tests)
 [![License: MIT](https://img.shields.io/badge/license-MIT-c9bda8)](LICENSE)
 
 **[→ The landing page](https://sense1tapo4ek.github.io/s1t-python-backend-templates/)**
@@ -31,8 +31,9 @@ you could extract to its own repo unchanged. Contracts:
 
 ## Anatomy of a context
 
-Every bounded context keeps the same four layers; imports point inward only,
-enforced by import-linter:
+Every bounded context keeps the same four layers; imports point inward only —
+context boundaries and layer direction are enforced by import-linter in CI,
+pre-commit, and the Docker test gate:
 
 ```
 adapters ──▶ ports ──▶ app ──▶ domain
@@ -58,9 +59,11 @@ rules: [docs/architecture.md](docs/architecture.md).
 ## One request, every pattern
 
 ```bash
+# The example endpoints are deliberately unauthenticated -- guard before deploying.
 curl -X POST http://localhost:8000/videos \
   -H "Content-Type: application/json" \
   -d '{"source_key": "uploads/demo.mp4"}'
+# -> 202 {"id": "<uuid>", "status": "PENDING", ...}
 ```
 
 The API writes the video row + outbox message in one transaction; a relay
@@ -89,7 +92,7 @@ Production ignores it: `docker compose -f docker-compose.yml up`.
 |---|---|
 | API | `http://localhost:8000` |
 | Admin login → dashboard + log viewer | `http://localhost:8000/admin/login` |
-| OpenAPI UI | `http://localhost:8000/schema/swagger` (needs the dev CSP from `.env.full.example`) |
+| OpenAPI UI | `http://localhost:8000/schema/swagger` — needs one line: copy `SECURITY_CSP` (dev variant) from `.env.full.example` into `.env` |
 | Backend Prometheus metrics | `http://localhost:8000/metrics` |
 | SAQ admin panel (jobs, retry/abort) | `http://localhost:8081` |
 | Consumer / worker metrics | `http://localhost:9101/metrics`, `http://localhost:9102/metrics` |
