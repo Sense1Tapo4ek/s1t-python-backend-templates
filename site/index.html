@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>s1t-litestar-template — an architecture you can read</title>
+<meta name="description" content="Production-shaped Litestar monorepo template: strict DDD, transactional outbox, event-driven two-service topology.">
+<meta property="og:title" content="s1t-litestar-template">
+<meta property="og:description" content="Two services, zero shared code, strict DDD in every context. Patterns first, features as proof.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#211c16; --raised:#2a241d; --raised-2:#322b21; --sunken:#1a1611;
+  --ink:#f7f0e0; --head:#f4ecdc; --soft:#c9bda8; --faint:#796e5e;
+  --line:#3a3228; --line-strong:#4c4234; --line-bright:#6a5c44;
+  --brass:#e3b661; --brass-glow:rgba(227,182,97,.35); --moss:#9cc48c; --clay:#d98f70;
+  --serif:"Literata",Georgia,serif; --sans:"Golos Text",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper); color:var(--soft); font:400 16px/1.65 var(--sans);
+  -webkit-font-smoothing:antialiased; position:relative;
+}
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:999;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  mix-blend-mode:screen; opacity:.05;
+}
+.container{max-width:1060px;margin:0 auto;padding:0 28px}
+a{color:var(--ink);text-decoration:none}
+a:hover{color:var(--brass)}
+.mono{font-family:var(--mono)}
+.overline{
+  font:500 11px/1 var(--mono); letter-spacing:2.5px; text-transform:uppercase;
+  color:var(--soft); display:flex; align-items:center; gap:8px;
+}
+.overline .geo{font-style:normal;font-size:12px}
+.g-brass{color:var(--brass)} .g-moss{color:var(--moss)} .g-clay{color:var(--clay)}
+section{padding:74px 0;border-top:1px solid var(--line)}
+h2{font:500 26px/1.3 var(--serif);color:var(--head);margin:14px 0 8px}
+.lede{max-width:38em;font-size:15px}
+
+/* header */
+header{border-bottom:1px solid var(--line-strong)}
+header .container{display:flex;justify-content:space-between;align-items:center;padding-top:18px;padding-bottom:18px}
+.wordmark{font:500 18px var(--serif);color:var(--head)}
+.wordmark b{color:var(--brass);font-weight:500}
+nav{font:400 12.5px var(--mono);display:flex;gap:22px}
+nav a{color:var(--soft)}
+
+/* hero */
+.hero{border-top:none;padding:96px 0 80px;background:radial-gradient(ellipse 62% 55% at 22% 0%,rgba(227,182,97,.08),transparent)}
+.hero h1{font:500 clamp(34px,6vw,52px)/1.16 var(--serif);color:var(--head);margin:18px 0 16px}
+.hero h1 em{font-style:normal;color:var(--brass)}
+.hero p{max-width:36em;font-size:16.5px}
+.cta{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap}
+.btn{display:inline-block;font:600 13.5px var(--sans);padding:11px 20px;border-radius:4px}
+.btn-brass{background:var(--brass);color:var(--paper);box-shadow:0 0 26px var(--brass-glow)}
+.btn-brass:hover{color:var(--paper);filter:brightness(1.06)}
+.btn-ghost{border:1px solid var(--line-bright);color:var(--ink)}
+
+/* topology */
+.topo{display:flex;align-items:stretch;gap:0;margin-top:30px}
+.svc{flex:1;border:1px solid var(--line-bright);background:linear-gradient(180deg,var(--raised-2),var(--raised));border-radius:4px;padding:20px 22px}
+.svc .name{font:500 15px var(--mono);color:var(--head)}
+.svc .desc{font-size:12.5px;color:var(--faint);margin-top:8px;line-height:1.7}
+.wire{display:flex;flex-direction:column;justify-content:center;padding:0 20px;font:400 12px/2.2 var(--mono);color:var(--brass);text-align:center;white-space:nowrap}
+.topo-note{font:italic 400 14px var(--serif);color:var(--soft);margin-top:18px}
+.topo-note b{color:var(--clay);font-weight:400}
+
+/* layers */
+.layers-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:30px}
+.layer{border:1px solid var(--line);border-left:3px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:13px 16px;margin-bottom:10px;cursor:default;transition:border-color .15s,background .15s}
+.layer .t{font:500 13.5px var(--mono);color:var(--head)}
+.layer .d{font-size:12.5px;color:var(--faint);margin-top:3px}
+.layer:hover,.layer.hl{border-left-color:var(--brass);background:var(--raised-2)}
+.tree{font:400 12.5px/1.9 var(--mono);color:var(--faint);background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:18px 20px;overflow-x:auto}
+.tree span{transition:color .15s,background .15s;padding:0 3px;border-radius:2px}
+.tree span.on{color:var(--paper);background:var(--brass)}
+.layers-note{font-size:12.5px;color:var(--faint);margin-top:14px}
+.layers-note code{font-family:var(--mono);color:var(--soft);font-size:12px}
+
+/* patterns */
+.patterns{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:30px}
+.pat{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.pat:hover{border-color:var(--line-bright)}
+.pat .t{font:500 15px var(--sans);color:var(--head)}
+.pat pre{font:400 10.5px/1.65 var(--mono);color:var(--brass);background:var(--sunken);border:1px solid var(--line);border-radius:3px;padding:10px 12px;overflow-x:auto}
+.pat .why{font-size:13px;color:var(--soft);flex:1}
+.pat .links{font:400 11.5px var(--mono);display:flex;gap:14px}
+.pat .links a{color:var(--faint)}
+.pat .links a:hover{color:var(--brass)}
+
+/* scenario */
+.flow{margin-top:34px;overflow-x:auto;padding-bottom:6px}
+.flow-inner{display:flex;align-items:center;gap:0;min-width:900px}
+.step{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:12px 14px;text-align:center;flex:1;transition:border-color .2s,box-shadow .2s,background .2s}
+.step .s-t{font:500 12px var(--mono);color:var(--head);white-space:nowrap}
+.step .s-p{font:400 10px var(--mono);color:var(--faint);margin-top:4px;white-space:nowrap}
+.step.lit{border-color:var(--brass);background:var(--raised-2);box-shadow:0 0 18px var(--brass-glow)}
+.step.lit .s-p{color:var(--brass)}
+.arrow{font:400 14px var(--mono);color:var(--faint);padding:0 8px;flex:0 0 auto;transition:color .2s}
+.arrow.lit{color:var(--brass)}
+.flow-caption{font-size:12.5px;color:var(--faint);margin-top:16px}
+
+/* quickstart */
+.qs{display:grid;grid-template-columns:1.1fr .9fr;gap:34px;margin-top:30px}
+.term{background:var(--sunken);border:1px solid var(--line-strong);border-radius:4px;padding:20px 22px;font:400 13px/2 var(--mono);color:var(--ink);overflow-x:auto}
+.term .c{color:var(--faint)}
+.term .p{color:var(--brass)}
+.docmap{display:flex;flex-direction:column;gap:10px}
+.docmap a{border:1px solid var(--line);background:var(--raised);border-radius:4px;padding:11px 16px;font-size:13.5px;color:var(--ink);display:flex;justify-content:space-between;align-items:baseline}
+.docmap a:hover{border-color:var(--line-bright);color:var(--brass)}
+.docmap .k{font:400 11px var(--mono);color:var(--faint)}
+
+/* philosophy + footer */
+.philo{text-align:center;padding:86px 0}
+.philo p{font:italic 400 clamp(19px,3vw,24px)/1.5 var(--serif);color:var(--head);max-width:26em;margin:14px auto 0}
+footer{border-top:1px solid var(--line-strong);padding:26px 0 34px}
+footer .container{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font:400 11.5px var(--mono);color:var(--faint)}
+footer a{color:var(--soft);font-family:var(--mono)}
+
+@media (max-width:760px){
+  .topo{flex-direction:column}
+  .wire{padding:14px 0}
+  .layers-grid,.qs{grid-template-columns:1fr}
+  .hero{padding:64px 0 56px}
+  section{padding:56px 0}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <span class="wordmark">s1t-litestar-template<b>.</b></span>
+    <nav>
+      <a href="#patterns">patterns</a>
+      <a href="#scenario">pipeline</a>
+      <a href="#start">quick start</a>
+      <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates">github&nbsp;↗</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <div class="overline"><i class="geo g-brass">▵</i>production-shaped python monorepo</div>
+    <h1>An architecture<br>you can <em>read</em>.</h1>
+    <p>Two services, zero shared code, strict DDD in every context. A Litestar
+    API and an event worker bound only by wire contracts — patterns first,
+    features as proof.</p>
+    <div class="cta">
+      <a class="btn btn-brass" href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates">Use this template</a>
+      <a class="btn btn-ghost" href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/architecture.md">Read the architecture&nbsp;→</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="overline"><i class="geo g-moss">▢</i>topology</div>
+    <h2>Two services. One boundary. Nothing shared.</h2>
+    <div class="topo">
+      <div class="svc">
+        <div class="name">litestar_backend</div>
+        <div class="desc">HTTP API · Postgres · transactional outbox<br>
+        JWT + users + API keys · admin UI · SSE feed · Prometheus</div>
+      </div>
+      <div class="wire">video_uploaded&nbsp;──▶<br>◀──&nbsp;video_status</div>
+      <div class="svc">
+        <div class="name">event_microservice</div>
+        <div class="desc">FastStream consumer · SAQ jobs (CPU / thread / async)<br>
+        Valkey join store · inbox dedup · no Postgres</div>
+      </div>
+    </div>
+    <p class="topo-note">only wire contracts cross the boundary — <b>not a single shared import</b>.
+    Each service is a standalone uv project you could extract to its own repo unchanged.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="overline"><i class="geo g-clay">◇</i>anatomy of a context</div>
+    <h2>Four layers, imports point inward.</h2>
+    <p class="lede">Every bounded context keeps the same shape. Hover a layer
+    to see where it lives in the tree — the direction is enforced by
+    import-linter, not by convention.</p>
+    <div class="layers-grid">
+      <div>
+        <div class="layer" data-l="domain"><div class="t">domain/</div><div class="d">pure stdlib — aggregates, value objects, domain events</div></div>
+        <div class="layer" data-l="app"><div class="t">app/</div><div class="d">use cases + Protocol interfaces — orchestration, zero I/O</div></div>
+        <div class="layer" data-l="ports"><div class="t">ports/</div><div class="d">driving facades &amp; DTOs · driven repos implementing app interfaces</div></div>
+        <div class="layer" data-l="adapters"><div class="t">adapters/</div><div class="d">controllers, engines, brokers, middleware — frameworks live here only</div></div>
+      </div>
+      <div class="tree"><pre style="background:none;border:none;padding:0;overflow:visible">media_example/
+├── <span data-l="domain">domain/video_agg.py</span>
+├── <span data-l="app">app/upload_video_uc.py</span>
+├── <span data-l="app">app/interfaces/i_video_repo.py</span>
+├── <span data-l="ports">ports/driving/media_facade.py</span>
+├── <span data-l="ports">ports/driven/sql_video_repo.py</span>
+├── <span data-l="adapters">adapters/driving/video_controller.py</span>
+├── <span data-l="adapters">adapters/lifespan_manager.py</span>
+├── provider.py   <span style="color:#5c5142">· DI wiring, the only place</span>
+└── config.py     <span style="color:#5c5142">· own env prefix</span></pre></div>
+    </div>
+    <p class="layers-note">The rules are written down, not implied:
+    <code>adapters → ports → app → domain</code>, siblings talk through ACLs,
+    every decision has an ADR. <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/architecture.md">architecture.md&nbsp;→</a></p>
+  </div>
+</section>
+
+<section id="patterns">
+  <div class="container">
+    <div class="overline"><i class="geo g-brass">▵</i>pattern catalog</div>
+    <h2>The patterns are the product.</h2>
+    <p class="lede">Each one is implemented end-to-end, tested at four levels,
+    and documented with the reasoning that picked it.</p>
+    <div class="patterns">
+
+      <div class="pat">
+        <div class="t">Transactional outbox</div>
+        <pre>INSERT video ─┐ one tx
+INSERT outbox ─┘   └─▶ relay ─▶ stream</pre>
+        <div class="why">The row and its event commit atomically; a relay drains
+        committed rows to a Valkey Stream. A failed transaction emits nothing.
+        Generic in <span class="mono">shared/</span>, used by two contexts.</div>
+        <div class="links">
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/shared/adapters/driven/outbox_relay.py">code →</a>
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/adr/0031-shared-generic-patterns.md">ADR 0031 →</a>
+        </div>
+      </div>
+
+      <div class="pat">
+        <div class="t">Inbox dedup</div>
+        <pre>at-least-once delivery
++ event_id inbox ─▶ exactly-once effect</pre>
+        <div class="why">The consumer records every processed
+        <span class="mono">event_id</span> in Valkey; duplicates become no-ops.
+        Delivery guarantees are a documented matrix, not folklore.</div>
+        <div class="links">
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/event_microservice/docs/subsystems/delivery-guarantees.md">doc →</a>
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/contract/video_uploaded.md">contract →</a>
+        </div>
+      </div>
+
+      <div class="pat">
+        <div class="t">Composite auth chain</div>
+        <pre>JWT ─▶ API-key ─▶ static token
+first match wins · fail-closed</pre>
+        <div class="why">Registered users (argon2id), service API keys and a
+        break-glass admin token resolve through one middleware chain. Every
+        request gets a Principal — anonymous just means UNKNOWN.</div>
+        <div class="links">
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/auth/ports/driven/composite_token_resolver.py">code →</a>
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/adr/0032-user-identity-model.md">ADR 0032 →</a>
+        </div>
+      </div>
+
+      <div class="pat">
+        <div class="t">Keyset pagination</div>
+        <pre>WHERE (created_at,id) &lt; (:ts,:id)
+ORDER BY created_at DESC, id DESC</pre>
+        <div class="why">Opaque cursors over a composite index — stable pages
+        under concurrent writes, no OFFSET drift. One generic
+        <span class="mono">Page[T]</span> envelope for every list endpoint.</div>
+        <div class="links">
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/shared/generics/pagination.py">code →</a>
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/shared/adapters/driven/postgres/keyset.py">helper →</a>
+        </div>
+      </div>
+
+      <div class="pat">
+        <div class="t">Integration-event envelope</div>
+        <pre>{event_id, event_type,
+ version, occurred_at, ...payload}</pre>
+        <div class="why">Every event on the wire carries identity, a schema
+        version and a producer timestamp by construction. Consumers define
+        their own inbound schema — producer types never cross the boundary.</div>
+        <div class="links">
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/shared/generics/integration_event.py">code →</a>
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/contract/README.md">contracts →</a>
+        </div>
+      </div>
+
+      <div class="pat">
+        <div class="t">Graceful drain</div>
+        <pre>SIGTERM ─▶ cancel tasks ─▶ await each
+─▶ flush ─▶ exit before SIGKILL</pre>
+        <div class="why">Lifespan managers own their background tasks —
+        outbox relay, stream consumers — and shut them down cleanly inside
+        the orchestrator's grace window.</div>
+        <div class="links">
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/media_example/adapters/lifespan_manager.py">code →</a>
+          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/architecture.md">lifespan →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="scenario">
+  <div class="container">
+    <div class="overline"><i class="geo g-moss">▢</i>end-to-end</div>
+    <h2>One request, every pattern.</h2>
+    <p class="lede">The shipped video pipeline exercises the whole catalog —
+    watch a request travel through both services and come back as an SSE event.</p>
+    <div class="flow"><div class="flow-inner" id="flow">
+      <div class="step"><div class="s-t">POST /videos</div><div class="s-p">202 accepted</div></div>
+      <div class="arrow">─▶</div>
+      <div class="step"><div class="s-t">outbox tx</div><div class="s-p">transactional outbox</div></div>
+      <div class="arrow">─▶</div>
+      <div class="step"><div class="s-t">relay → stream</div><div class="s-p">event envelope</div></div>
+      <div class="arrow">─▶</div>
+      <div class="step"><div class="s-t">3 SAQ jobs</div><div class="s-p">inbox dedup</div></div>
+      <div class="arrow">─▶</div>
+      <div class="step"><div class="s-t">join in Valkey</div><div class="s-p">completion set</div></div>
+      <div class="arrow">─▶</div>
+      <div class="step"><div class="s-t">video_status</div><div class="s-p">return contract</div></div>
+      <div class="arrow">─▶</div>
+      <div class="step"><div class="s-t">state machine</div><div class="s-p">PENDING→DONE</div></div>
+      <div class="arrow">─▶</div>
+      <div class="step"><div class="s-t">SSE feed</div><div class="s-p">to the browser</div></div>
+    </div></div>
+    <p class="flow-caption">at-least-once everywhere, duplicates absorbed at
+    each edge — the full field-by-field contracts live in
+    <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/tree/main/docs/contract">docs/contract/&nbsp;→</a></p>
+  </div>
+</section>
+
+<section id="start">
+  <div class="container">
+    <div class="overline"><i class="geo g-clay">◇</i>quick start</div>
+    <h2>Reading it is running it.</h2>
+    <div class="qs">
+      <div class="term">
+<span class="p">$</span> git clone https://github.com/Sense1Tapo4ek/s1t-python-backend-templates<br>
+<span class="p">$</span> cp .env.example .env<br>
+<span class="p">$</span> docker compose up --build<br>
+<span class="c"># API :8000 · admin :8000/admin · SAQ panel :8081</span><br>
+<span class="c"># 364 tests: docker compose run --rm litestar_backend_test</span>
+      </div>
+      <div class="docmap">
+        <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/architecture.md">architecture.md <span class="k">topology · layers · invariants</span></a>
+        <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/tree/main/docs/contract">contracts <span class="k">wire, field by field</span></a>
+        <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/adr/README.md">ADR index <span class="k">why, one page each</span></a>
+        <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/index.md">per-service docs <span class="k">contexts · subsystems · infra</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="philo">
+  <div class="container">
+    <div class="overline" style="justify-content:center"><i class="geo g-brass">▵</i><i class="geo g-moss">▢</i><i class="geo g-clay">◇</i></div>
+    <p>“A template, not a framework: fork it, rename it,
+    delete what you don’t need.”</p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <span><span class="g-brass">▵</span> <span class="g-moss">▢</span> <span class="g-clay">◇</span> · drafted in ink</span>
+    <span>part of the <a href="https://sense1tapo4ek.com">s1t</a> template family · <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates">github ↗</a></span>
+  </div>
+</footer>
+
+<script>
+// layer hover <-> tree highlight
+document.querySelectorAll('.layer').forEach(function(el){
+  var l = el.dataset.l;
+  var files = document.querySelectorAll('.tree span[data-l="'+l+'"]');
+  el.addEventListener('mouseenter', function(){ files.forEach(function(f){f.classList.add('on')}); el.classList.add('hl'); });
+  el.addEventListener('mouseleave', function(){ files.forEach(function(f){f.classList.remove('on')}); el.classList.remove('hl'); });
+});
+// the page's single motion: one spark walking the pipeline
+(function(){
+  var flow = document.getElementById('flow');
+  var items = Array.prototype.slice.call(flow.children); // step, arrow, step...
+  var i = -1;
+  setInterval(function(){
+    items.forEach(function(el){el.classList.remove('lit')});
+    i = (i + 1) % items.length;
+    items[i].classList.add('lit');
+    if(i > 0) items[i-1].classList.add('lit'); // trailing glow
+  }, 700);
+})();
+</script>
+</body>
+</html>

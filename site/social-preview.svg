@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <radialGradient id="glow" cx="22%" cy="0%" r="75%">
+      <stop offset="0%" stop-color="#e3b661" stop-opacity=".10"/>
+      <stop offset="100%" stop-color="#e3b661" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#322b21"/>
+      <stop offset="100%" stop-color="#2a241d"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="#211c16"/>
+  <rect width="1280" height="640" fill="url(#glow)"/>
+
+  <!-- overline: drawn triangle + text -->
+  <path d="M 100 130 L 110 112 L 120 130 Z" fill="none" stroke="#e3b661" stroke-width="2"/>
+  <text x="142" y="130" font-family="monospace" font-size="19" letter-spacing="5" fill="#c9bda8">PRODUCTION-SHAPED PYTHON MONOREPO</text>
+
+  <!-- headline -->
+  <text x="92" y="232" font-family="serif" font-size="80" font-weight="500" fill="#f7f0e0">An architecture</text>
+  <text x="92" y="322" font-family="serif" font-size="80" font-weight="500" fill="#f7f0e0">you can <tspan fill="#e3b661">read</tspan>.</text>
+
+  <!-- topology -->
+  <g font-family="monospace">
+    <rect x="96" y="392" width="380" height="118" rx="6" fill="url(#card)" stroke="#6a5c44"/>
+    <text x="124" y="440" font-size="24" fill="#f4ecdc">litestar_backend</text>
+    <text x="124" y="478" font-size="16" fill="#a99d8b">HTTP &#183; Postgres &#183; outbox &#183; SSE</text>
+
+    <!-- arrows drawn as paths -->
+    <text x="628" y="426" font-size="17" fill="#e3b661" text-anchor="middle">video_uploaded</text>
+    <line x1="510" y1="440" x2="756" y2="440" stroke="#e3b661" stroke-width="2"/>
+    <path d="M 756 440 L 744 433 L 744 447 Z" fill="#e3b661"/>
+
+    <line x1="524" y1="470" x2="770" y2="470" stroke="#e3b661" stroke-width="2"/>
+    <path d="M 524 470 L 536 463 L 536 477 Z" fill="#e3b661"/>
+    <text x="652" y="500" font-size="17" fill="#e3b661" text-anchor="middle">video_status</text>
+
+    <rect x="804" y="392" width="380" height="118" rx="6" fill="url(#card)" stroke="#6a5c44"/>
+    <text x="832" y="440" font-size="24" fill="#f4ecdc">event_microservice</text>
+    <text x="832" y="478" font-size="16" fill="#a99d8b">FastStream &#183; SAQ &#183; Valkey join</text>
+  </g>
+
+  <!-- footer -->
+  <line x1="96" y1="562" x2="1184" y2="562" stroke="#4c4234"/>
+  <text x="96" y="602" font-family="serif" font-size="27" fill="#f4ecdc">s1t-litestar-template<tspan fill="#e3b661">.</tspan></text>
+
+  <!-- footer glyphs drawn -->
+  <path d="M 420 596 L 427 584 L 434 596 Z" fill="none" stroke="#e3b661" stroke-width="1.6"/>
+  <rect x="446" y="585" width="11" height="11" fill="none" stroke="#9cc48c" stroke-width="1.6"/>
+  <path d="M 475 590.5 L 482 583 L 489 590.5 L 482 598 Z" fill="none" stroke="#d98f70" stroke-width="1.6"/>
+  <text x="1184" y="600" font-family="monospace" font-size="16" fill="#796e5e" text-anchor="end">strict DDD &#183; transactional outbox &#183; event-driven</text>
+</svg>
