@@ -8,12 +8,23 @@ from litestar.status_codes import (
     HTTP_303_SEE_OTHER,
     HTTP_400_BAD_REQUEST,
     HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
 )
 from litestar.testing import TestClient
 
 from root.entrypoints.api import create_app
 
 TOKEN = "valid-admin-token"
+
+
+def _csrf(client: TestClient) -> dict[str, str]:
+    """GET the login form so the csrftoken cookie is set; return the form field.
+
+    Every POST under /admin is CSRF-protected: the token must arrive both as
+    the cookie (set on any safe request) and as the `_csrf_token` form field.
+    """
+    client.get("/admin/login")
+    return {"_csrf_token": client.cookies["csrftoken"]}
 
 
 @pytest.fixture(autouse=True)
@@ -40,7 +51,7 @@ def test_login_with_valid_token_sets_cookie_and_redirects() -> None:
     with TestClient(app=app) as client:
         response = client.post(
             "/admin/login",
-            data={"token": TOKEN, "next": "/admin/"},
+            data={"token": TOKEN, "next": "/admin/", **_csrf(client)},
             follow_redirects=False,
         )
     assert response.status_code == HTTP_303_SEE_OTHER
@@ -56,7 +67,7 @@ def test_login_with_invalid_token_returns_401_with_form() -> None:
     with TestClient(app=app) as client:
         response = client.post(
             "/admin/login",
-            data={"token": "wrong"},
+            data={"token": "wrong", **_csrf(client)},
             follow_redirects=False,
         )
     assert response.status_code == HTTP_401_UNAUTHORIZED
@@ -69,7 +80,7 @@ def test_login_with_empty_token_returns_400() -> None:
     with TestClient(app=app) as client:
         response = client.post(
             "/admin/login",
-            data={"token": ""},
+            data={"token": "", **_csrf(client)},
             follow_redirects=False,
         )
     assert response.status_code == HTTP_400_BAD_REQUEST
@@ -82,7 +93,7 @@ def test_login_open_redirect_protection() -> None:
     with TestClient(app=app) as client:
         response = client.post(
             "/admin/login",
-            data={"token": TOKEN, "next": "https://evil.example/x"},
+            data={"token": TOKEN, "next": "https://evil.example/x", **_csrf(client)},
             follow_redirects=False,
         )
     assert response.status_code == HTTP_303_SEE_OTHER
@@ -105,7 +116,7 @@ def test_login_next_smuggle_attempts_coerce_to_dashboard(evil_next: str) -> None
     with TestClient(app=app) as client:
         response = client.post(
             "/admin/login",
-            data={"token": TOKEN, "next": evil_next},
+            data={"token": TOKEN, "next": evil_next, **_csrf(client)},
             follow_redirects=False,
         )
     assert response.status_code == HTTP_303_SEE_OTHER
@@ -136,7 +147,7 @@ def test_login_xss_in_error_is_escaped() -> None:
     with TestClient(app=app) as client:
         response = client.post(
             "/admin/login",
-            data={"token": ""},
+            data={"token": "", **_csrf(client)},
             follow_redirects=False,
         )
     assert "<script" not in response.text.lower().replace("&lt;", "")
@@ -147,7 +158,7 @@ def test_login_preserves_safe_next_inside_admin() -> None:
     with TestClient(app=app) as client:
         response = client.post(
             "/admin/login",
-            data={"token": TOKEN, "next": "/admin/logs"},
+            data={"token": TOKEN, "next": "/admin/logs", **_csrf(client)},
             follow_redirects=False,
         )
     assert response.status_code == HTTP_303_SEE_OTHER
@@ -157,7 +168,7 @@ def test_login_preserves_safe_next_inside_admin() -> None:
 def test_logout_clears_cookie_and_redirects_to_login() -> None:
     app = create_app()
     with TestClient(app=app, cookies={"admin_token": TOKEN}) as client:
-        response = client.post("/admin/logout", follow_redirects=False)
+        response = client.post("/admin/logout", data=_csrf(client), follow_redirects=False)
     assert response.status_code == HTTP_303_SEE_OTHER
     assert response.headers["location"] == "/admin/login"
     set_cookie = response.headers.get("set-cookie", "")
@@ -186,10 +197,22 @@ def test_login_after_redirect_round_trip() -> None:
     with TestClient(app=app) as client:
         login = client.post(
             "/admin/login",
-            data={"token": TOKEN, "next": "/admin/"},
+            data={"token": TOKEN, "next": "/admin/", **_csrf(client)},
             follow_redirects=False,
         )
         assert login.status_code == HTTP_303_SEE_OTHER
         # TestClient persists cookies. Now navigate to /admin/.
         dashboard = client.get("/admin/")
         assert dashboard.status_code == HTTP_200_OK
+
+
+def test_login_post_without_csrf_token_is_rejected() -> None:
+    """A POST to the admin surface without the CSRF pair must be 403."""
+    app = create_app()
+    with TestClient(app=app) as client:
+        response = client.post(
+            "/admin/login",
+            data={"token": TOKEN, "next": "/admin/"},
+            follow_redirects=False,
+        )
+    assert response.status_code == HTTP_403_FORBIDDEN

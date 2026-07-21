@@ -30,6 +30,14 @@ from root.entrypoints.api import create_app
 E2E_APP_NAME = "test-service"
 
 
+@pytest.fixture(autouse=True)
+def _unthrottled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Rate-limit counters live in the session-scoped Valkey and would
+    accumulate across e2e tests (same client IP); lift the cap so only the
+    dedicated rate-limit test exercises 429."""
+    monkeypatch.setenv("RATE_LIMIT_PER_MINUTE", "100000")
+
+
 @pytest.fixture(scope="module")
 def e2e_app(
     tmp_path_factory: pytest.TempPathFactory, pg_dsn: str, valkey_url: str
