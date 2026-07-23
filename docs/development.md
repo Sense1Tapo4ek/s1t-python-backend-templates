@@ -83,26 +83,41 @@ pre-commit run --all-files
 |---|---|---|
 | gitleaks | whole repo | secret scan on the diff |
 | ruff / ruff-format / mypy (litestar_backend) | `src/litestar_backend/` | via that service's uv venv |
+| arch-litestar-backend | `src/litestar_backend/` | `uv run lint-imports` (import-linter contracts) |
 | ruff / ruff-format / mypy (event_microservice) | `src/event_microservice/` | via that service's uv venv |
+| arch-event-microservice | `src/event_microservice/` | `uv run lint-imports` (import-linter contracts) |
 
-The ruff/mypy hooks are **local** -- they call each service's own `uv run ruff/mypy`,
-not pinned mirror hooks, so they always match `task lint` / `task type` and can
-never drift from the toolchain pins above. gitleaks is a standalone scanner, pinned
-by tag.
+The ruff/mypy/arch hooks are **local** -- they call each service's own `uv run` tools,
+not pinned mirror hooks, so they always match `task lint` / `task type` / `task arch`
+and can never drift from the toolchain pins above. gitleaks is a standalone scanner,
+pinned by tag.
 
 Notes:
 - `git commit --no-verify` skips the hook (it is client-side; nothing can stop
   it), but bypassing is treated as breaking the gate -- fix the finding instead
-  (`task fmt` for formatting), then re-commit. CI (being added) is the backstop
-  that catches bypassed commits.
+  (`task fmt` for formatting), then re-commit. CI (below) is the backstop that
+  catches bypassed commits.
 - Stale hook tag? `pre-commit autoupdate`.
 - A broken `task arch` is a real S-DDD violation (one bounded context importing
   another's internals); route it through `shared/` or an ACL.
 
 ## CI
 
-No CI workflow ships yet. When added, it runs `task check` +
-`pre-commit run --all-files` + `task test`. Until then these are local gates.
+Two GitHub Actions workflows ship in `.github/workflows/`:
+
+- **`ci.yml`** -- on every push to `main`, every pull request, and manual
+  dispatch. Two jobs, each a `[litestar_backend, event_microservice]` matrix so
+  both services run in parallel:
+  - `static`: `uv sync --frozen` then `ruff check` + `ruff format --check` +
+    `mypy` + `lint-imports` in each service dir (mirrors `task check`).
+  - `tests`: builds and runs each service's `*_test` Compose service under the
+    `test` profile -- the full Docker gate, real Postgres + Valkey (mirrors
+    `task test`).
+- **`pages.yml`** -- on push to `main` touching `site/**` (or manual dispatch);
+  uploads `site/` and deploys it to GitHub Pages.
+
+Locally, `pre-commit run --all-files` + `task test` reproduce the `ci.yml` gate
+before pushing.
 
 ## Feature workflow
 
