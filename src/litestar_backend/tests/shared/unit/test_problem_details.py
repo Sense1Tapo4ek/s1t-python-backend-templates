@@ -2,14 +2,13 @@ from litestar.plugins.problem_details import ProblemDetailsException
 
 from shared.adapters.problem_details import (
     _type_uri,
-    adapter_to_problem,
     app_to_problem,
     domain_to_problem,
     not_found_to_problem,
     port_to_problem,
     unexpected_to_problem,
 )
-from shared.generics.errors import AdapterError, AppError, DomainError, PortError
+from shared.generics.errors import AppError, DomainError, PortError
 
 
 class FakeAlreadyPaid(DomainError):
@@ -44,12 +43,6 @@ def test_port_converter_hides_internals() -> None:
     assert pd.status_code == 503
     assert pd.detail == "Service temporarily unavailable"
     assert "secret" not in (pd.detail or "")
-
-
-def test_adapter_converter_is_generic_500() -> None:
-    pd = adapter_to_problem(AdapterError("boom"))
-    assert pd.status_code == 500
-    assert pd.detail == "Internal server error"
 
 
 def test_unexpected_converter_is_generic_500() -> None:

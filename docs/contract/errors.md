@@ -67,11 +67,13 @@ Branch your logic on `status` (always present) and, for typed errors, `type`.
 (The 4xx/503 wordings mirror `_ERROR_DESCRIPTIONS` in
 `src/shared/adapters/openapi.py`, the source the OpenAPI schema uses.)
 
-409 (`DomainError`) and 422 (non-NotFound `AppError`) are defined by the error
-model but are not emitted by any built-in endpoint today -- the bundled
-endpoints surface 400/401/403/404 and, under failure, 503/500. A new context
-that raises a domain conflict or an unprocessable `AppError` makes them
-observable; the envelope shape is identical (`type` + `instance` present).
+409 (`DomainError`) is emitted by `POST /videos/{id}/cancel` when the target is
+already terminal (DONE/FAILED) -- the invalid transition raises
+`InvalidTransition`. 422 (non-NotFound `AppError`) is defined by the error model
+but is not emitted by any built-in endpoint today -- the bundled endpoints
+otherwise surface 400/401/403/404 and, under failure, 503/500. A new context
+that raises an unprocessable `AppError` makes 422 observable; the envelope shape
+is identical (`type` + `instance` present).
 
 ## `type` URN registry
 
@@ -100,6 +102,19 @@ add new URNs; existing ones stay stable.
   "title": "Not Found",
   "detail": "video 3fa85f64-5717-4562-b3fc-2c963f66afa6 not found",
   "instance": "/videos/3fa85f64-5717-4562-b3fc-2c963f66afa6"
+}
+```
+
+409 -- domain conflict (application error: `type` + `instance` present). Cancelling
+a video that is already terminal (DONE/FAILED):
+
+```json
+{
+  "status": 409,
+  "type": "urn:litestar-base:error:invalid-transition",
+  "title": "Conflict",
+  "detail": "invalid status transition: failed -> failed",
+  "instance": "/videos/3fa85f64-5717-4562-b3fc-2c963f66afa6/cancel"
 }
 ```
 

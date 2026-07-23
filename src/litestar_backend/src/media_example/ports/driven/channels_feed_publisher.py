@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 from uuid import UUID
 
-import structlog
+from shared.logging import Layer, layer_logger
 
 from ..feed import VIDEOS_CHANNEL
 
-_log = structlog.get_logger("media_example.channels_feed_publisher")
+_log = layer_logger(Layer.PORTS_DRIVEN, "media_example.channels_feed_publisher")
 
 
 class _IChannels(Protocol):

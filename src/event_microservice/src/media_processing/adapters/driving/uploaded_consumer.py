@@ -1,9 +1,10 @@
 import socket
 
 import msgspec
-import structlog
 from faststream import Context
 from faststream.redis import RedisMessage, RedisRouter, StreamSub
+
+from shared.logging import Layer, layer_logger
 
 from ...ports.driving import EVENTS_RECEIVED, MediaProcessingFacade, VideoUploadedSchema
 
@@ -11,7 +12,7 @@ VIDEO_UPLOADED_STREAM = "video_uploaded"
 CONSUMER_GROUP = "media_processing"
 _CONSUMER = f"{CONSUMER_GROUP}-{socket.gethostname()}"
 
-_log = structlog.get_logger("media_processing.consumer")
+_log = layer_logger(Layer.ADAPTERS_DRIVING, "media_processing.consumer")
 router = RedisRouter()
 
 

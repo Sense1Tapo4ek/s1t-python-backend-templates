@@ -6,7 +6,7 @@ from dishka.integrations.litestar import inject
 from litestar import Controller, delete, get, post
 from litestar.exceptions import ValidationException
 from litestar.params import Parameter
-from litestar.status_codes import HTTP_202_ACCEPTED
+from litestar.status_codes import HTTP_200_OK, HTTP_202_ACCEPTED
 from prometheus_client import Counter
 
 from shared.adapters.openapi import error_responses
@@ -60,3 +60,16 @@ class VideoController(Controller):
     @inject
     async def delete_video(self, video_id: UUID, facade: FromDishka[MediaFacade]) -> None:
         await facade.delete(video_id)
+
+    @post(
+        "/{video_id:uuid}/cancel",
+        status_code=HTTP_200_OK,
+        summary="Cancel a video (transition to FAILED)",
+        responses=error_responses(404, 409, 503),
+    )
+    @inject
+    async def cancel_video(self, video_id: UUID, facade: FromDishka[MediaFacade]) -> None:
+        """Cancel a video by transitioning it to FAILED. Terminal videos (DONE/FAILED)
+        yield 409 InvalidTransition; unknown ids yield 404. Cancel surfaces as `failed`
+        on the SSE feed; a dedicated CANCELLED state is intentionally out of scope."""
+        await facade.mark_failed(video_id)

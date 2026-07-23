@@ -73,6 +73,66 @@ log.info("user paid", user_id=user_id, amount=amount, currency=currency)
 | `PortError` (5xx) | ERROR + traceback |
 | Unknown `Exception` | EXCEPTION (full traceback) |
 
+## The `layer` field
+
+`Layer` + `layer_logger(layer, component)` in `src/shared/logging.py` bind a
+hexagon `layer` value onto a component logger. The bind is **explicit, not
+automatic** -- a site opts in by constructing its logger through `layer_logger`.
+`Layer` has five members (`app`, `ports_driving`, `ports_driven`,
+`adapters_driving`, `adapters_driven`) and **no `DOMAIN`**: the domain layer is
+pure and never logs. The helper ships in both services' `shared/logging.py`,
+kept identical so `layer` reads the same across them.
+
+*Where* the logger is built follows S-DDD logging rule 3 -- bind at the
+operation boundary:
+
+- **App use cases** build it inside `__call__` (one operation, one logger):
+
+  ```python
+  from shared.logging import Layer, layer_logger
+
+  layer_logger(Layer.APP, "UploadVideoUC").info(
+      "video registered", video_id=str(video.id)
+  )   # -> layer="app"
+  ```
+
+  A module-level `_log = layer_logger(...)` is cached on first use
+  (`cache_logger_on_first_use=True`), and a later reconfigure -- every test app
+  build calls `configure_structlog` again -- leaves that cached logger pinned to
+  a stale processor list. Building it per call keeps a fresh proxy that reads the
+  live config, which honours the rule and lets `capture_logs()` observe the line
+  in flow tests.
+
+- **Long-lived adapters/consumers** (routers, publishers with many log lines)
+  hold it at module level -- e.g. `status_consumer`, `uploaded_consumer`,
+  `channels_feed_publisher`.
+
+Scope: applied only at the `media_example` (backend) and `media_processing`
+(worker) sites that form the demonstrated video pipeline -- not swept
+repo-wide. Transport/composition edges (access log, trace middleware, lifespan)
+are not a context's hexagon layer and keep their bare component loggers.
+
+## Cross-service correlation by `video_id`
+
+`video_id` is logged at every stage of the causal chain and is the same value on
+both sides of the Valkey streams, so a single `grep video_id=<uuid>` follows the
+whole pipeline end-to-end across both services:
+
+```
+backend  UploadVideoUC        "video registered"          layer=app  trace_id=... video_id=X
+  -> video_uploaded stream ->
+worker   uploaded_consumer    "video_uploaded received"   layer=adapters_driving  video_id=X
+worker   complete_job         "video processed"           layer=app  video_id=X
+  <- video_status stream <-
+backend  status_consumer      "video_status applied"      layer=adapters_driving  video_id=X
+```
+
+`trace_id` (merged from the contextvar `TraceIdMiddleware` sets) pins the chain
+to the originating HTTP request, but does **not** cross the process boundary:
+the return `video_status` events mint fresh ids, and the SAQ worker runs in a
+separate process from the consumer, so no contextvar propagates. `video_id`
+carries the correlation the whole way; `trace_id` scopes the backend request.
+
 ## Invariants & gotchas
 
 - **One line per record (JSONL).** A truncation processor keeps each line

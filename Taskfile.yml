@@ -1,7 +1,7 @@
 version: "3"
 
 # Monorepo command surface. Two independent uv services share ONE pinned toolchain
-# (ruff==0.15.16, mypy==2.1.0 -- keep identical in both pyprojects). Static tasks
+# (ruff==0.15.22, mypy==2.3.0 -- keep identical in both pyprojects). Static tasks
 # (lint/fmt/type/check) run across BOTH services; tests run per service or together.
 
 vars:

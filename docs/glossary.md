@@ -50,4 +50,4 @@ lookup, not a substitute.
 - **Provider** -- a Dishka `Provider`; the only place that maps a concrete implementation to its interface.
 - **Container** -- the assembled Dishka graph; built once at startup in `root/composition/`.
 - **Lifespan Manager** -- app-lifecycle start/stop glue (pools, migrations, background tasks) registered in the lifespan.
-- **LayerError hierarchy** -- `DomainError` (409) / `AppError` (404/422) / `PortError` (503) / `AdapterError` (500); raised inward, caught and rendered as `problem+json` at the adapter boundary.
+- **LayerError hierarchy** -- `DomainError` (409) / `AppError` (404/422) / `PortError` (503); raised inward, caught and rendered as `problem+json` at the adapter boundary. A truly unexpected failure renders a generic 500 via the PROD catch-all. (The canonical ruleset's `AdapterError` is deliberately omitted -- no honest raise-site; see the error-hierarchy subsystem doc.)

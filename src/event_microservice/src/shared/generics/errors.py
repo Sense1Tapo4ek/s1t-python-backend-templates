@@ -12,7 +12,3 @@ class AppError(LayerError):
 
 class PortError(LayerError):
     pass
-
-
-class AdapterError(LayerError):
-    pass

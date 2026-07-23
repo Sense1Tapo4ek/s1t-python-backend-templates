@@ -12,7 +12,7 @@ from litestar.status_codes import (
     HTTP_503_SERVICE_UNAVAILABLE,
 )
 
-from shared.generics.errors import AdapterError, AppError, DomainError, PortError
+from shared.generics.errors import AppError, DomainError, PortError
 
 _log = structlog.get_logger("root.errors")
 _TYPE_BASE = "urn:litestar-base:error"
@@ -83,10 +83,6 @@ def _internal_500(exc: Exception, *, log_event: str) -> ProblemDetailsException:
         detail="Internal server error",
         type_=f"{_TYPE_BASE}:internal",
     )
-
-
-def adapter_to_problem(exc: AdapterError) -> ProblemDetailsException:
-    return _internal_500(exc, log_event="adapter error")
 
 
 def unexpected_to_problem(exc: Exception) -> ProblemDetailsException:

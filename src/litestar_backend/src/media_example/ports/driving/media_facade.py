@@ -86,11 +86,11 @@ class MediaFacade:
     async def mark_failed(self, video_id: UUID) -> None:
         """Transition a video to FAILED and persist it.
 
-        Triggered by a status callback. Raises VideoNotFound (app) when no
-        such video exists, InvalidTransition (domain) when the current
-        status forbids the move, PortError on a storage failure. The
-        post-commit feed broadcast is best-effort: a publish failure is
-        logged and does not fail this call.
+        Triggered by a status callback (processing failed) or the cancel
+        endpoint. Raises VideoNotFound (app) when no such video exists,
+        InvalidTransition (domain) when the current status forbids the move,
+        PortError on a storage failure. The post-commit feed broadcast is
+        best-effort: a publish failure is logged and does not fail this call.
         """
         await self._mark_failed(video_id)
 
