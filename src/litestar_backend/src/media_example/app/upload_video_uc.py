@@ -7,8 +7,6 @@ from shared.logging import Layer, layer_logger
 from ..domain import Video
 from .interfaces import IOutboxRepo, IUoW, IVideoRepo
 
-_log = layer_logger(Layer.APP, "UploadVideoUC")
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class UploadVideoCommand:
@@ -36,5 +34,7 @@ class UploadVideoUC:
         # Backend edge of the cross-service correlation chain: video_id logged
         # here lets a grep across both services follow the whole causal chain;
         # trace_id (merged via contextvar) pins it to the originating request.
-        _log.info("video registered", video_id=str(video.id))
+        # Built at the call site (S-DDD logging rule 3: bind layer at the
+        # operation boundary), not as a module global -- see structlog.md.
+        layer_logger(Layer.APP, "UploadVideoUC").info("video registered", video_id=str(video.id))
         return video

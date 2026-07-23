@@ -6,9 +6,11 @@ import structlog
 class Layer(Enum):
     """Hexagon layer bound onto a logger as the `layer` field.
 
-    No DOMAIN member: the domain layer is pure and never logs. Kept identical
-    to the backend's shared/logging.py so `layer` reads the same across both
-    services (the video_id-keyed correlation chain spans them).
+    No DOMAIN member: the domain layer is pure and never logs. Transport and
+    composition edges (access log, trace middleware, lifespan) are not a
+    context's hexagon layer either and keep their bare component loggers. Kept
+    identical across both services so `layer` reads the same on every line of
+    the video_id-keyed correlation chain that spans them.
     """
 
     APP = "app"
@@ -19,7 +21,11 @@ class Layer(Enum):
 
 
 def layer_logger(layer: Layer, component: str) -> structlog.stdlib.BoundLogger:
-    """Return a component logger pre-bound with its hexagon `layer` value."""
+    """Build a component logger bound with its hexagon `layer` value.
+
+    App use cases build it inside `__call__` (the operation boundary, S-DDD
+    logging rule 3); long-lived adapters/consumers hold it at module level.
+    """
     return structlog.get_logger(component).bind(layer=layer.value)
 
 
