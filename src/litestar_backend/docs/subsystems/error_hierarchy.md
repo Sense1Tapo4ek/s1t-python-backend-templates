@@ -8,14 +8,22 @@ Exception
 └── LayerError
     ├── DomainError      -> 409 Conflict       (WARNING)
     ├── AppError         -> 422 Unprocessable  (WARNING)
-    ├── PortError        -> 503 Unavailable    (ERROR + traceback)
-    └── AdapterError     -> 500 Internal       (EXCEPTION)
+    └── PortError        -> 503 Unavailable    (ERROR + traceback)
 ```
 
 The discipline in one line: raise semantic errors named after the violated
 invariant, wrap raw infrastructure exceptions at driven ports, log only at
 the adapter boundary that maps the error to a response. This page documents
 the project-specific wiring; the raise/catch table below is the contract.
+
+**Deliberate divergence from the canonical S-DDD ruleset.** The reusable
+ruleset lists a fifth class, `AdapterError` (-> 500), for framework/I/O
+failures raised in `adapters/`. This template omits it: no honest raise-site
+exists here (driven adapters wrap infra failures as `PortError` at the port
+boundary), and a mapped-but-never-raised class is a dead duplicate of the PROD
+catch-all `Exception -> 500` (`unexpected_to_problem`). A truly unexpected
+adapter failure still renders as a generic problem+json 500 via that catch-all.
+Add `AdapterError` back only when a real adapter raise-site appears.
 
 ## Raise / catch contract
 
@@ -59,7 +67,6 @@ EXCEPTION_TO_PROBLEM = {
     NotFoundError:        not_found_to_problem,    # 404 (MRO: wins over AppError)
     AlchemyNotFoundError: not_found_to_problem,    # 404
     PortError:            port_to_problem,         # 503
-    AdapterError:         adapter_to_problem,      # 500
 }
 ```
 

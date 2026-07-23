@@ -59,7 +59,6 @@ from shared.adapters.middleware import (
     TraceIdMiddleware,
 )
 from shared.adapters.problem_details import (
-    adapter_to_problem,
     app_to_problem,
     domain_to_problem,
     jwt_disabled_to_problem,
@@ -71,7 +70,7 @@ from shared.adapters.problem_details import (
 from shared.config import AppEnv, BaseAppConfig, MetricsConfig, ValkeyConfig
 from shared.domain.auth import Role
 from shared.generics.config import PROJECT_ROOT
-from shared.generics.errors import AdapterError, AppError, DomainError, NotFoundError, PortError
+from shared.generics.errors import AppError, DomainError, NotFoundError, PortError
 
 _STATIC_DIR = PROJECT_ROOT / "static"
 
@@ -96,7 +95,6 @@ EXCEPTION_TO_PROBLEM: dict[type[Exception], Callable[[Any], ProblemDetailsExcept
     NotFoundError: not_found_to_problem,
     AlchemyNotFoundError: not_found_to_problem,
     PortError: port_to_problem,
-    AdapterError: adapter_to_problem,
 }
 
 

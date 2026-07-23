@@ -17,7 +17,3 @@ class NotFoundError(AppError):
 
 class PortError(LayerError):
     pass
-
-
-class AdapterError(LayerError):
-    pass
