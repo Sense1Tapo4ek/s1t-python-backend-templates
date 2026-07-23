@@ -59,14 +59,15 @@ live-browser update).
 | POST | `/videos` | `UploadVideoRequest` (source_key, optional `document` JSONB) | `VideoModel` (incl. `document`) | 202 |
 | GET | `/videos` | `?limit=1-200` (default 50), `?cursor=<token>` (optional) | `Page[VideoModel] {items, next_cursor}` | 200, 400 on bad cursor |
 | DELETE | `/videos/{id}` | -- | -- | 204, 404 unknown id |
+| POST | `/videos/{id}/cancel` | -- | -- | 200, 409 if already terminal, 404 unknown id |
 | GET | `/videos/feed` | -- | SSE stream | 200 |
 
 `POST /videos` increments the `videos_uploaded_total` Prometheus counter.
 
 These routes are **intentionally unauthenticated** -- an explorable example
 surface, like the `db_example_litestar` CRUD. Before any real deployment add
-`require_role(...)` guards to `POST`/`DELETE /videos` and the SSE feed (or
-delete the context).
+`require_role(...)` guards to the mutating routes (`POST`/`DELETE /videos`,
+`POST /videos/{id}/cancel`) and the SSE feed (or delete the context).
 
 `GET /videos/feed` opens a subscription on the `videos` Litestar channel.
 Each status transition broadcasts `{"video_id": "...", "status": "..."}` to
