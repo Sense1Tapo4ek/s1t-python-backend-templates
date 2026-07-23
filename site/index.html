@@ -50,11 +50,11 @@ h2{font:500 26px/1.3 var(--serif);color:var(--head);margin:14px 0 8px}
 .lede{max-width:38em;font-size:15px}
 
 /* header */
-header{border-bottom:1px solid var(--line-strong)}
-header .container{display:flex;justify-content:space-between;align-items:center;padding-top:18px;padding-bottom:18px}
+header{border-bottom:1px solid var(--line-strong);position:sticky;top:0;z-index:50;background:rgba(33,28,22,.92);backdrop-filter:blur(6px)}
+header .container{display:flex;justify-content:space-between;align-items:center;padding-top:16px;padding-bottom:16px}
 .wordmark{font:500 18px var(--serif);color:var(--head)}
 .wordmark b{color:var(--brass);font-weight:500}
-nav{font:400 12.5px var(--mono);display:flex;gap:22px}
+nav{font:400 12.5px var(--mono);display:flex;gap:20px;flex-wrap:wrap}
 nav a{color:var(--soft)}
 
 /* hero */
@@ -137,12 +137,101 @@ footer{border-top:1px solid var(--line-strong);padding:26px 0 34px}
 footer .container{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font:400 11.5px var(--mono);color:var(--faint)}
 footer a{color:var(--soft);font-family:var(--mono)}
 
+/* internals: shared building blocks */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px;align-items:start}
+.ascii{font:400 12px/1.7 var(--mono);color:var(--soft);background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:16px 18px;overflow-x:auto;white-space:pre;margin:0}
+.ascii b{color:var(--brass);font-weight:400}
+.ascii .mo{color:var(--moss)} .ascii .cl{color:var(--clay)} .ascii .fa{color:#5c5142}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;font:500 10px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--faint);padding:0 10px 7px;border-bottom:1px solid var(--line-strong)}
+.tbl td{padding:7px 10px;border-bottom:1px solid var(--line);color:var(--soft);vertical-align:top}
+.tbl td .m,.tbl code{font-family:var(--mono);font-size:11.5px;color:var(--ink)}
+.tbl .st{color:var(--brass);font-family:var(--mono);white-space:nowrap}
+.tbl .cl{color:var(--clay);font-family:var(--mono)}
+.tbl tr[data-cls]{cursor:default;transition:background .15s}
+.tbl tr.hl td{background:rgba(227,182,97,.08)}
+.tbl tr.hl td .m{color:var(--brass)}
+.facts{list-style:none;margin-top:24px;display:grid;gap:11px}
+.facts li{padding-left:22px;position:relative;font-size:14px;color:var(--soft);max-width:60em}
+.facts li::before{content:"▹";position:absolute;left:0;color:var(--brass)}
+.facts li b{color:var(--head);font-weight:500}
+.facts li .mono{color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{font:400 11.5px var(--mono);border:1px solid var(--line-strong);border-radius:3px;padding:5px 10px;color:var(--soft)}
+.chip b{color:var(--brass);font-weight:400}
+.note{font-size:12.5px;color:var(--faint);margin-top:16px;max-width:52em}
+.note code{font-family:var(--mono);color:var(--soft);font-size:11.5px}
+.note a{color:var(--soft);font-family:var(--mono)}
+.gates{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:8px}
+.gate{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:14px 15px;transition:border-color .15s,box-shadow .15s}
+.gate:hover{border-color:var(--line-bright);box-shadow:0 0 14px rgba(227,182,97,.10)}
+.gate .g-h{font:500 12px var(--mono);color:var(--head)}
+.gate:hover .g-h{color:var(--brass)}
+.gate .g-d{font-size:11.5px;color:var(--faint);margin-top:5px;line-height:1.6}
+.subh{font:500 13px var(--mono);color:var(--soft);margin:0 0 4px}
+.tag{font:500 9.5px var(--mono);letter-spacing:1px;text-transform:uppercase;border-radius:3px;padding:2px 7px;vertical-align:middle}
+.tag-e{color:var(--moss);border:1px solid rgba(156,196,140,.4)}
+.tag-c{color:var(--clay);border:1px solid rgba(217,143,112,.4)}
+
+/* divider band */
+.band{border-top:1px solid var(--line-bright);background:linear-gradient(180deg,var(--sunken),var(--paper))}
+.band .container{padding:30px 28px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+.band .bt{font:500 14px var(--mono);letter-spacing:4px;text-transform:uppercase;color:var(--brass);display:flex;align-items:center;gap:10px}
+.band .bt .geo{font-size:12px}
+.band .bd{font:italic 400 14px var(--serif);color:var(--faint)}
+
+/* configuration */
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.seg button{font:500 11.5px var(--mono);letter-spacing:.5px;background:transparent;color:var(--soft);border:0;padding:7px 14px;cursor:pointer;transition:background .15s,color .15s}
+.seg button.on{background:var(--brass);color:var(--paper)}
+.envblock{display:none}
+.envblock.on{display:block}
+
+/* test pyramid */
+.pyr{display:flex;flex-direction:column;align-items:center;gap:6px;margin:4px 0}
+.tier{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:11px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px;
+      opacity:.45;transform:translateY(6px);transition:opacity .5s ease,transform .5s ease,border-color .15s,box-shadow .15s}
+.pyr.in .tier{opacity:1;transform:none}
+.tier:hover{border-color:var(--brass);box-shadow:0 0 16px var(--brass-glow)}
+.tier .tl{font:500 13px var(--mono);color:var(--head)}
+.tier:hover .tl{color:var(--brass)}
+.tier .tr{font-size:11.5px;color:var(--faint);text-align:right}
+.tier .tc{font:500 14px var(--mono);color:var(--brass)}
+.tier.t-unit{width:100%} .tier.t-flow{width:84%} .tier.t-integ{width:68%} .tier.t-e2e{width:52%}
+
+/* feature workflow */
+.wf{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:26px}
+.wf-step{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:15px 16px 15px 46px;position:relative;transition:border-color .15s,box-shadow .15s}
+.wf-step:hover{border-color:var(--line-bright);box-shadow:0 0 14px rgba(227,182,97,.10)}
+.wf-step .n{position:absolute;left:14px;top:14px;font:500 13px var(--mono);color:var(--brass)}
+.wf-step .wt{font:500 13.5px var(--sans);color:var(--head)}
+.wf-step .wd{font-size:12.5px;color:var(--faint);margin-top:4px;line-height:1.55}
+.wf-step .wd code{font-family:var(--mono);font-size:11px;color:var(--soft)}
+
+/* observability chain */
+.chain{display:flex;flex-direction:column;gap:0;margin:0}
+.hop{border:1px solid var(--line);background:var(--sunken);border-radius:4px;padding:9px 13px;font:400 11.5px var(--mono);color:var(--soft);transition:border-color .15s,background .15s;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.hop:hover{border-color:var(--brass);background:var(--raised-2)}
+.hop .hl-l{color:var(--head)}
+.hop:hover .hl-l{color:var(--brass)}
+.hop .hk{color:var(--faint)}
+.hop .vid{color:var(--brass)}
+.hop.svc-b{margin-left:0} .hop.svc-w{margin-left:26px;border-left:2px solid var(--line-bright)}
+.chain-wire{font:400 11px var(--mono);color:var(--clay);padding:5px 0 5px 13px}
+.lyr{font:500 9.5px var(--mono);letter-spacing:.5px;text-transform:uppercase;color:var(--moss)}
+
 @media (max-width:760px){
   .topo{flex-direction:column}
   .wire{padding:14px 0}
-  .layers-grid,.qs{grid-template-columns:1fr}
+  .layers-grid,.qs,.cols,.wf{grid-template-columns:1fr}
   .hero{padding:64px 0 56px}
   section{padding:56px 0}
+  .tier{width:100% !important}
+  .hop.svc-w{margin-left:12px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .tier{opacity:1;transform:none;transition:border-color .15s,box-shadow .15s}
 }
 </style>
 </head>
@@ -153,8 +242,10 @@ footer a{color:var(--soft);font-family:var(--mono)}
     <span class="wordmark">s1t-python-backend-templates<b>.</b></span>
     <nav>
       <a href="#patterns">patterns</a>
-      <a href="#scenario">pipeline</a>
-      <a href="#start">quick start</a>
+      <a href="#errors">errors</a>
+      <a href="#observability">logging</a>
+      <a href="#tests">tests</a>
+      <a href="#docs">docs</a>
       <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates">github&nbsp;↗</a>
     </nav>
   </div>
@@ -299,19 +390,6 @@ ORDER BY created_at DESC, id DESC</pre>
         </div>
       </div>
 
-      <div class="pat">
-        <div class="t">Graceful drain</div>
-        <pre>SIGTERM ─▶ cancel tasks ─▶ await each
-─▶ flush ─▶ exit before SIGKILL</pre>
-        <div class="why">Lifespan managers own their background tasks ·
-        outbox relay, stream consumers · and shut them down cleanly inside
-        the orchestrator's grace window.</div>
-        <div class="links">
-          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/media_example/adapters/lifespan_manager.py">code →</a>
-          <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/architecture.md">lifespan →</a>
-        </div>
-      </div>
-
     </div>
   </div>
 </section>
@@ -342,6 +420,424 @@ ORDER BY created_at DESC, id DESC</pre>
     <p class="flow-caption">at-least-once everywhere, duplicates absorbed at
     each edge · the full field-by-field contracts live in
     <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/tree/main/docs/contract">docs/contract/&nbsp;→</a></p>
+  </div>
+</section>
+
+<div class="band">
+  <div class="container">
+    <span class="bt"><i class="geo g-brass">▵</i>runtime</span>
+    <span class="bd">what the app does while a request is in flight.</span>
+  </div>
+</div>
+
+<section id="lifecycle">
+  <div class="container">
+    <div class="overline"><i class="geo g-moss">▢</i>composition &amp; lifecycle</div>
+    <h2>One graph, resolved on the first request.</h2>
+    <p class="lede">The entire dependency graph is assembled in a single
+    container call and resolved lazily; background tasks are lifespan-owned and
+    drained inside the orchestrator's grace window; prod invariants fail closed
+    at boot.</p>
+    <div class="cols">
+      <pre class="ascii">lifespan(app):
+  RootConfig().<b>validate_prod_invariants()</b>
+                          <span class="fa">fail closed at boot</span>
+  <b>build_container</b>(channels=…)  <span class="fa">one call · 7 providers</span>
+     AsyncContainer <span class="fa">(APP scope, lazy)</span>
+                    <span class="fa">resolves on 1st request</span>
+  start:  auth · alchemy · media  managers
+                          <span class="fa">own background tasks</span>
+  ── serve ──
+  stop <span class="fa">(finally · always reached)</span>:
+     cancel + await every task
+     → <b>container.close()</b>  <span class="fa">dispose engines, aclose redis</span>
+
+  <b>25s</b> uvicorn drain  <span class="mo">&lt;</span>  <b>30s</b> k8s grace
+                 <span class="fa">never SIGKILLed mid-flight</span></pre>
+      <div>
+        <p class="subh">the one place dependencies are wired</p>
+        <p class="note"><code>build_container()</code> registers <b class="mono" style="color:var(--head)">7</b>
+        Dishka providers and hands back one <code>AsyncContainer</code>. Business
+        code never constructs a collaborator: use cases and facades receive
+        theirs by injection, and the <em>only</em> file that names a concrete
+        implementation is a <code>provider.py</code>.</p>
+        <p class="subh" style="margin-top:16px">graceful drain</p>
+        <p class="note">Each lifespan manager owns its background
+        <code>asyncio.Task</code>s -- the outbox relay, the stream consumers -- and
+        cancels + joins every one on <code>SIGTERM</code>, even after one crashes.
+        uvicorn's <b class="mono" style="color:var(--head)">25s</b> drain sits inside
+        a <b class="mono" style="color:var(--head)">30s</b> k8s grace window, so
+        in-flight work finishes before <code>SIGKILL</code>.</p>
+      </div>
+    </div>
+    <ul class="facts">
+      <li><b>The graph is lazy.</b> Nothing is instantiated at import; the
+      <span class="mono">APP</span>-scope container resolves on the first HTTP
+      request, so tests warm it explicitly and a boot never does hidden I/O.</li>
+      <li><b>Background tasks are lifespan-owned.</b> The outbox relay and status
+      consumer run as <span class="mono">asyncio.Task</span>s a manager cancels and
+      joins on shutdown -- no orphan survives the process.</li>
+      <li><b>Prod invariants fail closed.</b> No admin token or CSRF secret under
+      <span class="mono">APP_ENV=prod</span> and the app refuses to start; the
+      worker refuses to start without its panel password.</li>
+    </ul>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/infra/dishka.md">infra/dishka.md →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/architecture.md">architecture.md →</a></p>
+  </div>
+</section>
+
+<section id="config">
+  <div class="container">
+    <div class="overline"><i class="geo g-clay">◇</i>configuration</div>
+    <h2>Everything is an environment variable. Nothing reads one.</h2>
+    <p class="lede">Config enters through typed Pydantic Settings and flows out
+    through Dishka providers · no domain or app code ever touches
+    <span class="mono">os.environ</span>. Two committed templates bound the
+    surface: a minimal one that boots the stack, and the full annotated contract.</p>
+    <div class="cols">
+      <div>
+        <div class="seg" id="envseg">
+          <button class="on" data-env="min">.env.example</button>
+          <button data-env="full">.env.full.example</button>
+        </div>
+        <pre class="ascii envblock on" data-env="min"><span class="fa"># 12 variables · clone, fill one secret, boot</span>
+APP_NAME=            APP_ENV=<b>dev</b>
+VOLUME_PATH=         SNITCHBOT_DISABLED=<b>1</b>
+<b>AUTH_ADMIN_TOKEN=</b>   <span class="fa"># openssl rand -hex 32</span>
+POSTGRES_HOST=  PORT=  USER=  PASSWORD=  DB=
+VALKEY_HOST=    VALKEY_PORT=</pre>
+        <pre class="ascii envblock" data-env="full"><span class="fa"># the complete contract · every var the code reads,</span>
+<span class="fa"># grouped and annotated, secrets left empty</span>
+<b>MEDIA_</b>*              outbox batch · relay interval
+<b>MEDIA_PROCESSING_</b>*   fan-out · job kinds · TTLs
+<b>AUTH_</b>*               jwt ttls · argon2 · cookie
+<b>LOG_</b>*                level · file path · max bytes
+<b>METRICS_</b>*            multiproc dir
+<b>POSTGRES_</b>* <b>VALKEY_</b>*   pools · dsn parts
+<b>DB_EXAMPLE_LITESTAR_</b>* the advanced-alchemy demo</pre>
+      </div>
+      <div>
+        <p class="subh">one prefix per context</p>
+        <div class="chips">
+          <span class="chip"><b>MEDIA_</b></span>
+          <span class="chip"><b>MEDIA_PROCESSING_</b></span>
+          <span class="chip"><b>AUTH_</b></span>
+          <span class="chip"><b>LOG_</b></span>
+          <span class="chip"><b>METRICS_</b></span>
+          <span class="chip"><b>POSTGRES_</b></span>
+          <span class="chip"><b>VALKEY_</b></span>
+          <span class="chip"><b>DB_EXAMPLE_LITESTAR_</b></span>
+        </div>
+        <p class="note" style="margin-top:16px">Each context owns a
+        <code>config.py</code> with a unique <code>env_prefix</code>, so two
+        contexts can hold a <code>TIMEOUT</code> without collision and each
+        settings class validates only its own slice of the environment.</p>
+        <p class="subh" style="margin-top:16px">the flow, one direction</p>
+        <p class="note"><code>env → Pydantic Settings → Dishka provider →
+        constructor</code>. Drift is a bug: every variable the code reads is
+        present in the templates in the same change, and even per-worker mutable
+        state -- the SSE <code>FeedLimiter</code> -- is a DI-provided singleton,
+        never a module global.</p>
+      </div>
+    </div>
+    <ul class="facts">
+      <li><b>The domain can't see the environment.</b> Config is Pydantic
+      Settings injected through Dishka; domain and app take plain constructor
+      arguments and never touch <span class="mono">os.environ</span> -- verified
+      across both layers, and the DI wiring makes it the only easy path.</li>
+      <li><b>Secrets are placeholders, never examples.</b> Both templates ship
+      empty secret slots with a generation hint -- the app validates their
+      presence at startup, and <span class="mono">.env</span> itself is
+      gitignored.</li>
+    </ul>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/.env.full.example">.env.full.example →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/architecture.md">architecture.md →</a></p>
+  </div>
+</section>
+
+<section id="errors">
+  <div class="container">
+    <div class="overline"><i class="geo g-clay">◇</i>error model</div>
+    <h2>One error taxonomy, one wire shape.</h2>
+    <p class="lede">Every failure is named by the layer whose invariant broke,
+    and the whole surface between exceptions and HTTP is a single dictionary
+    that maps each class to an RFC 9457 problem-details response. Hover a class
+    to trace it.</p>
+    <div class="cols">
+      <pre class="ascii">     raise inward  ───►  translate outward
+
+ports/driven   <b>PortError</b>     ─┐  caught once at
+app            <b>AppError</b>      ─┤  the edge, logged,
+app            <b>NotFoundError</b> ─┤  mapped to
+domain         <b>DomainError</b>   ─┘  problem+json
+        │
+        ▼  shared/generics/errors.py  <span class="fa">· 4 classes</span>
+   LayerError
+   ├─ <b>DomainError</b>       → 409
+   ├─ <b>AppError</b>          → 422
+   │  └─ <b>NotFoundError</b>  → 404  <span class="fa">(MRO wins)</span>
+   └─ <b>PortError</b>         → 503  <span class="fa">(hermetic 5xx)</span>
+
+   unmapped Exception → 500  <span class="fa">(prod catch-all,
+                             body hermetic)</span></pre>
+      <div>
+        <table class="tbl">
+          <tr><th>Error</th><th>Raised in</th><th>Wire</th></tr>
+          <tr data-cls="domain"><td><span class="m">DomainError</span></td><td>domain</td><td class="st">409</td></tr>
+          <tr data-cls="app"><td><span class="m">AppError</span></td><td>app</td><td class="st">422</td></tr>
+          <tr data-cls="notfound"><td><span class="m">NotFoundError</span></td><td>app</td><td class="st">404</td></tr>
+          <tr data-cls="port"><td><span class="m">PortError</span></td><td>ports/driven</td><td class="st">503</td></tr>
+        </table>
+        <p class="note">A <code>6</code>-entry <code>EXCEPTION_TO_PROBLEM</code> map
+        is the entire translation layer -- the four base classes plus two concrete
+        framework cases (<span class="mono">JwtDisabled</span>, advanced-alchemy's
+        <span class="mono">NotFound</span>). A new context error inherits its
+        status and a stable <code>urn:litestar-base:error:&lt;slug&gt;</code> type
+        for free -- no handler edits.</p>
+        <p class="subh" style="margin-top:16px">seen live <span class="tag tag-e">e2e-tested</span></p>
+        <p class="note"><code>POST /videos/{id}/cancel</code> on a terminal video
+        raises <span class="mono">InvalidTransition</span> (a
+        <span class="mono">DomainError</span>) that maps to
+        <span class="st mono" style="color:var(--brass)">409</span>
+        <code>urn:…:invalid-transition</code>; an unknown id maps to
+        <span class="st mono" style="color:var(--brass)">404</span>.
+        <a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/tests/media_example/e2e/test_cancel.py">test_cancel.py →</a></p>
+      </div>
+    </div>
+    <ul class="facts">
+      <li><b>Every error has exactly one home layer.</b> A four-class base
+      taxonomy names <em>which</em> invariant broke; each context subclasses
+      only its own layer, and the taxonomy is fully exercised -- no class exists
+      without a raise-site.</li>
+      <li><b>Raw infrastructure exceptions are caged at the driven port.</b>
+      asyncpg / redis / OS errors are wrapped into <span class="mono">PortError</span>
+      at a single kind of site -- translation lives in one file, not in
+      scattered controller <span class="mono">try/except</span>.</li>
+      <li><b>5xx bodies are hermetic.</b> Full context is logged once at the
+      boundary; a generic detail goes on the wire. Tracebacks and driver
+      messages never cross, and truly-unexpected exceptions hit one prod
+      catch-all that maps to 500.</li>
+    </ul>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/contract/errors.md">contract/errors.md →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/subsystems/error_hierarchy.md">error_hierarchy.md →</a></p>
+  </div>
+</section>
+
+<section id="observability">
+  <div class="container">
+    <div class="overline"><i class="geo g-moss">▢</i>observability on the layers</div>
+    <h2>Bind the trace once. Each layer signs its own line.</h2>
+    <p class="lede">One <span class="mono">bind_contextvars(trace_id)</span> in an
+    ASGI middleware puts the id on every structured line of the request -- because
+    <span class="mono">merge_contextvars</span> is the first processor, no lower
+    layer re-threads it. Each layer adds its own <span class="mono">layer</span>
+    tag; <span class="mono">video_id</span> carries correlation across the wire.</p>
+    <div class="cols">
+      <div class="chain">
+        <div class="hop svc-b"><span><span class="hl-l">TraceIdMiddleware</span> <span class="hk">binds</span> <span class="vid">trace_id</span></span><span class="lyr">transport</span></div>
+        <div class="hop svc-b"><span><span class="hl-l">UploadVideoUC</span> <span class="hk">"video registered"</span> <span class="vid">video_id=X</span></span><span class="lyr">app</span></div>
+        <div class="chain-wire">└─▶ video_uploaded stream ─▶</div>
+        <div class="hop svc-w"><span><span class="hl-l">uploaded_consumer</span> <span class="hk">"received"</span> <span class="vid">video_id=X</span></span><span class="lyr">adapters_driving</span></div>
+        <div class="hop svc-w"><span><span class="hl-l">complete_job</span> <span class="hk">"processed"</span> <span class="vid">video_id=X</span></span><span class="lyr">app</span></div>
+        <div class="chain-wire">◀─ video_status stream ◀─┘</div>
+        <div class="hop svc-b"><span><span class="hl-l">status_consumer</span> <span class="hk">"applied"</span> <span class="vid">video_id=X</span></span><span class="lyr">adapters_driving</span></div>
+      </div>
+      <div>
+        <p class="subh">processor chain</p>
+        <p class="note"><code>merge_contextvars → add_log_level →
+        add_logger_name → TimeStamper(iso,utc) → StackInfoRenderer →
+        CallsiteParameterAdder → dict_tracebacks → snitchbot →
+        ProcessorFormatter</code> -- the shared <code>ProcessorFormatter</code>
+        renders one bounded JSON line to stdout <em>and</em> the JSONL file. No
+        queue, no shipper, no second process.</p>
+        <p class="subh" style="margin-top:16px">the <span class="mono">layer</span> field <span class="tag tag-c">explicit bind</span></p>
+        <p class="note">Five <code>Layer</code> values (<span class="mono">app,
+        ports_driving, ports_driven, adapters_driving, adapters_driven</span>) --
+        no <span class="mono">DOMAIN</span>, the domain never logs. App use cases
+        bind it at the operation boundary; adapters hold a module logger. It is
+        an explicit opt-in, not an auto-derived tag.</p>
+        <p class="subh" style="margin-top:16px">correlation</p>
+        <p class="note"><code>trace_id</code> pins the chain to the originating
+        HTTP request but does <em>not</em> cross the process boundary -- the SAQ
+        worker is a separate process. <code>video_id</code> is logged at every
+        stage and is identical on both sides of the streams, so one
+        <span class="mono">grep video_id=X</span> follows the whole pipeline.</p>
+      </div>
+    </div>
+    <ul class="facts">
+      <li><b>The domain and port interfaces log nothing</b> -- no logger lives in
+      any <span class="mono">domain/</span> or <span class="mono">app/interfaces/</span>
+      file. Logging sits only where I/O and orchestration do.</li>
+      <li><b>One process writes, the UI tails.</b> The admin viewer reverse-reads
+      and <span class="mono">tail -F</span>s the exact JSONL file, inode-aware
+      through logrotate, streaming new rows over SSE with client-side filtering.</li>
+      <li><b>Metrics are multiprocess-safe.</b> The master wipes stale shards and
+      exports <span class="mono">PROMETHEUS_MULTIPROC_DIR</span> before forking;
+      <span class="mono">APP_WORKERS</span> scales with no config change and
+      module-level counters survive repeated app construction in tests.</li>
+    </ul>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/infra/structlog.md">infra/structlog.md →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/subsystems/observability.md">observability.md →</a></p>
+  </div>
+</section>
+
+<div class="band">
+  <div class="container">
+    <span class="bt"><i class="geo g-moss">▢</i>discipline</span>
+    <span class="bd">how a change earns its way into main.</span>
+  </div>
+</div>
+
+<section id="tests">
+  <div class="container">
+    <div class="overline"><i class="geo g-brass">▵</i>test pyramid</div>
+    <h2>The level is the directory.</h2>
+    <p class="lede">Four levels, each a directory that mirrors
+    <span class="mono">src/</span>; the level is auto-tagged by a path-reading
+    collection hook, so <span class="mono">-m unit</span> selects a tier with zero
+    hand-maintained markers. Hover a tier for its rule.</p>
+    <div class="cols">
+      <div class="pyr" id="pyr">
+        <div class="tier t-unit"><span class="tl">unit</span><span class="tr"><span class="tc">110</span> · domain · <span class="cl">mocks forbidden</span></span></div>
+        <div class="tier t-flow"><span class="tl">flow</span><span class="tr"><span class="tc">60</span> · app · every interface a fake</span></div>
+        <div class="tier t-integ"><span class="tl">integration</span><span class="tr"><span class="tc">77</span> · one port+adapter · real infra</span></div>
+        <div class="tier t-e2e"><span class="tl">e2e</span><span class="tr"><span class="tc">93</span> · full app · no mocks</span></div>
+      </div>
+      <div>
+        <p class="subh">tests/&lt;context&gt;/&lt;level&gt;/</p>
+        <p class="note">Grouped by bounded context first, then level -- the
+        directory <em>is</em> the taxonomy. Integration and e2e run against real
+        <b class="mono" style="color:var(--head)">Postgres 18</b> and
+        <b class="mono" style="color:var(--head)">Valkey 8</b> via testcontainers,
+        never a SQLite stand-in.</p>
+        <div class="chips">
+          <span class="chip">backend <b>340</b></span>
+          <span class="chip">worker <b>31</b></span>
+          <span class="chip">total <b>371</b></span>
+        </div>
+        <p class="note" style="margin-top:16px">The tiers rank by
+        <em>isolation and speed</em>, not head-count: a template earns trust by
+        proving itself end-to-end, so e2e is deliberately heavy. Unit stays
+        instant and mock-free; the pyramid is a rule about dependencies, not a
+        quota.</p>
+      </div>
+    </div>
+    <ul class="facts">
+      <li><b>Each level has a hard rule.</b> Unit forbids
+      <span class="mono">unittest.mock</span> entirely; flow requires every
+      interface to be a fake or <span class="mono">AsyncMock</span>; integration
+      and e2e forbid mocks and use real infra.</li>
+      <li><b>Rigor is legible from the path.</b> No test hides its level -- the
+      collection hook reads it from the directory, so a reviewer knows what a
+      failure means before opening the file.</li>
+    </ul>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/tree/main/src/litestar_backend/tests">tests/ →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/development.md">development.md →</a></p>
+  </div>
+</section>
+
+<section id="gates">
+  <div class="container">
+    <div class="overline"><i class="geo g-clay">◇</i>quality gates</div>
+    <h2>The same gate runs in four places.</h2>
+    <p class="lede">One command --
+    <span class="mono">ruff · mypy · lint-imports · pytest</span> -- fired from
+    pre-commit, GitHub CI, the Docker image, and the Taskfile, over both services.
+    What passes locally is exactly what passes in CI.</p>
+    <div class="cols">
+      <div>
+        <div class="gates">
+          <div class="gate"><div class="g-h">pre-commit</div><div class="g-d">ruff · ruff-format · mypy · import-linter · gitleaks, per service venv</div></div>
+          <div class="gate"><div class="g-h">GitHub CI</div><div class="g-d">static + Docker tests, matrix over both services</div></div>
+          <div class="gate"><div class="g-h">Docker image</div><div class="g-d">tester stage: ruff &amp;&amp; mypy &amp;&amp; lint-imports &amp;&amp; pytest</div></div>
+          <div class="gate"><div class="g-h">Taskfile</div><div class="g-d">task check · task test · task fmt, both services</div></div>
+        </div>
+      </div>
+      <div>
+        <p class="subh">architecture is machine-verified <span class="tag tag-e">enforced</span></p>
+        <p class="note"><b class="mono" style="color:var(--head)">10</b>
+        import-linter contracts guard bounded-context independence, an
+        un-importable <span class="mono">root</span> shell, a dependency-free
+        <span class="mono">shared</span> kernel, and strict inward layering. A
+        cross-layer import fails the gate -- the hexagon on this page is a test,
+        not a diagram.</p>
+        <div class="chips">
+          <span class="chip"><b>10</b> import-linter contracts</span>
+          <span class="chip"><b>7</b> backend</span>
+          <span class="chip"><b>3</b> worker</span>
+          <span class="chip">ruff <b>==0.15.22</b></span>
+          <span class="chip">mypy <b>==2.3.0</b></span>
+        </div>
+        <p class="note" style="margin-top:16px">One pinned toolchain, no drift:
+        ruff and mypy are pinned <em>identically</em> in both services and run
+        through local hooks, so the versions can never diverge from CI.</p>
+      </div>
+    </div>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/.github/workflows/ci.yml">ci.yml →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/development.md">development.md →</a></p>
+  </div>
+</section>
+
+<section id="workflow">
+  <div class="container">
+    <div class="overline"><i class="geo g-brass">▵</i>feature workflow</div>
+    <h2>Every change walks the same path.</h2>
+    <p class="lede">Docs at both ends, tests through the middle. This one is a
+    <span class="tag tag-c">convention</span>, not a linter -- but it is written
+    down, and the last step is machine-checked: the gate stays red until the
+    docs match.</p>
+    <div class="wf">
+      <div class="wf-step"><span class="n">1</span><div class="wt">Frame the feature</div><div class="wd">Goal and boundary in a few lines -- which context owns it, what crosses the wire, what is out of scope.</div></div>
+      <div class="wf-step"><span class="n">2</span><div class="wt">Read the docs first</div><div class="wd"><code>architecture.md</code>, the owning context page, the relevant <code>contract/</code> pages, any ADR that already constrains the area.</div></div>
+      <div class="wf-step"><span class="n">3</span><div class="wt">Write the design</div><div class="wd">A short spec: data flow, layer placement, changed wire shapes, error cases. New decision means a new ADR (≤40 lines).</div></div>
+      <div class="wf-step"><span class="n">4</span><div class="wt">Read the code</div><div class="wd">The owning context end-to-end plus the nearest analog (<code>media_example</code> is the reference) -- plan against what exists, not memory.</div></div>
+      <div class="wf-step"><span class="n">5</span><div class="wt">Implement inward-out</div><div class="wd">Domain first, then app, ports, adapters; tests at each level as you go -- <code>unit → flow → integration → e2e</code>.</div></div>
+      <div class="wf-step"><span class="n">6</span><div class="wt">Update every touched doc</div><div class="wd">Context page, contract on any wire change, ADR status, env templates for new vars. A stale doc is a bug.</div></div>
+    </div>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/development.md">development.md → feature workflow</a></p>
+  </div>
+</section>
+
+<section id="docs">
+  <div class="container">
+    <div class="overline"><i class="geo g-clay">◇</i>documentation</div>
+    <h2>Docs are the product, not an afterthought.</h2>
+    <p class="lede">Every page lives in the narrowest tree whose blast radius
+    contains it, every fact has exactly one home, and behaviour ships in the
+    same change as the docs that describe it.</p>
+    <div class="cols">
+      <pre class="ascii"><b>docs/</b>                    <span class="fa">platform · cross-service</span>
+├ architecture.md         <span class="fa">300-line budget</span>
+├ <b>contract/</b>               <span class="mo">single wire truth</span>
+├ adr/                    <span class="fa">project ADR tree</span>
+├ features/               <span class="fa">feature maps · zero wire facts</span>
+└ infra/                  <span class="fa">postgres · valkey</span>
+
+<b>src/&lt;service&gt;/docs/</b>       <span class="fa">service-internal</span>
+├ contexts/               <span class="fa">ownership · invariants</span>
+├ subsystems/             <span class="fa">errors · jwt · metrics</span>
+├ infra/                  <span class="fa">dishka · structlog · jinja</span>
+└ adr/                    <span class="fa">service ADR tree</span></pre>
+      <div>
+        <table class="tbl">
+          <tr><th>Doc kind</th><th>Budget</th><th>Home</th></tr>
+          <tr><td>README</td><td class="st">200</td><td>service root</td></tr>
+          <tr><td>architecture</td><td class="st">300</td><td>docs/</td></tr>
+          <tr><td>context</td><td class="st">250</td><td>svc/docs/contexts</td></tr>
+          <tr><td>subsystem</td><td class="st">200</td><td>svc/docs/subsystems</td></tr>
+          <tr><td>infrastructure</td><td class="st">150</td><td>svc/docs/infra</td></tr>
+          <tr><td>feature map</td><td class="st">100</td><td>docs/features</td></tr>
+          <tr><td>ADR</td><td class="st">40</td><td>nearest of 4 trees</td></tr>
+        </table>
+        <p class="note"><b class="mono" style="color:var(--head)">26 decisions</b>
+        across <b class="mono" style="color:var(--head)">4</b> independently-numbered
+        MADR trees -- ≤40 lines, never renumbered, superseded-not-edited, with an
+        audit trail (0015 superseded by 0016, both stay in the tree).</p>
+      </div>
+    </div>
+    <ul class="facts">
+      <li><b>One authoritative home per fact.</b> Wire truth lives only in
+      <span class="mono">docs/contract/</span>; feature maps and ADRs carry zero
+      wire fields and link out -- a field name or status code is defined once in
+      the whole repo.</li>
+      <li><b>A stale doc is a bug.</b> The feature workflow ends by updating every
+      touched page in the same change; the gate is not green until the docs match.</li>
+    </ul>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/adr/README.md">ADR index →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/adopting.md">adopting.md →</a></p>
   </div>
 </section>
 
@@ -384,17 +880,56 @@ ORDER BY created_at DESC, id DESC</pre>
 </footer>
 
 <script>
-// layer hover <-> tree highlight
+// hexagon layer hover <-> tree highlight
 document.querySelectorAll('.layer').forEach(function(el){
   var l = el.dataset.l;
   var files = document.querySelectorAll('.tree .ln[data-l~="'+l+'"]');
   el.addEventListener('mouseenter', function(){ files.forEach(function(f){f.classList.add('on')}); el.classList.add('hl'); });
   el.addEventListener('mouseleave', function(){ files.forEach(function(f){f.classList.remove('on')}); el.classList.remove('hl'); });
 });
-// the page's single motion: one spark walking the pipeline
+
+// errors: hover a table row <-> highlight
+document.querySelectorAll('.tbl tr[data-cls]').forEach(function(tr){
+  tr.addEventListener('mouseenter', function(){ tr.classList.add('hl'); });
+  tr.addEventListener('mouseleave', function(){ tr.classList.remove('hl'); });
+});
+
+// configuration: minimal <-> full env toggle
+(function(){
+  var seg = document.getElementById('envseg');
+  if(!seg) return;
+  seg.querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click', function(){
+      var env = b.dataset.env;
+      seg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b)});
+      document.querySelectorAll('.envblock').forEach(function(pre){
+        pre.classList.toggle('on', pre.dataset.env===env);
+      });
+    });
+  });
+})();
+
+// test pyramid: fill on scroll into view (user-initiated, reduced-motion-safe)
+(function(){
+  var pyr = document.getElementById('pyr');
+  if(!pyr) return;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce || !('IntersectionObserver' in window)){ pyr.classList.add('in'); return; }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ pyr.classList.add('in'); io.disconnect(); } });
+  }, {threshold:.4});
+  io.observe(pyr);
+})();
+
+// the page's single ambient motion: one spark walking the pipeline
 (function(){
   var flow = document.getElementById('flow');
+  if(!flow) return;
   var items = Array.prototype.slice.call(flow.children); // step, arrow, step...
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    items.forEach(function(el){el.classList.add('lit')}); // static lit state
+    return;
+  }
   var i = -1;
   setInterval(function(){
     items.forEach(function(el){el.classList.remove('lit')});
