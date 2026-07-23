@@ -1,12 +1,33 @@
 import logging
 import logging.handlers
 import sys
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
 import structlog
 from snitchbot.integrations import make_structlog_processor
 from structlog.processors import CallsiteParameter, CallsiteParameterAdder
+
+
+class Layer(Enum):
+    """Hexagon layer bound onto a logger as the `layer` field.
+
+    No DOMAIN member: the domain layer is pure and never logs. Transport and
+    composition edges (access log, trace middleware, lifespan) are not a
+    context's hexagon layer either and keep their bare component loggers.
+    """
+
+    APP = "app"
+    PORTS_DRIVING = "ports_driving"
+    PORTS_DRIVEN = "ports_driven"
+    ADAPTERS_DRIVING = "adapters_driving"
+    ADAPTERS_DRIVEN = "adapters_driven"
+
+
+def layer_logger(layer: Layer, component: str) -> structlog.stdlib.BoundLogger:
+    """Return a component logger pre-bound with its hexagon `layer` value."""
+    return structlog.get_logger(component).bind(layer=layer.value)
 
 
 class _TruncatingProcessorFormatter(structlog.stdlib.ProcessorFormatter):

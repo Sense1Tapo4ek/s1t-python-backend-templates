@@ -7,16 +7,16 @@ from typing import Any
 
 import msgspec
 import redis.asyncio as aioredis
-import structlog
 from prometheus_client import Counter
 from redis.exceptions import ResponseError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from shared.generics.errors import AppError, DomainError, PortError
+from shared.logging import Layer, layer_logger
 
 from ...ports.driving import MediaFacade, VideoStatusEventSchema
 
-_log = structlog.get_logger("media_example.status_consumer")
+_log = layer_logger(Layer.ADAPTERS_DRIVING, "media_example.status_consumer")
 
 VIDEO_STATUS_STREAM = "video_status"
 CONSUMER_GROUP = "media_example"

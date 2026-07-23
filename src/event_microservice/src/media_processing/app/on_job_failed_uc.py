@@ -1,13 +1,12 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-import structlog
-
 from shared.generics.errors import PortError
+from shared.logging import Layer, layer_logger
 
 from .interfaces import IEventPublisher, IJoinStore
 
-_log = structlog.get_logger("media_processing.on_job_failed")
+_log = layer_logger(Layer.APP, "media_processing.on_job_failed")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-import structlog
+from shared.logging import Layer, layer_logger
 
 from ..domain import JobKind, JoinPolicy
 from .interfaces import IEventPublisher, IJoinStore
 
-_log = structlog.get_logger("media_processing.complete_job")
+_log = layer_logger(Layer.APP, "media_processing.complete_job")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

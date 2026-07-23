@@ -2,9 +2,12 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from shared.app import IClock
+from shared.logging import Layer, layer_logger
 
 from ..domain import Video
 from .interfaces import IOutboxRepo, IUoW, IVideoRepo
+
+_log = layer_logger(Layer.APP, "UploadVideoUC")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -30,4 +33,8 @@ class UploadVideoUC:
             await self._repo.save(video)
             for event in video.collect_events():
                 await self._outbox.add(event)
+        # Backend edge of the cross-service correlation chain: video_id logged
+        # here lets a grep across both services follow the whole causal chain;
+        # trace_id (merged via contextvar) pins it to the originating request.
+        _log.info("video registered", video_id=str(video.id))
         return video

@@ -1,4 +1,5 @@
 import pytest
+from structlog.testing import capture_logs
 
 from media_example.app import UploadVideoCommand, UploadVideoUC
 from media_example.domain import VideoStatus, VideoUploaded
@@ -99,3 +100,34 @@ class TestUploadVideoUC:
         # Assert
         assert fake_uow.entered == 1
         assert fake_uow.exited == 1
+
+    @pytest.mark.asyncio
+    async def test_upload_emits_app_layer_registered_line(
+        self,
+        fake_repo: FakeVideoRepo,
+        fake_outbox: FakeOutbox,
+        fake_uow: FakeUoW,
+        fake_clock: FakeClock,
+    ) -> None:
+        """
+        Given a valid source key,
+        When UploadVideoUC is called,
+        Then it emits a "video registered" app-layer line carrying video_id
+        (the backend edge of the cross-service video_id correlation chain).
+        """
+        # Arrange
+        uc = UploadVideoUC(
+            _repo=fake_repo,
+            _uow=fake_uow,
+            _outbox=fake_outbox,
+            _clock=fake_clock,
+        )
+
+        # Act
+        with capture_logs() as logs:
+            video = await uc(UploadVideoCommand(source_key="uploads/log.mp4"))
+
+        # Assert
+        registered = next(log for log in logs if log["event"] == "video registered")
+        assert registered["layer"] == "app"
+        assert registered["video_id"] == str(video.id)
