@@ -42,7 +42,7 @@ onto the app's uv venv; full gate = `ruff check . && mypy && pytest -q`):
 
 ```bash
 docker compose run --rm litestar_backend_test                       # full gate
-docker compose run --rm litestar_backend_test pytest tests/unit -q  # any subset
+docker compose run --rm litestar_backend_test pytest -m unit -q     # any subset
 ```
 
 Or via `Taskfile` (monorepo command surface; wraps the same commands): `task --list`
@@ -64,15 +64,18 @@ testcontainer, so **Docker must be running** (or point at an external DB via
 (the backend service root):
 
 ```bash
-uv run pytest                     # full suite (needs Docker)
-uv run pytest tests/unit/         # domain only, instant, no DB
-uv run pytest tests/flow/         # app-level with mocked interfaces, no DB
-uv run pytest tests/integration/  # FileLogReader (tmp_path) + real Postgres (testcontainer)
-uv run pytest tests/e2e/          # full app via AsyncTestClient + Postgres
+uv run pytest                        # full suite (needs Docker)
+uv run pytest -m unit                # domain only, instant, no DB
+uv run pytest -m flow                # app-level with mocked interfaces, no DB
+uv run pytest -m integration         # FileLogReader (tmp_path) + real Postgres (testcontainer)
+uv run pytest -m e2e                 # full app via AsyncTestClient + Postgres
 uv run ruff check . && uv run mypy
 ```
 
-Test layout mirrors `src/`. Don't mix layers in one file. The `litestar_backend_test` service
+Tests are grouped by context first, then level: `tests/<context>/<level>/`
+mirrors `src/`; the level (`unit`/`flow`/`integration`/`e2e`) is a pytest
+marker applied from the path (`conftest.py::pytest_collection_modifyitems`), so
+select a subset with `-m <level>`, not a path. Don't mix levels in one file. The `litestar_backend_test` service
 is profile-gated (`profiles: ["test"]`) so `docker compose up` never starts it.
 The `tester`/runtime images both copy `static/` (Jinja templates + assets);
 without it the app 500s on every rendered page.
@@ -137,7 +140,7 @@ deploys ignore the override: `docker compose -f docker-compose.yml up`.
   the browser over loaded rows; "load more" pulls deeper into the file.
 - **APP-scope DI is lazy.** The first HTTP request resolves the graph.
   Tests using env-isolation autouse fixtures must warm DI eagerly first
-  — see `tests/e2e/conftest.py::e2e_client`.
+  — see `tests/conftest.py::e2e_client`.
 - **`.env` is gitignored.** `.env.full.example` is the full contract;
   `.env.example` is the minimal quick-start subset of it.
 - **Test env isolation.** `tests/conftest.py::_isolate_environment` is

@@ -11,6 +11,20 @@ from root.entrypoints.api import create_app
 
 E2E_APP_NAME = "test-service"
 
+
+@pytest.fixture(autouse=True)
+def _set_admin_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Enable auth for the own-app log tests (test_logs_api builds its app
+    without setting the token). Formerly in the admin e2e conftest, which the
+    log subtree no longer inherits under the context-first layout."""
+    monkeypatch.setenv("AUTH_ADMIN_TOKEN", E2E_ADMIN_TOKEN)
+
+
+@pytest.fixture
+def auth_headers() -> dict[str, str]:
+    return {"Authorization": f"Bearer {E2E_ADMIN_TOKEN}"}
+
+
 _SEED_LINES = [
     {
         "timestamp": "2026-05-31T10:00:00Z",

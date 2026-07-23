@@ -116,7 +116,7 @@ src/
 │   │   └── db_example_litestar/  Hybrid CRUD example: advanced-alchemy + SQLAlchemyDTO
 │   ├── migrations/           yoyo migrations, one folder per context
 │   ├── static/               Jinja templates + assets, mirrors the context tree
-│   └── tests/                unit / flow / integration / e2e -- mirrors src/
+│   └── tests/                <context>/{unit,flow,integration,e2e} -- mirrors src/
 └── event_microservice/       FastStream consumer + SAQ worker (own pyproject + lock)
     ├── src/
     │   ├── shared/           Own Valkey client, logging, base errors
@@ -152,21 +152,23 @@ levels). Use **`db_example_litestar`** only for thin CRUD with no invariants.
 Canonical path is Docker Compose -- same toolchain as the app images:
 
 ```bash
-docker compose run --rm litestar_backend_test                       # ruff + mypy + pytest
-docker compose run --rm litestar_backend_test pytest tests/unit -q  # any subset
+docker compose run --rm litestar_backend_test                        # ruff + mypy + pytest
+docker compose run --rm litestar_backend_test pytest -m unit -q      # any subset
 docker compose run --rm event_microservice_test
 ```
 
 Local `uv` inner loop (from the service root, e.g. `src/litestar_backend/`):
 
 ```bash
-uv run pytest tests/unit tests/flow   # instant, no DB
-uv run pytest                         # full suite -- needs Docker (testcontainers)
+uv run pytest -m "unit or flow"   # instant, no DB
+uv run pytest                     # full suite -- needs Docker (testcontainers)
 uv run ruff check . && uv run mypy
 ```
 
-Test layout mirrors `src/`: `unit/` (domain, no mocks), `flow/` (use cases,
-mocked interfaces), `integration/` (real Postgres/Valkey), `e2e/` (full app).
+Tests are grouped by context first, then level -- `tests/<context>/{unit,flow,
+integration,e2e}/` mirrors `src/`. Pick a level with `-m <level>` (a marker set
+from the path): `unit` (domain, no mocks), `flow` (use cases, mocked
+interfaces), `integration` (real Postgres/Valkey), `e2e` (full app).
 The [`Taskfile`](Taskfile.yml) wraps these (`task test`, `task be:unit`) and
 `pre-commit` runs ruff/mypy/gitleaks on every commit -- see
 [docs/development.md](docs/development.md).
