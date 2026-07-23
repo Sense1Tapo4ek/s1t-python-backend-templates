@@ -51,6 +51,12 @@ where = ["src"]
 namespaces = true
 
 [tool.pytest.ini_options]
+markers = [
+    "unit: domain-level tests (no mocks, no I/O)",
+    "flow: app-level tests (mocked interfaces)",
+    "integration: real infra via testcontainers",
+    "e2e: full application through the test client",
+]
 pythonpath = ["src", "tests"]
 addopts = "--import-mode=importlib"
 

@@ -70,7 +70,7 @@ Author list query params: `search` (substring, case-insensitive, on `name`),
 The same CRUD is callable from code without HTTP. Facades are REQUEST-scoped
 (they wrap the REQUEST-scoped service) -- resolve them from the request-scoped
 Dishka container, or construct directly over an `AsyncSession` (see
-`tests/integration/db_example_litestar/test_facades.py`).
+`tests/db_example_litestar/integration/test_facades.py`).
 
 | Facade | Methods |
 |---|---|

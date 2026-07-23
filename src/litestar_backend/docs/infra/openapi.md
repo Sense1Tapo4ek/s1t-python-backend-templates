@@ -82,7 +82,7 @@ is [../../../../docs/contract/errors.md](../../../../docs/contract/errors.md).
   are grouped under `Admin UI` instead.
 - **Tag strings are the contract.** The exact strings in `OpenAPIConfig.tags`
   must match the per-controller `tags=` byte-for-byte, or an operation lands in
-  an undeclared group. `tests/e2e/root/entrypoints/test_openapi_schema.py`
+  an undeclared group. `tests/root/e2e/entrypoints/test_openapi_schema.py`
   guards this (declared tags, zero untagged operations, documented operations,
   VideoModel examples).
 - **Error docs follow runtime.** When a handler's reachable status codes change,

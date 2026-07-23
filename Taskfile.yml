@@ -69,44 +69,44 @@ tasks:
     desc: litestar_backend -- domain unit tests (instant, no DB)
     dir: "{{.BE}}"
     cmds:
-      - uv run pytest tests/unit -q
+      - uv run pytest -m unit -q
   be:flow:
     desc: litestar_backend -- app flow tests (mocked interfaces, no DB)
     dir: "{{.BE}}"
     cmds:
-      - uv run pytest tests/flow -q
+      - uv run pytest -m flow -q
   be:integration:
     desc: litestar_backend -- ports/adapters integration tests (needs Docker)
     dir: "{{.BE}}"
     cmds:
-      - uv run pytest tests/integration -q
+      - uv run pytest -m integration -q
   be:e2e:
     desc: litestar_backend -- full-app e2e tests (needs Docker)
     dir: "{{.BE}}"
     cmds:
-      - uv run pytest tests/e2e -q
+      - uv run pytest -m e2e -q
 
   # fast local subsets -- event_microservice
   em:unit:
     desc: event_microservice -- unit tests (instant, no infra)
     dir: "{{.EM}}"
     cmds:
-      - uv run pytest tests/unit -q
+      - uv run pytest -m unit -q
   em:flow:
     desc: event_microservice -- flow tests (mocked interfaces)
     dir: "{{.EM}}"
     cmds:
-      - uv run pytest tests/flow -q
+      - uv run pytest -m flow -q
   em:integration:
     desc: event_microservice -- integration tests (needs Docker)
     dir: "{{.EM}}"
     cmds:
-      - uv run pytest tests/integration -q
+      - uv run pytest -m integration -q
   em:e2e:
     desc: event_microservice -- e2e tests (needs Docker)
     dir: "{{.EM}}"
     cmds:
-      - uv run pytest tests/e2e -q
+      - uv run pytest -m e2e -q
 
   # ===================== run =====================
   dev:

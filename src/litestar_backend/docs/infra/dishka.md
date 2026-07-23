@@ -79,7 +79,7 @@ request.
 - **APP-scope graph is lazy.** The first HTTP request triggers
   resolution. Tests that use env-isolation autouse fixtures must warm
   DI eagerly before the fixture wipes env vars. See
-  `tests/e2e/conftest.py::e2e_client`.
+  `tests/conftest.py::e2e_client`.
 - **`build_container` threads the `ChannelsPlugin`.** It takes
   `channels: ChannelsPlugin` and registers it as Dishka context
   (`context={ChannelsPlugin: channels}`) so the media feed publisher can

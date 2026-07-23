@@ -204,7 +204,7 @@ Things that, if you change them, will break the app silently or in production.
   that imports the target's `ports/driving/` facade.
 - **APP-scope DI is lazy.** The graph resolves on the first HTTP request, so
   tests must warm DI before any env-isolation fixture runs (see
-  `tests/e2e/conftest.py::e2e_client`).
+  `tests/conftest.py::e2e_client`).
 - **Cookie auth contract.** `ADMIN_COOKIE_NAME` lives in `auth/config.py`.
   Cookie is `HttpOnly`, `SameSite=Strict`, `Secure` only over HTTPS.
 - **Errors propagate; adapters catch.** Domain/app code never catches
@@ -252,20 +252,20 @@ Postgres 18, schema-per-context via `search_path` ([infra/postgres.md](infra/pos
 
 ## 9. Testing
 
-Tests mirror `src/` exactly. Pyramid:
+Tests group by context first, then level -- `tests/<context>/<level>/...`
+mirrors `src/`. Pyramid:
 
-| Layer | Folder | Speed | Mocks? | Real I/O? |
+| Level | Path | Speed | Mocks? | Real I/O? |
 |:---|:---|:---|:---|:---|
-| Unit | `tests/unit/` | instant | forbidden | no |
-| Flow | `tests/flow/` | fast | AsyncMock interfaces | no |
-| Integration | `tests/integration/` | slow | no | yes (tmp_path files) |
-| E2E | `tests/e2e/` | slowest | no | full app via `AsyncTestClient` |
+| Unit | `tests/<context>/unit/` | instant | forbidden | no |
+| Flow | `tests/<context>/flow/` | fast | AsyncMock interfaces | no |
+| Integration | `tests/<context>/integration/` | slow | no | yes (tmp_path files) |
+| E2E | `tests/<context>/e2e/` | slowest | no | full app via `AsyncTestClient` |
 
-Conventions:
-- Test path = `src/` path. One file per subject.
-- Class names: `Test<Subject><Scenario>`. Method names: `test_<what_happens>`.
-- Docstring: Given / When / Then. Body: Arrange / Act / Assert.
-- E2E suite warms DI eagerly before env-isolation autouse fixtures kick in.
+The level is a marker set from the path
+(`conftest.py::pytest_collection_modifyitems`) -- select with `-m <level>`, not a
+folder (nested contexts like `admin/log` have none). Naming and Given/When/Then
+follow the S-DDD test rule; E2E suites warm DI eagerly before env isolation.
 
 ---
 
