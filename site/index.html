@@ -112,15 +112,6 @@ nav a{color:var(--soft)}
 .conn-row .cd{font:400 11.5px/1.7 var(--mono);color:var(--faint);margin-top:6px;white-space:pre-wrap}
 
 /* reusable layer spine (errors + observability) */
-.spine{display:grid;gap:6px}
-.lrow{border:1px solid var(--line);background:var(--raised);border-radius:4px;padding:9px 13px;display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:baseline;transition:border-color .15s,background .15s;cursor:default}
-.lrow.lh{border-color:var(--line-bright);background:var(--raised-2);box-shadow:0 0 12px rgba(227,182,97,.10)}
-.lrow .ln-k{font:500 11.5px var(--mono);color:var(--soft)}
-.lrow.lh .ln-k{color:var(--brass)}
-.lrow .ln-v{font:400 11.5px/1.55 var(--mono);color:var(--faint)}
-.lrow .st{color:var(--brass)}
-.lrow .cl{color:var(--clay)}
-.lrow.mut{opacity:.6}
 
 /* patterns */
 .patterns{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:30px}
@@ -166,15 +157,14 @@ footer a{color:var(--soft);font-family:var(--mono)}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:28px;align-items:start}
 .ascii{font:400 12px/1.7 var(--mono);color:var(--soft);background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:16px 18px;overflow-x:auto;white-space:pre;margin:0}
 .ascii b{color:var(--brass);font-weight:400}
-.ascii .mo{color:var(--moss)} .ascii .cl{color:var(--clay)} .ascii .fa{color:#6a5c44}
+.ascii .mo{color:var(--moss)} .ascii .fa{color:#6a5c44}
 .tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .tbl th{text-align:left;font:500 10px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--faint);padding:0 10px 7px;border-bottom:1px solid var(--line-strong)}
 .tbl td{padding:7px 10px;border-bottom:1px solid var(--line);color:var(--soft);vertical-align:top}
-.tbl td .m,.tbl code{font-family:var(--mono);font-size:11.5px;color:var(--ink)}
+.tbl code{font-family:var(--mono);font-size:11.5px;color:var(--ink)}
 .tbl .st{color:var(--brass);font-family:var(--mono);white-space:nowrap}
 .tbl tr[data-l]{cursor:default;transition:background .15s}
 .tbl tr.lh td{background:rgba(227,182,97,.08)}
-.tbl tr.lh td .m{color:var(--brass)}
 .facts{list-style:none;margin-top:22px;display:grid;gap:10px}
 .facts li{padding-left:22px;position:relative;font-size:13.5px;color:var(--soft);max-width:62em}
 .facts li::before{content:"▹";position:absolute;left:0;color:var(--brass)}
@@ -200,10 +190,6 @@ footer a{color:var(--soft);font-family:var(--mono)}
 
 
 /* config */
-.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:4px;overflow:hidden;margin-bottom:10px}
-.seg button{font:500 11px var(--mono);letter-spacing:.5px;background:transparent;color:var(--soft);border:0;padding:7px 13px;cursor:pointer;transition:background .15s,color .15s}
-.seg button.on{background:var(--brass);color:var(--paper)}
-.envblock{display:none} .envblock.on{display:block}
 
 /* tests */
 .pyr{display:flex;flex-direction:column;align-items:center;gap:6px;margin:4px 0}
@@ -248,16 +234,7 @@ footer a{color:var(--soft);font-family:var(--mono)}
 
 
 /* observability: layer picker + fixed panel */
-.obs{display:grid;grid-template-columns:1fr 1.2fr;gap:22px;margin-top:26px;align-items:start}
-.olayers{display:grid;gap:6px}
-.olay{border:1px solid var(--line);background:var(--raised);border-radius:4px;padding:10px 13px;cursor:pointer;
       display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;transition:border-color .15s,background .15s,box-shadow .15s}
-.olay:hover{border-color:var(--line-bright)}
-.olay.sel{border-color:var(--brass);background:var(--raised-2);box-shadow:0 0 14px rgba(227,182,97,.12)}
-.olay .ok{font:500 12px var(--mono);color:var(--soft)}
-.olay.sel .ok{color:var(--brass)}
-.olay .oq{font:400 10px var(--mono);color:var(--faint);white-space:nowrap}
-.olay.sel .oq{color:var(--moss)}
 .opanel{border:1px solid var(--line-strong);background:var(--sunken);border-radius:4px;padding:16px 18px}
 .opanel .oh{font:500 10px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
 .ojson{font:400 11.5px/1.85 var(--mono);white-space:pre-wrap;color:var(--soft);min-height:96px}
@@ -265,6 +242,14 @@ footer a{color:var(--soft);font-family:var(--mono)}
 .ojson .silent{font:italic 400 13px var(--serif);color:var(--faint)}
 .odesc{font-size:12.5px;line-height:1.6;color:var(--faint);margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .odesc b{color:var(--soft);font-weight:500}
+
+/* shared layer grid: hexagon + panel (errors, observability) */
+.laygrid{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;margin-top:26px;align-items:start}
+.laygrid .layer{cursor:pointer}
+.layer.sel{border-color:var(--brass);background:var(--raised-2);box-shadow:0 0 16px var(--brass-glow)}
+.layer.sel .t{color:var(--brass)}
+.layer.sel .d{color:var(--soft)}
+.layer .d b{color:var(--brass);font-weight:400}
 
 /* DI graph */
 .digraph{display:grid;grid-template-columns:1fr auto 1.05fr;gap:16px;align-items:center;margin-top:24px}
@@ -299,11 +284,10 @@ footer a{color:var(--soft);font-family:var(--mono)}
 @media (max-width:820px){
   .topo{flex-direction:column}
   .wire{padding:14px 0}
-  .layers-grid,.qs,.cols,.wf,.cfgcols,.obs,.digraph,.lifebar{grid-template-columns:1fr}
+  .layers-grid,.qs,.cols,.wf,.cfgcols,.laygrid,.digraph,.lifebar{grid-template-columns:1fr}
   .hero{padding:60px 0 52px}
   section{padding:54px 0}
   .tier{width:100% !important}
-  .lrow{grid-template-columns:1fr}
   .tctx .trow{grid-template-columns:110px repeat(4,1fr)}
   .matrix{font-size:10.5px}
   .dconv{padding:6px 0}
@@ -584,8 +568,7 @@ ORDER BY created_at DESC, id DESC</pre>
     Pydantic-Settings class with its own <span class="mono">env_prefix</span> and typed,
     self-validating fields. Values flow one way:
     <span class="mono">env &#8594; Settings &#8594; provider &#8594; constructor</span>; domain and app never
-    read <span class="mono">os.environ</span>. Hover a field to light up the variable
-    it reads.</p>
+    read <span class="mono">os.environ</span>. Hover a field to light up the variable it reads.</p>
     <div class="cfgcols">
       <pre class="code"><span class="cm"># auth/config.py</span>
 <span class="kw">class</span> <span class="cls">AuthConfig</span>(<span class="cls">BaseAppConfig</span>):
@@ -600,25 +583,7 @@ ORDER BY created_at DESC, id DESC</pre>
     <span class="fn pair" data-cfg="refresh">jwt_refresh_ttl_seconds</span>: <span class="ty">int</span> = <span class="cls">Field</span>(<span class="num">1_209_600</span>, ge=<span class="num">1</span>)
     <span class="fn pair" data-cfg="pool">pool_size</span>: <span class="ty">int</span> = <span class="cls">Field</span>(<span class="num">5</span>, ge=<span class="num">1</span>)  <span class="cm"># validated here</span></pre>
       <div>
-        <div class="seg" id="envseg">
-          <button class="on" data-env="min">.env.example</button>
-          <button data-env="full">.env.full.example</button>
-        </div>
-        <pre class="code envblock on" data-env="min"><span class="cm"># 12 vars &#183; the absolute minimum to boot</span>
-APP_NAME=litestar-base
-APP_ENV=dev
-VOLUME_PATH=./storage
-SNITCHBOT_DISABLED=1
-<span class="pair" data-cfg="admin">AUTH_ADMIN_TOKEN</span>=          <span class="cm"># openssl rand -hex 32</span>
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=litestar_base
-VALKEY_HOST=localhost
-VALKEY_PORT=6379
-<span class="cm"># every other var has a default</span></pre>
-        <pre class="code envblock" data-env="full"><span class="cm"># the full contract &#183; every var, annotated</span>
+        <pre class="code"><span class="cm"># the full contract &#183; every var, annotated</span>
 <span class="pair" data-cfg="admin">AUTH_ADMIN_TOKEN</span>=
 <span class="pair" data-cfg="secret">AUTH_JWT_SECRET</span>=
 <span class="pair" data-cfg="issuer">AUTH_JWT_ISSUER</span>=litestar-base
@@ -651,48 +616,39 @@ VALKEY_PORT=6379
 
 <section id="errors">
   <div class="container">
-    <div class="overline"><i class="geo g-clay">◇</i>error model</div>
-    <h2>One base error. Each layer derives its own. Catching it picks the code.</h2>
-    <p class="lede"><span class="mono">LayerError</span> roots the taxonomy; each
-    layer raises its own subtype. The driving edge is the single catch-and-map site --
-    one <span class="mono">EXCEPTION_TO_PROBLEM</span> dict turns each class into
-    exactly one RFC 9457 response. Hover a layer -- it's the same
-    <span class="mono">auth</span> stack from above.</p>
-    <div class="spine">
-      <div class="lrow" data-l="adapters-driving"><span class="ln-k">adapters/driving</span><span class="ln-v">controller · catches everything, maps once</span></div>
-      <div class="lrow" data-l="ports-driving"><span class="ln-k">ports/driving</span><span class="ln-v">facade · propagates (pydantic → <span class="st">400</span>)</span></div>
-      <div class="lrow" data-l="app"><span class="ln-k">app</span><span class="ln-v">UserNotFound (NotFoundError) ─▶ <span class="st">404</span> · JwtDisabledError (AppError) ─▶ <span class="st">503</span></span></div>
-      <div class="lrow" data-l="domain"><span class="ln-k">domain</span><span class="ln-v">EmailTakenError (DomainError) ─▶ <span class="st">409</span></span></div>
-      <div class="lrow" data-l="ports-driven"><span class="ln-k">ports/driven</span><span class="ln-v">PortError wraps asyncpg / redis ─▶ <span class="st">503</span> <span class="cl">· body hermetic, logged w/ traceback</span></span></div>
-      <div class="lrow" data-l="adapters-driven"><span class="ln-k">adapters/driven</span><span class="ln-v">jwt_codec raw exc ─▶ wrapped into PortError at the port</span></div>
-      <div class="lrow mut"><span class="ln-k">base</span><span class="ln-v">LayerError (never mapped directly) · unmapped Exception ─▶ <span class="st">500</span> <span class="cl">(prod only)</span></span></div>
+    <div class="overline"><i class="geo g-clay">&#9671;</i>error model</div>
+    <h2>One base error. Each layer derives its own.</h2>
+    <p class="lede">Every layer raises its own subtype of
+    <span class="mono">LayerError</span>; the driving edge is the single place that
+    catches and maps. Pick a layer.</p>
+    <div class="laygrid">
+      <div class="hex">
+        <div class="layer core span2" data-l="domain"><div class="t">domain/</div><div class="d">DomainError &#183; <b>409</b></div></div>
+        <div class="hex-arrow span2">&#9650;</div>
+        <div class="layer span2" data-l="app"><div class="t">app/</div><div class="d">AppError <b>422</b> &#183; NotFound <b>404</b></div></div>
+        <div class="hex-arrow">&#9650;</div><div class="hex-arrow">&#9660;</div>
+        <div class="layer" data-l="ports-driving"><div class="t">ports/driving/</div><div class="d">propagates &#183; pydantic <b>400</b></div></div>
+        <div class="layer" data-l="ports-driven"><div class="t">ports/driven/</div><div class="d">PortError &#183; <b>503</b></div></div>
+        <div class="hex-arrow">&#9650;</div><div class="hex-arrow">&#9660;</div>
+        <div class="layer" data-l="adapters-driving"><div class="t">adapters/driving/</div><div class="d">catches + maps, once</div></div>
+        <div class="layer" data-l="adapters-driven"><div class="t">adapters/driven/</div><div class="d">raw exc &#8594; PortError</div></div>
+      </div>
+      <div class="opanel">
+        <div class="oh" id="eh">adapters/driving</div>
+        <div class="ojson" id="ejson"></div>
+        <div class="odesc" id="edesc"></div>
+      </div>
     </div>
-    <table class="tbl" style="margin-top:22px">
-      <tr><th>Class</th><th>Layer</th><th>Wire</th></tr>
-      <tr data-l="domain"><td><span class="m">DomainError</span></td><td>domain</td><td class="st">409</td></tr>
-      <tr data-l="app"><td><span class="m">AppError</span></td><td>app</td><td class="st">422</td></tr>
-      <tr data-l="app"><td><span class="m">NotFoundError</span></td><td>app (⊂ AppError)</td><td class="st">404</td></tr>
-      <tr data-l="ports-driven"><td><span class="m">PortError</span></td><td>ports/driven</td><td class="st">503</td></tr>
-    </table>
     <ul class="facts">
-      <li><b>A 6-entry map is the whole translation layer.</b> The four base classes
-      plus two concrete framework cases (<span class="mono">JwtDisabled → 503</span>,
-      advanced-alchemy <span class="mono">NotFound → 404</span>). A new context error
-      inherits its status and a stable
+      <li><b>One 6-entry map is the whole translation layer.</b> Four base classes
+      plus two framework cases. A new context error inherits its status and a stable
       <span class="mono">urn:litestar-base:error:&lt;slug&gt;</span> for free.
       <span class="tag tag-e">enforced at one site</span></li>
-      <li><b>Two honest deviations from the generic rule.</b> There is no
-      <span class="mono">AdapterError</span> here (no honest raise-site), and
-      <span class="mono">NotFoundError</span> nests under
-      <span class="mono">AppError</span> so 404 wins over 422 by MRO. Labelled, not
-      hidden.</li>
-      <li><b>Seen live.</b> <span class="mono">POST /auth/register</span> with a taken
-      email raises <span class="mono">EmailTakenError</span> (a
-      <span class="mono">DomainError</span>) that maps to
-      <span class="st mono" style="color:var(--brass)">409</span>, asserted in
-      <span class="mono">test_user_flow.py</span>. <span class="tag tag-e">e2e-tested</span></li>
+      <li><b>Two honest deviations.</b> No <span class="mono">AdapterError</span>
+      exists here (no raise-site), and <span class="mono">NotFoundError</span> nests
+      under <span class="mono">AppError</span> so 404 wins over 422 by MRO.</li>
     </ul>
-    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/contract/errors.md">contract/errors.md →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/subsystems/error_hierarchy.md">error_hierarchy.md →</a></p>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/contract/errors.md">contract/errors.md &#8594;</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/subsystems/error_hierarchy.md">error_hierarchy.md &#8594;</a></p>
   </div>
 </section>
 
@@ -701,18 +657,20 @@ VALKEY_PORT=6379
     <div class="overline"><i class="geo g-moss">&#9634;</i>observability on the layers</div>
     <h2>Bind the trace once. Each layer signs its own line.</h2>
     <p class="lede"><span class="mono">trace_id</span> is created once, at the
-    driving-adapter edge. Below it nobody passes it along --
-    <span class="mono">merge_contextvars</span> is the first processor, so every layer
-    inherits it and adds only its own slice. Pick a layer to see the line it really
-    writes.</p>
-    <div class="obs">
-      <div class="olayers" id="olayers">
-        <div class="olay sel" data-lay="ad"><span class="ok">adapters/driving</span><span class="oq">binds trace_id</span></div>
-        <div class="olay" data-lay="pdg"><span class="ok">ports/driving</span><span class="oq">silent</span></div>
-        <div class="olay" data-lay="app"><span class="ok">app</span><span class="oq">inherits</span></div>
-        <div class="olay" data-lay="dom"><span class="ok">domain</span><span class="oq">never logs</span></div>
-        <div class="olay" data-lay="pdv"><span class="ok">ports/driven</span><span class="oq">inherits</span></div>
-        <div class="olay" data-lay="adv"><span class="ok">adapters/driven</span><span class="oq">no trace_id</span></div>
+    driving-adapter edge; below it nobody passes it along --
+    <span class="mono">merge_contextvars</span> merges it from a contextvar. Pick a
+    layer to see the line it really writes.</p>
+    <div class="laygrid">
+      <div class="hex">
+        <div class="layer core span2" data-l="domain"><div class="t">domain/</div><div class="d">never logs</div></div>
+        <div class="hex-arrow span2">&#9650;</div>
+        <div class="layer span2" data-l="app"><div class="t">app/</div><div class="d">video_id &#183; layer=app</div></div>
+        <div class="hex-arrow">&#9650;</div><div class="hex-arrow">&#9660;</div>
+        <div class="layer" data-l="ports-driving"><div class="t">ports/driving/</div><div class="d">silent</div></div>
+        <div class="layer" data-l="ports-driven"><div class="t">ports/driven/</div><div class="d">layer=ports_driven</div></div>
+        <div class="hex-arrow">&#9650;</div><div class="hex-arrow">&#9660;</div>
+        <div class="layer" data-l="adapters-driving"><div class="t">adapters/driving/</div><div class="d">binds trace_id</div></div>
+        <div class="layer" data-l="adapters-driven"><div class="t">adapters/driven/</div><div class="d">no trace_id</div></div>
       </div>
       <div class="opanel">
         <div class="oh" id="oh">adapters/driving</div>
@@ -721,7 +679,7 @@ VALKEY_PORT=6379
       </div>
     </div>
     <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/infra/structlog.md">infra/structlog.md &#8594;</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/subsystems/observability.md">observability.md &#8594;</a>
-    &nbsp;&#183;&nbsp; the <span class="mono">layer</span> field is an explicit bind via
+    &nbsp;&#183;&nbsp; <span class="mono">layer</span> is an explicit bind via
     <span class="mono">layer_logger</span>, never auto-derived <span class="tag tag-c">convention</span></p>
   </div>
 </section>
@@ -965,66 +923,91 @@ document.querySelectorAll('.pair[data-cfg]').forEach(function(el){
   });
 });
 
-// observability: pick a layer -> the panel shows the line that layer really writes
-(function(){
-  var wrap = document.getElementById('olayers');
-  if(!wrap) return;
-  var oh = document.getElementById('oh'), oj = document.getElementById('ojson'), od = document.getElementById('odesc');
-  var D = {
-    ad: { title:'adapters/driving · HTTP edge + stream consumers',
-      json:'{ <span class="k">"event"</span>: "request",           <span class="cm">// logger: access</span>\n'+
-           '  <span class="k">"method"</span>: "POST", <span class="k">"http_path"</span>: "/videos",\n'+
-           '  <span class="k">"status"</span>: 202, <span class="k">"duration_ms"</span>: 18.4,\n'+
-           '  <span class="tr">"trace_id"</span>: "9f2a…"          <span class="cm">// bound HERE, once</span>\n}',
-      desc:'<b>trace_id is born here.</b> TraceIdMiddleware mints it (or adopts the inbound header) and binds it into a contextvar. Nothing below ever re-passes it. The stream consumer is this layer too: it writes <span class="mono">"video_status applied"</span> with <span class="mono">layer=adapters_driving</span>.' },
-    pdg: { title:'ports/driving · facade + DTOs',
-      json:'<span class="silent">no line -- the facade translates and propagates</span>',
-      desc:'Pure translation stays quiet. Schema violations become a 400 at the edge; domain and app errors propagate up to the single mapping site instead of being logged here.' },
-    app: { title:'app · use case',
-      json:'{ <span class="k">"event"</span>: "video registered",\n'+
-           '  <span class="k">"video_id"</span>: "e3b0…",           <span class="cm">// this layer\'s own slice</span>\n'+
-           '  <span class="k">"layer"</span>: "app",                <span class="cm">// explicit bind</span>\n'+
-           '  <span class="tr">"trace_id"</span>: "9f2a…"          <span class="cm">// inherited, not passed</span>\n}',
-      desc:'The use case adds only what it knows -- <span class="mono">video_id</span>. It never touches <span class="mono">trace_id</span>: that arrives from the contextvar. <span class="mono">layer</span> comes from <span class="mono">layer_logger(Layer.APP, …)</span>, built at the operation boundary.' },
-    dom: { title:'domain · pure business logic',
-      json:'<span class="silent">nothing -- the domain never logs</span>',
-      desc:'No I/O, no logger, and no <span class="mono">Layer.DOMAIN</span> member exists at all. When the domain has something to report it raises a typed error instead.' },
-    pdv: { title:'ports/driven · repos, gateways, publishers',
-      json:'{ <span class="k">"event"</span>: "feed publish failed",\n'+
-           '  <span class="k">"video_id"</span>: "e3b0…", <span class="k">"status"</span>: "done",\n'+
-           '  <span class="k">"layer"</span>: "ports_driven",\n'+
-           '  <span class="tr">"trace_id"</span>: "9f2a…"          <span class="cm">// inherited</span>\n}',
-      desc:'The driven port owns the technology, so it owns the failure line. Raw driver exceptions (asyncpg, redis) are wrapped into <span class="mono">PortError</span> right here.' },
-    adv: { title:'adapters/driven · engines, relays, clients',
-      json:'{ <span class="k">"event"</span>: "relay published",\n'+
-           '  <span class="k">"stream"</span>: "video_uploaded",\n'+
-           '  <span class="k">"count"</span>: 12\n'+
-           '                                <span class="cm">// no trace_id</span>\n}',
-      desc:'<b>No trace_id at all.</b> The outbox relay is a lifespan-owned background task, not a request -- there is no contextvar to inherit. That is exactly why <span class="mono">video_id</span>, not <span class="mono">trace_id</span>, is the key that crosses the stream.' }
-  };
+// errors + observability: pick a layer in the hexagon -> the panel follows.
+// Same component, same data-l keys as the anatomy hexagon.
+function layerPicker(sectionId, headId, jsonId, descId, data, initial){
+  var sec = document.getElementById(sectionId);
+  if(!sec) return;
+  var hex = sec.querySelector('.hex');
+  var h = document.getElementById(headId), j = document.getElementById(jsonId), d = document.getElementById(descId);
+  if(!hex || !h) return;
   function show(key, el){
-    var d = D[key]; if(!d) return;
-    wrap.querySelectorAll('.olay').forEach(function(x){ x.classList.toggle('sel', x === el); });
-    oh.textContent = d.title; oj.innerHTML = d.json; od.innerHTML = d.desc;
+    var v = data[key]; if(!v) return;
+    hex.querySelectorAll('.layer').forEach(function(x){ x.classList.toggle('sel', x === el); });
+    h.textContent = v.title; j.innerHTML = v.json; d.innerHTML = v.desc;
   }
-  wrap.querySelectorAll('.olay').forEach(function(el){
-    el.addEventListener('mouseenter', function(){ show(el.dataset.lay, el); });
-    el.addEventListener('click', function(){ show(el.dataset.lay, el); });
+  hex.querySelectorAll('.layer').forEach(function(el){
+    var key = el.dataset.l;
+    el.addEventListener('mouseenter', function(){ show(key, el); });
+    el.addEventListener('click', function(){ show(key, el); });
   });
-  show('ad', wrap.querySelector('.olay[data-lay="ad"]'));
-})();
+  show(initial, hex.querySelector('.layer[data-l="'+initial+'"]'));
+}
 
-// configuration: minimal <-> full env toggle
-(function(){
-  var seg = document.getElementById('envseg');
-  if(!seg) return;
-  seg.querySelectorAll('button').forEach(function(b){
-    b.addEventListener('click', function(){
-      seg.querySelectorAll('button').forEach(function(x){x.classList.toggle('on', x===b)});
-      document.querySelectorAll('.envblock').forEach(function(pre){ pre.classList.toggle('on', pre.dataset.env===b.dataset.env); });
-    });
-  });
-})();
+layerPicker('errors','eh','ejson','edesc',{
+  'adapters-driving': { title:'adapters/driving · the one catch site',
+    json:'<span class="cm">EXCEPTION_TO_PROBLEM</span>  <span class="cm">// 6 entries, one site</span>\n'+
+         '  <span class="k">DomainError</span>      -> <span class="tr">409</span>\n'+
+         '  <span class="k">AppError</span>         -> <span class="tr">422</span>\n'+
+         '  <span class="k">NotFoundError</span>    -> <span class="tr">404</span>\n'+
+         '  <span class="k">PortError</span>        -> <span class="tr">503</span>\n'+
+         '  <span class="k">JwtDisabled</span>      -> <span class="tr">503</span>\n'+
+         '  <span class="k">AlchemyNotFound</span>  -> <span class="tr">404</span>\n'+
+         '<span class="cm">unmapped Exception -> 500 (prod)</span>',
+    desc:'The controller raises nothing of its own. Every typed error from below lands in one dict and becomes an RFC 9457 <span class="mono">application/problem+json</span> body.' },
+  'ports-driving': { title:'ports/driving · facade + DTOs',
+    json:'<span class="silent">raises nothing -- it propagates</span>',
+    desc:'Schema violations are rejected by pydantic at the edge (400). Domain and app errors pass straight through to the mapping site.' },
+  'app': { title:'app · use cases',
+    json:'<span class="k">UserNotFound</span>(NotFoundError)    -> <span class="tr">404</span>\n'+
+         '<span class="k">ApiKeyNotFound</span>(NotFoundError)  -> <span class="tr">404</span>\n'+
+         '<span class="k">JwtDisabledError</span>(AppError)     -> <span class="tr">503</span>',
+    desc:'Names what the use case could not do. <span class="mono">NotFoundError</span> subclasses <span class="mono">AppError</span>, so MRO picks 404 over the 422 base.' },
+  'domain': { title:'domain · invariants',
+    json:'<span class="k">EmailTakenError</span>(DomainError)   -> <span class="tr">409</span>',
+    desc:'<b>Seen live:</b> <span class="mono">POST /auth/register</span> with a taken email raises it, and the e2e test asserts the 409. A broken invariant is a conflict, never a 500.' },
+  'ports-driven': { title:'ports/driven · repos, gateways, clients',
+    json:'<span class="k">PortError</span>  -> <span class="tr">503</span>\n'+
+         '  <span class="cm">wraps asyncpg / redis failures</span>\n'+
+         '  <span class="cm">body hermetic, logged with traceback</span>',
+    desc:'Raw driver exceptions are caged at the one kind of site that owns the technology. The wire gets a generic detail; the traceback stays in the log.' },
+  'adapters-driven': { title:'adapters/driven · engines, codecs',
+    json:'<span class="silent">no taxonomy of its own</span>',
+    desc:'Domain-blind infrastructure. Whatever it throws is wrapped into <span class="mono">PortError</span> by the driven port above it, so the taxonomy stays closed.' }
+}, 'adapters-driving');
+
+layerPicker('observability','oh','ojson','odesc',{
+  'adapters-driving': { title:'adapters/driving · HTTP edge + stream consumers',
+    json:'{ <span class="k">"event"</span>: "request",           <span class="cm">// logger: access</span>\n'+
+         '  <span class="k">"method"</span>: "POST", <span class="k">"http_path"</span>: "/videos",\n'+
+         '  <span class="k">"status"</span>: 202, <span class="k">"duration_ms"</span>: 18.4,\n'+
+         '  <span class="tr">"trace_id"</span>: "9f2a…"          <span class="cm">// bound HERE, once</span>\n}',
+    desc:'<b>trace_id is born here.</b> TraceIdMiddleware mints it (or adopts the inbound header) and binds it into a contextvar. Nothing below re-passes it. The stream consumer is this layer too: it writes <span class="mono">"video_status applied"</span> with <span class="mono">layer=adapters_driving</span>.' },
+  'ports-driving': { title:'ports/driving · facade + DTOs',
+    json:'<span class="silent">no line -- the facade translates and propagates</span>',
+    desc:'Pure translation stays quiet. Errors travel up to the single mapping site instead of being logged here.' },
+  'app': { title:'app · use case',
+    json:'{ <span class="k">"event"</span>: "video registered",\n'+
+         '  <span class="k">"video_id"</span>: "e3b0…",           <span class="cm">// this layer\'s own slice</span>\n'+
+         '  <span class="k">"layer"</span>: "app",                <span class="cm">// explicit bind</span>\n'+
+         '  <span class="tr">"trace_id"</span>: "9f2a…"          <span class="cm">// inherited, not passed</span>\n}',
+    desc:'The use case adds only what it knows -- <span class="mono">video_id</span>. It never touches <span class="mono">trace_id</span>: that arrives from the contextvar.' },
+  'domain': { title:'domain · pure business logic',
+    json:'<span class="silent">nothing -- the domain never logs</span>',
+    desc:'No I/O, no logger, and no <span class="mono">Layer.DOMAIN</span> member exists at all. When the domain has something to report it raises a typed error instead.' },
+  'ports-driven': { title:'ports/driven · repos, gateways, publishers',
+    json:'{ <span class="k">"event"</span>: "feed publish failed",\n'+
+         '  <span class="k">"video_id"</span>: "e3b0…", <span class="k">"status"</span>: "done",\n'+
+         '  <span class="k">"layer"</span>: "ports_driven",\n'+
+         '  <span class="tr">"trace_id"</span>: "9f2a…"          <span class="cm">// inherited</span>\n}',
+    desc:'The driven port owns the technology, so it owns the failure line. Raw driver exceptions become <span class="mono">PortError</span> right here.' },
+  'adapters-driven': { title:'adapters/driven · engines, relays, clients',
+    json:'{ <span class="k">"event"</span>: "relay published",\n'+
+         '  <span class="k">"stream"</span>: "video_uploaded",\n'+
+         '  <span class="k">"count"</span>: 12\n'+
+         '                                <span class="cm">// no trace_id</span>\n}',
+    desc:'<b>No trace_id at all.</b> The outbox relay is a lifespan-owned background task, not a request -- there is no contextvar to inherit. That is exactly why <span class="mono">video_id</span>, not <span class="mono">trace_id</span>, is the key that crosses the stream.' }
+}, 'adapters-driving');
 
 // test pyramid: fill on scroll into view (reduced-motion-safe)
 (function(){
