@@ -11,6 +11,7 @@
 <meta property="og:image" content="https://sense1tapo4ek.github.io/s1t-python-backend-templates/social-preview.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://sense1tapo4ek.github.io/s1t-python-backend-templates/social-preview.png">
+<meta name="theme-color" id="tcolor" content="#211c16">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23211c16'/%3E%3Cpath d='M32 15 L51 49 L13 49 Z' fill='none' stroke='%23e3b661' stroke-width='5' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,36 +19,44 @@
 <style>
 :root{
   --paper:#211c16; --raised:#2a241d; --raised-2:#322b21; --sunken:#1a1611;
-  --ink:#f7f0e0; --head:#f4ecdc; --soft:#d5cab6; --faint:#95886f;
+  --ink:#f7f0e0; --head:#f4ecdc; --soft:#d5cab6; --faint:#9d9076;
   --line:#3a3228; --line-strong:#4c4234; --line-bright:var(--dim);
   --brass:#e3b661; --brass-glow:rgba(227,182,97,.35); --moss:#9cc48c; --clay:#d98f70;
-  --dim:#8a7c63; --strcol:#b9c9a8; --header-bg:rgba(33,28,22,.92);
+  --dim:#9c8e74; --strcol:#b9c9a8; --header-bg:rgba(33,28,22,.92);
   --tint:rgba(227,182,97,.09); --tint-strong:rgba(227,182,97,.20); --glow:rgba(227,182,97,.12);
   --noise-blend:screen; --noise-op:.05; --hero-tint:rgba(227,182,97,.08);
+  /* elevation reads as light-on-dark here, as a cast shadow on paper -- so the
+     three surfaces that "lift" go through tokens, not a literal box-shadow */
+  --pl-fg:var(--brass); --elev:0 0 16px var(--brass-glow); --btn-hover:brightness(1.06);
+  color-scheme:dark;
   --serif:"Literata",Georgia,serif; --sans:"Golos Text",system-ui,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,monospace;
 }
 
 :root[data-theme="light"]{
-  --paper:#f4efe4; --raised:#fbf8f1; --raised-2:#fffdf8; --sunken:#eae2d1;
-  --ink:#2a2419; --head:#1b160f; --soft:#4c4333; --faint:#756b58;
-  --line:#ded5c1; --line-strong:#c8bda3; --line-bright:#a3957a;
-  --brass:#8a6516; --brass-glow:rgba(138,101,22,.20); --moss:#41682f; --clay:#a04a28;
-  --dim:#8b8069; --strcol:#4a6a34; --header-bg:rgba(244,239,228,.92);
-  --tint:rgba(138,101,22,.08); --tint-strong:rgba(138,101,22,.18); --glow:rgba(138,101,22,.10);
-  --noise-blend:multiply; --noise-op:.035; --hero-tint:rgba(138,101,22,.09);
+  --paper:#f4efe4; --raised:#fbf8f1; --raised-2:#f5eddc; --sunken:#eae2d1;
+  --ink:#2a2419; --head:#1b160f; --soft:#4c4333; --faint:#6a6150;
+  --line:#ded5c1; --line-strong:#c8bda3; --line-bright:#8f8062;
+  --brass:#7d5b13; --brass-glow:rgba(125,91,19,.22); --moss:#41682f; --clay:#a04a28;
+  --dim:#6e6349; --strcol:#4a6a34; --header-bg:rgba(244,239,228,.92);
+  --tint:rgba(125,91,19,.08); --tint-strong:rgba(125,91,19,.18); --glow:rgba(125,91,19,.22);
+  --noise-blend:multiply; --noise-op:.035; --hero-tint:rgba(255,253,248,.85);
+  --pl-fg:var(--head); --elev:0 2px 10px rgba(27,22,15,.14); --btn-hover:brightness(.92);
+  color-scheme:light;
 }
 @media (prefers-color-scheme:light){:root:not([data-theme]){
-  --paper:#f4efe4; --raised:#fbf8f1; --raised-2:#fffdf8; --sunken:#eae2d1;
-  --ink:#2a2419; --head:#1b160f; --soft:#4c4333; --faint:#756b58;
-  --line:#ded5c1; --line-strong:#c8bda3; --line-bright:#a3957a;
-  --brass:#8a6516; --brass-glow:rgba(138,101,22,.20); --moss:#41682f; --clay:#a04a28;
-  --dim:#8b8069; --strcol:#4a6a34; --header-bg:rgba(244,239,228,.92);
-  --tint:rgba(138,101,22,.08); --tint-strong:rgba(138,101,22,.18); --glow:rgba(138,101,22,.10);
-  --noise-blend:multiply; --noise-op:.035; --hero-tint:rgba(138,101,22,.09);
+  --paper:#f4efe4; --raised:#fbf8f1; --raised-2:#f5eddc; --sunken:#eae2d1;
+  --ink:#2a2419; --head:#1b160f; --soft:#4c4333; --faint:#6a6150;
+  --line:#ded5c1; --line-strong:#c8bda3; --line-bright:#8f8062;
+  --brass:#7d5b13; --brass-glow:rgba(125,91,19,.22); --moss:#41682f; --clay:#a04a28;
+  --dim:#6e6349; --strcol:#4a6a34; --header-bg:rgba(244,239,228,.92);
+  --tint:rgba(125,91,19,.08); --tint-strong:rgba(125,91,19,.18); --glow:rgba(125,91,19,.22);
+  --noise-blend:multiply; --noise-op:.035; --hero-tint:rgba(255,253,248,.85);
+  --pl-fg:var(--head); --elev:0 2px 10px rgba(27,22,15,.14); --btn-hover:brightness(.92);
+  color-scheme:light;
 }}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
 body{
   background:var(--paper); color:var(--soft); font:400 17.5px/1.65 var(--sans);
   -webkit-font-smoothing:antialiased; position:relative;
@@ -58,6 +67,10 @@ body::after{
   mix-blend-mode:var(--noise-blend); opacity:var(--noise-op);
 }
 .container{max-width:1060px;margin:0 auto;padding:0 28px}
+/* Grid/flex children default to min-width:auto, so a `white-space:pre` block
+   inside one pushes the whole page wide instead of scrolling in its own box.
+   Every column that can hold a mono block opts out. */
+.layers-grid>*,.laygrid>*,.cols>*,.cfgcols>*,.digraph>*,.qs>*,.wf>*,.patterns>*{min-width:0}
 a{color:var(--ink);text-decoration:none}
 a:hover{color:var(--brass)}
 .mono{font-family:var(--mono)}
@@ -68,8 +81,8 @@ a:hover{color:var(--brass)}
 .overline .geo{font-style:normal;font-size:13px}
 .g-brass{color:var(--brass)} .g-moss{color:var(--moss)} .g-clay{color:var(--clay)}
 section{padding:74px 0;border-top:1px solid var(--line)}
-h2{font:500 28.5px/1.3 var(--serif);color:var(--head);margin:14px 0 8px}
-.lede{max-width:40em;font-size:16.5px}
+h2{font:500 28.5px/1.3 var(--serif);color:var(--head);margin:16px 0 12px}
+.lede{max-width:34em;font-size:16.5px}
 
 /* header */
 header{border-bottom:1px solid var(--line-strong);position:sticky;top:0;z-index:50;background:var(--header-bg);backdrop-filter:blur(6px)}
@@ -83,7 +96,7 @@ nav a{color:var(--soft)}
 .themetog:hover{border-color:var(--brass);color:var(--brass)}
 
 /* hero */
-.hero{border-top:none;padding:92px 0 76px;background:radial-gradient(ellipse 62% 55% at 22% 0%,var(--tint),transparent)}
+.hero{border-top:none;padding:92px 0 76px;background:radial-gradient(ellipse 62% 55% at 22% 0%,var(--hero-tint),transparent)}
 .hero h1{font:500 clamp(41px,6vw,57px)/1.14 var(--serif);color:var(--head);margin:18px 0 16px}
 .hero h1 em{font-style:normal;color:var(--brass)}
 .hero p{max-width:37em;font-size:18px}
@@ -94,7 +107,7 @@ nav a{color:var(--soft)}
 .cta{display:flex;gap:14px;margin-top:26px;flex-wrap:wrap}
 .btn{display:inline-block;font:600 15px var(--sans);padding:11px 20px;border-radius:4px}
 .btn-brass{background:var(--brass);color:var(--paper);box-shadow:0 0 26px var(--brass-glow)}
-.btn-brass:hover{color:var(--paper);filter:brightness(1.06)}
+.btn-brass:hover{color:var(--paper);filter:var(--btn-hover)}
 .btn-ghost{border:1px solid var(--line-bright);color:var(--ink)}
 
 /* topology */
@@ -143,7 +156,7 @@ nav a{color:var(--soft)}
 .pat{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:20px;display:flex;flex-direction:column;gap:10px}
 .pat:hover{border-color:var(--line-bright)}
 .pat .t{font:500 16.5px var(--sans);color:var(--head)}
-.pat pre{font:400 11.5px/1.65 var(--mono);color:var(--brass);background:var(--sunken);border:1px solid var(--line);border-radius:3px;padding:10px 12px;overflow-x:auto}
+.pat pre{font:400 10.5px/1.65 var(--mono);color:var(--brass);background:var(--sunken);border:1px solid var(--line);border-radius:3px;padding:10px;overflow-x:auto}
 .pat .why{font-size:14.5px;color:var(--soft);flex:1}
 .pat .links{font:400 12.5px var(--mono);display:flex;gap:14px}
 .pat .links a{color:var(--faint)}
@@ -155,15 +168,15 @@ nav a{color:var(--soft)}
 .step{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:12px 14px;text-align:center;flex:0 1 auto;transition:border-color .2s,box-shadow .2s,background .2s}
 .step .s-t{font:500 13px var(--mono);color:var(--head);white-space:nowrap}
 .step .s-p{font:400 11px var(--mono);color:var(--faint);margin-top:4px;white-space:nowrap}
-.step.lit{border-color:var(--brass);background:var(--raised-2);box-shadow:0 0 18px var(--brass-glow)}
+.step.lit{border-color:var(--brass);background:var(--raised-2);box-shadow:var(--elev)}
 .step.lit .s-p{color:var(--brass)}
-.arrow{font:400 15.5px var(--mono);color:var(--faint);padding:0 8px;flex:0 0 auto;transition:color .2s}
+.arrow{font:400 15.5px var(--mono);color:var(--faint);padding:0 5px;flex:0 0 auto;transition:color .2s}
 .arrow.lit{color:var(--brass)}
 .flow-caption{font-size:14px;color:var(--faint);margin-top:16px}
 
 /* quickstart */
 .qs{display:grid;grid-template-columns:1.1fr .9fr;gap:34px;margin-top:30px}
-.term{background:var(--sunken);border:1px solid var(--line-strong);border-radius:4px;padding:20px 22px;font:400 14.5px/2 var(--mono);color:var(--ink);overflow-x:auto}
+.term{background:var(--sunken);border:1px solid var(--line-strong);border-radius:4px;padding:20px 22px;font:400 14.5px/2 var(--mono);color:var(--ink);overflow-wrap:anywhere}
 .term .c{color:var(--faint)}
 .term .p{color:var(--brass)}
 .docmap{display:flex;flex-direction:column;gap:10px}
@@ -190,21 +203,21 @@ footer a{color:var(--soft);font-family:var(--mono)}
 .tbl .st{color:var(--brass);font-family:var(--mono);white-space:nowrap}
 .tbl tr[data-l]{cursor:default;transition:background .15s}
 .tbl tr.lh td{background:var(--tint)}
-.facts{list-style:none;margin-top:22px;display:grid;gap:10px}
-.facts li{padding-left:22px;position:relative;font-size:15px;color:var(--soft);max-width:62em}
+.facts{list-style:none;margin-top:22px;display:grid;gap:14px}
+.facts li{padding-left:22px;position:relative;font-size:15px;color:var(--soft);max-width:42em}
 .facts li::before{content:"▹";position:absolute;left:0;color:var(--brass)}
 .facts li b{color:var(--head);font-weight:500}
 .facts li .mono{color:var(--ink)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .chip{font:400 12.5px var(--mono);border:1px solid var(--line-strong);border-radius:3px;padding:5px 10px;color:var(--soft)}
 .chip b{color:var(--brass);font-weight:400}
-.note{font-size:14px;color:var(--faint);margin-top:16px;max-width:54em}
+.note{font-size:14px;color:var(--faint);margin-top:16px;max-width:44em}
 .note code{font-family:var(--mono);color:var(--soft);font-size:12.5px}
 .note a{color:var(--soft);font-family:var(--mono)}
 .subh{font:500 14px var(--mono);color:var(--soft);margin:0 0 6px}
 .tag{font:500 10px var(--mono);letter-spacing:1px;text-transform:uppercase;border-radius:3px;padding:2px 7px;vertical-align:middle;white-space:nowrap}
-.tag-e{color:var(--moss);border:1px solid rgba(156,196,140,.4)}
-.tag-c{color:var(--clay);border:1px solid rgba(217,143,112,.4)}
+.tag-e{color:var(--moss);border:1px solid color-mix(in srgb,var(--moss) 70%,transparent)}
+.tag-c{color:var(--clay);border:1px solid color-mix(in srgb,var(--clay) 70%,transparent)}
 
 /* divider band */
 .band{border-top:1px solid var(--line-bright);background:linear-gradient(180deg,var(--sunken),var(--paper))}
@@ -221,14 +234,14 @@ footer a{color:var(--soft);font-family:var(--mono)}
 .tier{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:10px 15px;display:flex;justify-content:space-between;align-items:center;gap:14px;
       opacity:.45;transform:translateY(6px);transition:opacity .5s ease,transform .5s ease,border-color .15s,box-shadow .15s}
 .pyr.in .tier{opacity:1;transform:none}
-.tier:hover{border-color:var(--brass);box-shadow:0 0 16px var(--brass-glow)}
+.tier:hover{border-color:var(--brass);box-shadow:var(--elev)}
 .tier .tl{font:500 14px var(--mono);color:var(--head)}
 .tier:hover .tl{color:var(--brass)}
 .tier .tr{font-size:12px;color:var(--faint);text-align:right}
 .tier .tc{font:500 14.5px var(--mono);color:var(--brass)}
 .tier.t-unit{width:100%} .tier.t-flow{width:82%} .tier.t-integ{width:64%} .tier.t-e2e{width:46%}
-.tctx{border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-top:4px}
-.tctx .trow{display:grid;grid-template-columns:150px repeat(4,1fr);border-top:1px solid var(--line);transition:background .15s;cursor:default}
+.tctx{border:1px solid var(--line);border-radius:4px;overflow:auto;margin-top:4px}
+.tctx .trow{display:grid;grid-template-columns:184px repeat(4,1fr);border-top:1px solid var(--line);transition:background .15s;cursor:default}
 .tctx .trow:first-child{border-top:0}
 .tctx .trow:hover{background:var(--tint)}
 .tctx .tk{font:500 12.5px var(--mono);color:var(--soft);padding:9px 12px}
@@ -260,20 +273,19 @@ footer a{color:var(--soft);font-family:var(--mono)}
 
 
 /* observability: layer picker + fixed panel */
-      display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;transition:border-color .15s,background .15s,box-shadow .15s}
 .opanel{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:16px 18px}
 .opanel .oh{font:500 11px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
 .ojson{font:400 12.5px/1.8 var(--mono);white-space:pre;color:var(--soft);background:var(--sunken);
-       border:1px solid var(--line);border-radius:4px;padding:14px 16px;height:200px;overflow:auto}
+       border:1px solid var(--line);border-radius:4px;padding:14px 16px;height:216px;overflow:auto}
 .ojson .k{color:var(--brass)} .ojson .tr{color:var(--moss)} .ojson .cm{color:var(--dim)}
 .ojson .silent{font:italic 400 14.5px var(--serif);color:var(--faint)}
-.odesc{font-size:14px;line-height:1.6;color:var(--faint);margin-top:14px;min-height:86px}
+.odesc{font-size:14px;line-height:1.6;color:var(--faint);margin-top:14px;min-height:112px}
 .odesc b{color:var(--soft);font-weight:500}
 
 /* shared layer grid: hexagon + panel (errors, observability) */
 .laygrid{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;margin-top:26px;align-items:start}
 .laygrid .layer{cursor:pointer}
-.layer.sel{border-color:var(--brass);background:var(--raised-2);box-shadow:0 0 16px var(--brass-glow)}
+.layer.sel{border-color:var(--brass);background:var(--raised-2);box-shadow:var(--elev)}
 .layer.sel .t{color:var(--brass)}
 .layer.sel .d{color:var(--soft)}
 .layer .d b{color:var(--brass);font-weight:400}
@@ -305,27 +317,48 @@ footer a{color:var(--soft);font-family:var(--mono)}
 .code .cm{color:var(--dim)}
 .code .fn{color:var(--ink)}
 .pair{border-radius:2px;padding:0 3px;margin:0 -3px;transition:background .15s,color .15s;cursor:default}
-.pair.pl{background:var(--tint-strong);color:var(--brass)}
+.pair.pl{background:var(--tint-strong);color:var(--pl-fg)}
 .cfgcols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px;align-items:start}
 
-@media (max-width:820px){
+/* the container caps at 1060px, so the mono blocks sit in a ~450px half-column
+   the moment the viewport drops below the cap -- step them down before the
+   two-column layout itself gives way */
+@media (max-width:1080px){
+  .code,.ascii,.tree,.ojson{font-size:12px}
+}
+@media (max-width:980px){
   .topo{flex-direction:column}
   .wire{padding:14px 0}
   .layers-grid,.qs,.cols,.wf,.cfgcols,.laygrid,.digraph,.lifebar{grid-template-columns:1fr}
   .hero{padding:60px 0 52px}
   section{padding:54px 0}
+  header .container{flex-wrap:wrap;row-gap:10px}
+  nav{gap:14px}
   .tier{width:100% !important}
-  .tctx .trow{grid-template-columns:110px repeat(4,1fr)}
+  .tctx .trow{grid-template-columns:160px repeat(4,1fr);min-width:430px}
+  .tctx .tk{font-size:11px}
   .matrix{font-size:11.5px}
   .dconv{padding:6px 0}
-  .code{font-size:12px;padding:14px}
+  .docmap a{flex-wrap:wrap;row-gap:2px}
+  .code{padding:14px}
+}
+/* the hexagon keeps its two-column driving|driven shape all the way down --
+   only the label type shrinks, so `adapters/driving/` still fits one line */
+@media (max-width:560px){
+  .layer .t{font-size:11.5px}
+  .layer .d{font-size:11px}
+  .hex{gap:0 8px}
+  .layer{padding:10px}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .tier{opacity:1;transform:none;transition:border-color .15s,box-shadow .15s}
 }
 </style>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<!-- Applies the stored theme before first paint, so a light reader never sees a
+     dark flash. Only the two known values are honoured: any other stored string
+     would match neither theme rule and would strand the toggle on its own state. -->
+<script>try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 </head>
 <body>
 
@@ -892,14 +925,29 @@ ORDER BY created_at DESC, id DESC</pre>
 // theme toggle: follows the system until the reader picks a side, then remembers
 (function(){
   var root = document.documentElement, b = document.getElementById('themetog');
+  var meta = document.getElementById('tcolor');
+  var sys = window.matchMedia('(prefers-color-scheme: light)');
   if(!b) return;
+
+  function active(){ return root.getAttribute('data-theme') || (sys.matches ? 'light' : 'dark'); }
+
+  // The button carries the ACTION, not the state -- "toggle theme" leaves a
+  // screen-reader user unable to tell which side they are currently on.
+  function sync(){
+    var other = active() === 'dark' ? 'light' : 'dark';
+    b.setAttribute('aria-label', 'Switch to ' + other + ' theme');
+    b.title = 'Switch to ' + other + ' theme';
+    if(meta) meta.setAttribute('content', active() === 'dark' ? '#211c16' : '#f4efe4');
+  }
+
   b.addEventListener('click', function(){
-    var cur = root.getAttribute('data-theme');
-    if(!cur) cur = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    var next = cur === 'dark' ? 'light' : 'dark';
+    var next = active() === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     try{ localStorage.setItem('theme', next); }catch(e){}
+    sync();
   });
+  sys.addEventListener('change', sync);
+  sync();
 })();
 
 // shared layer highlight: hover any [data-l] element -> light every element
