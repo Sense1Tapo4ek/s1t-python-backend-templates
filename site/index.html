@@ -198,19 +198,8 @@ footer a{color:var(--soft);font-family:var(--mono)}
 .band .bt .geo{font-size:12px}
 .band .bd{font:italic 400 14px var(--serif);color:var(--faint)}
 
-/* DI panels */
-.dip{display:grid;gap:12px;margin-top:26px}
-.dip-card{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:16px 18px}
-.dip-h{font:500 12px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
-.prov{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
-.prov .p{font:400 11.5px var(--mono);border:1px solid var(--line-strong);border-radius:3px;padding:5px 10px;color:var(--soft);cursor:default;transition:border-color .15s,color .15s}
-.prov .p:hover{border-color:var(--brass);color:var(--brass)}
-.dip-code{font:400 11.5px/1.8 var(--mono);color:var(--soft);white-space:pre-wrap}
-.dip-code b{color:var(--brass);font-weight:400} .dip-code .fa{color:#6a5c44}
-.provhint{font:400 11.5px var(--mono);color:var(--faint);min-height:1.5em;margin-top:2px}
 
 /* config */
-.cfg{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
 .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:4px;overflow:hidden;margin-bottom:10px}
 .seg button{font:500 11px var(--mono);letter-spacing:.5px;background:transparent;color:var(--soft);border:0;padding:7px 13px;cursor:pointer;transition:background .15s,color .15s}
 .seg button.on{background:var(--brass);color:var(--paper)}
@@ -257,22 +246,68 @@ footer a{color:var(--soft);font-family:var(--mono)}
 .wf-step .wd{font-size:12px;color:var(--faint);margin-top:3px;line-height:1.5}
 .wf-step .wd code{font-family:var(--mono);font-size:11px;color:var(--soft)}
 
-/* observability json */
-.logj{font:400 11.5px/1.85 var(--mono);background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:14px 16px;overflow-x:auto;white-space:pre}
-.logj .k{color:var(--brass)} .logj .v{color:var(--soft)} .logj .cm{color:#6a5c44}
-.logj .row{display:block;border-radius:2px;margin:0 -6px;padding:0 6px;border-left:2px solid transparent;transition:background .15s}
-.logj .row.lh{background:rgba(227,182,97,.08);border-left-color:var(--brass)}
+
+/* observability: layer picker + fixed panel */
+.obs{display:grid;grid-template-columns:1fr 1.2fr;gap:22px;margin-top:26px;align-items:start}
+.olayers{display:grid;gap:6px}
+.olay{border:1px solid var(--line);background:var(--raised);border-radius:4px;padding:10px 13px;cursor:pointer;
+      display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;transition:border-color .15s,background .15s,box-shadow .15s}
+.olay:hover{border-color:var(--line-bright)}
+.olay.sel{border-color:var(--brass);background:var(--raised-2);box-shadow:0 0 14px rgba(227,182,97,.12)}
+.olay .ok{font:500 12px var(--mono);color:var(--soft)}
+.olay.sel .ok{color:var(--brass)}
+.olay .oq{font:400 10px var(--mono);color:var(--faint);white-space:nowrap}
+.olay.sel .oq{color:var(--moss)}
+.opanel{border:1px solid var(--line-strong);background:var(--sunken);border-radius:4px;padding:16px 18px}
+.opanel .oh{font:500 10px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+.ojson{font:400 11.5px/1.85 var(--mono);white-space:pre-wrap;color:var(--soft);min-height:96px}
+.ojson .k{color:var(--brass)} .ojson .tr{color:var(--moss)} .ojson .cm{color:#6a5c44}
+.ojson .silent{font:italic 400 13px var(--serif);color:var(--faint)}
+.odesc{font-size:12.5px;line-height:1.6;color:var(--faint);margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.odesc b{color:var(--soft);font-weight:500}
+
+/* DI graph */
+.digraph{display:grid;grid-template-columns:1fr auto 1.05fr;gap:16px;align-items:center;margin-top:24px}
+.dctx{display:grid;gap:6px}
+.dc{border:1px solid var(--line);background:var(--raised);border-radius:4px;padding:9px 12px;font:500 11.5px var(--mono);color:var(--soft);cursor:default;transition:border-color .15s,color .15s}
+.dc:hover{border-color:var(--brass);color:var(--brass)}
+.dconv{font:400 12px/1.5 var(--mono);color:var(--faint);text-align:center;white-space:pre}
+.dcont{border:1px solid var(--line-bright);background:linear-gradient(180deg,var(--raised-2),var(--raised));border-radius:4px;padding:20px 16px;text-align:center}
+.dcont .dt{font:500 13px var(--mono);color:var(--brass)}
+.dcont .dd{font:400 11px/1.7 var(--mono);color:var(--faint);margin-top:7px}
+.dbind{font:400 11.5px var(--mono);color:var(--faint);min-height:1.6em;margin-top:12px}
+.lifebar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px}
+.lf{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:12px 14px}
+.lf .lt{font:500 10px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--brass)}
+.lf .ld{font:400 11.5px/1.65 var(--mono);color:var(--faint);margin-top:6px}
+.drain{margin-top:12px;border:1px dashed var(--line-strong);border-radius:4px;padding:10px 14px;font:400 11.5px var(--mono);color:var(--faint);text-align:center}
+.drain b{color:var(--brass);font-weight:400} .drain .g{color:var(--moss)}
+
+/* python code + config pairing */
+.code{font:400 12px/1.9 var(--mono);background:var(--sunken);border:1px solid var(--line);border-radius:4px;padding:18px 20px;overflow-x:auto;white-space:pre;margin:0}
+.code .kw{color:var(--clay)}
+.code .cls{color:var(--brass)}
+.code .ty{color:var(--moss)}
+.code .str{color:#b9c9a8}
+.code .num{color:var(--brass)}
+.code .cm{color:#6a5c44}
+.code .fn{color:var(--ink)}
+.pair{border-radius:2px;padding:0 3px;margin:0 -3px;transition:background .15s,color .15s;cursor:default}
+.pair.pl{background:rgba(227,182,97,.20);color:var(--brass)}
+.cfgcols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px;align-items:start}
 
 @media (max-width:820px){
   .topo{flex-direction:column}
   .wire{padding:14px 0}
-  .layers-grid,.qs,.cols,.wf,.cfg{grid-template-columns:1fr}
+  .layers-grid,.qs,.cols,.wf,.cfgcols,.obs,.digraph,.lifebar{grid-template-columns:1fr}
   .hero{padding:60px 0 52px}
   section{padding:54px 0}
   .tier{width:100% !important}
   .lrow{grid-template-columns:1fr}
   .tctx .trow{grid-template-columns:110px repeat(4,1fr)}
   .matrix{font-size:10.5px}
+  .dconv{padding:6px 0}
+  .code{font-size:11px;padding:14px}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
@@ -496,107 +531,121 @@ ORDER BY created_at DESC, id DESC</pre>
 
 <section id="lifecycle">
   <div class="container">
-    <div class="overline"><i class="geo g-moss">▢</i>composition &amp; lifecycle</div>
+    <div class="overline"><i class="geo g-moss">&#9634;</i>composition &amp; lifecycle</div>
     <h2>One DI graph. Swap anything in one line.</h2>
     <p class="lede">Every bounded context ships its own Dishka provider -- its own
-    sub-graph -- and one <span class="mono">build_container()</span> call composes
-    them into a single container, resolved lazily on the first request. Init and
-    shutdown are ordered and explicit.</p>
-    <div class="dip">
-      <div class="dip-card">
-        <div class="dip-h">compose · each context owns its DI sub-graph</div>
-        <div class="prov" id="prov">
-          <span class="p" data-hint="clock · config · Postgres engine · Valkey pool">Shared</span>
-          <span class="p" data-hint="facade · jwt · api-keys · argon2 · auth middleware">Auth</span>
-          <span class="p" data-hint="engine · outbox relay · status consumer · SSE feed">Media</span>
-          <span class="p" data-hint="dashboard facade + log tail viewer">Admin</span>
-          <span class="p" data-hint="advanced-alchemy authors demo (create_all)">DbExample</span>
-        </div>
-        <div class="provhint mono" id="provhint">hover a provider to see what it binds</div>
-        <div class="dip-code"><b>build_container()</b> ─▶ one AsyncContainer   <span class="fa">7 backend · 2 worker providers</span>
-<span class="fa">swap   </span> provide(SystemClock, provides=<b>IClock</b>)   <span class="fa"># one line, one file</span>
-<span class="fa">disable</span> drop the provider from build_container()
-<span class="fa">add    </span> write &lt;ctx&gt;/provider.py, add one line</div>
+    sub-graph. One <span class="mono">build_container()</span> call composes them into
+    a single container, resolved lazily on the first request. Hover a provider to see
+    what it puts into the graph.</p>
+    <div class="digraph">
+      <div class="dctx" id="dctx">
+        <div class="dc" data-binds="clock &#183; config &#183; Postgres engine &#183; Valkey pool">SharedProvider</div>
+        <div class="dc" data-binds="AuthFacade &#183; JWT codec &#183; argon2 hasher &#183; API keys &#183; denylist">AuthProvider</div>
+        <div class="dc" data-binds="media engine &#183; outbox relay &#183; status consumer">MediaInfraProvider</div>
+        <div class="dc" data-binds="MediaFacade &#183; SSE feed &#183; FeedLimiter">MediaWebProvider</div>
+        <div class="dc" data-binds="admin dashboard facade + guards">AdminProvider</div>
+        <div class="dc" data-binds="log tail reader behind the admin UI">AdminLogWebProvider</div>
+        <div class="dc" data-binds="advanced-alchemy authors demo (create_all)">DbExampleLitestarProvider</div>
       </div>
-      <div class="dip-card">
-        <div class="dip-h">lifecycle · ordered, explicit, drained</div>
-        <div class="dip-code"><b>START</b>  build ─▶ warm auth facade ─▶ auth.start() ─▶ media.start()
-<b>SERVE</b>  ───────────────────────────────────────────────────
-<b>STOP</b>   cancel() then await every task ─▶ <b>container.close()</b>
-        <span class="fa">engine.dispose() · redis.aclose()</span>
-       uvicorn drains &le;<b>25s</b>  &lt;  <b>30s</b> k8s grace  <span class="fa">· never SIGKILLed mid-drain</span></div>
+      <div class="dconv">build_container()
+&#9472;&#9472;&#9472;&#9472;&#9472;&#9654;</div>
+      <div class="dcont">
+        <div class="dt">AsyncContainer</div>
+        <div class="dd">APP scope &#183; lazy<br>resolves on the 1st request<br><b style="color:var(--soft);font-weight:400">7 backend &#183; 2 worker</b></div>
       </div>
     </div>
+    <p class="dbind mono" id="dbind">hover a provider to see what it binds</p>
+    <div class="lifebar">
+      <div class="lf"><div class="lt">start</div><div class="ld">build the graph &#183; warm the auth facade &#183; each manager starts its background tasks</div></div>
+      <div class="lf"><div class="lt">serve</div><div class="ld">APP-scope singletons resolved once &#183; a child scope per request</div></div>
+      <div class="lf"><div class="lt">stop</div><div class="ld">cancel() then await every task &#183; container.close() &#183; engine.dispose() &#183; redis.aclose()</div></div>
+    </div>
+    <div class="drain">uvicorn drains <b>&#8804;25s</b> <span class="g">&lt;</span> <b>30s</b> k8s grace &#183; in-flight work finishes before SIGKILL</div>
     <ul class="facts">
-      <li><b>One place binds concrete to interface.</b> A <span class="mono">provider.py</span>
-      is the only file that names an implementation:
-      <span class="mono">provide(SystemClock, provides=IClock)</span>. Business code
-      receives collaborators by injection. <span class="tag tag-e">structural</span></li>
-      <li><b>The graph is lazy.</b> APP-scope resolves on the first request; tests
-      warm it explicitly and a boot does no hidden I/O.</li>
+      <li><b>Swap, disable, add -- one line each.</b>
+      <span class="mono">provide(SystemClock, provides=IClock)</span> swaps an
+      implementation; dropping a provider from <span class="mono">build_container()</span>
+      disables that context; a new <span class="mono">&lt;ctx&gt;/provider.py</span> plus
+      one line adds one. <span class="tag tag-e">structural</span></li>
+      <li><b>The graph is lazy.</b> APP-scope resolves on the first request; tests warm
+      it explicitly and a boot does no hidden I/O.</li>
       <li><b>Prod invariants fail closed.</b> No admin token or CSRF secret under
       <span class="mono">APP_ENV=prod</span> and the app refuses to start.</li>
     </ul>
-    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/infra/dishka.md">infra/dishka.md →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/root/composition/container.py">container.py →</a></p>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/infra/dishka.md">infra/dishka.md &#8594;</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/root/composition/container.py">container.py &#8594;</a></p>
   </div>
 </section>
 
 <section id="config">
   <div class="container">
-    <div class="overline"><i class="geo g-clay">◇</i>configuration</div>
+    <div class="overline"><i class="geo g-clay">&#9671;</i>configuration</div>
     <h2>Config is one file per context.</h2>
     <p class="lede">Each context owns a <span class="mono">config.py</span> -- a
-    Pydantic-Settings class with its own <span class="mono">env_prefix</span> and
-    typed, self-validating fields. Values flow one way:
-    <span class="mono">env → Settings → provider → constructor</span>; domain and app
-    never read <span class="mono">os.environ</span>.</p>
-    <div class="cfg">
-      <pre class="ascii"><span class="fa"># auth/config.py</span>
-class <b>AuthConfig</b>(BaseAppConfig):
-  model_config = SettingsConfigDict(
-      env_prefix=<b>"AUTH_"</b>)
-  jwt_access_ttl_seconds:  int = Field(...)
-  jwt_refresh_ttl_seconds: int = Field(...)
-  jwt_issuer: str = Field(...)
-  pool_size:  int = Field(<b>5, ge=1</b>)   <span class="fa"># validated</span>
-  admin_token: SecretStr | None
-  jwt_secret:  SecretStr | None</pre>
+    Pydantic-Settings class with its own <span class="mono">env_prefix</span> and typed,
+    self-validating fields. Values flow one way:
+    <span class="mono">env &#8594; Settings &#8594; provider &#8594; constructor</span>; domain and app never
+    read <span class="mono">os.environ</span>. Hover a field to light up the variable
+    it reads.</p>
+    <div class="cfgcols">
+      <pre class="code"><span class="cm"># auth/config.py</span>
+<span class="kw">class</span> <span class="cls">AuthConfig</span>(<span class="cls">BaseAppConfig</span>):
+    model_config = <span class="cls">SettingsConfigDict</span>(
+        env_prefix=<span class="str">"AUTH_"</span>,
+    )
+
+    <span class="fn pair" data-cfg="admin">admin_token</span>: <span class="ty">SecretStr</span> | <span class="kw">None</span> = <span class="kw">None</span>
+    <span class="fn pair" data-cfg="secret">jwt_secret</span>: <span class="ty">SecretStr</span> | <span class="kw">None</span> = <span class="kw">None</span>
+    <span class="fn pair" data-cfg="issuer">jwt_issuer</span>: <span class="ty">str</span> = <span class="cls">Field</span>(<span class="str">"litestar-base"</span>)
+    <span class="fn pair" data-cfg="access">jwt_access_ttl_seconds</span>: <span class="ty">int</span> = <span class="cls">Field</span>(<span class="num">900</span>, ge=<span class="num">1</span>)
+    <span class="fn pair" data-cfg="refresh">jwt_refresh_ttl_seconds</span>: <span class="ty">int</span> = <span class="cls">Field</span>(<span class="num">1_209_600</span>, ge=<span class="num">1</span>)
+    <span class="fn pair" data-cfg="pool">pool_size</span>: <span class="ty">int</span> = <span class="cls">Field</span>(<span class="num">5</span>, ge=<span class="num">1</span>)  <span class="cm"># validated here</span></pre>
       <div>
         <div class="seg" id="envseg">
           <button class="on" data-env="min">.env.example</button>
           <button data-env="full">.env.full.example</button>
         </div>
-        <pre class="ascii envblock on" data-env="min"><span class="fa"># 12 vars · clone, fill one secret, boot</span>
-APP_NAME=       APP_ENV=<b>dev</b>
-VOLUME_PATH=    SNITCHBOT_DISABLED=<b>1</b>
-<b>AUTH_ADMIN_TOKEN=</b>  <span class="fa"># openssl rand -hex 32</span>
-POSTGRES_HOST= PORT= USER= PASSWORD= DB=
-VALKEY_HOST=   VALKEY_PORT=
-<span class="fa"># every other var has a default</span></pre>
-        <pre class="ascii envblock" data-env="full"><span class="fa"># the full contract · every var, annotated</span>
-<b>AUTH_</b>JWT_ACCESS_TTL_SECONDS=900
-<b>AUTH_</b>JWT_REFRESH_TTL_SECONDS=1209600
-<b>AUTH_</b>JWT_ISSUER=litestar-base
-<b>AUTH_</b>POOL_SIZE=5
-<b>AUTH_</b>JWT_SECRET=        <span class="fa"># empty placeholder</span>
-<b>MEDIA_</b>* <b>LOG_</b>* <b>METRICS_</b>* <b>POSTGRES_</b>* ...</pre>
+        <pre class="code envblock on" data-env="min"><span class="cm"># 12 vars &#183; the absolute minimum to boot</span>
+APP_NAME=litestar-base
+APP_ENV=dev
+VOLUME_PATH=./storage
+SNITCHBOT_DISABLED=1
+<span class="pair" data-cfg="admin">AUTH_ADMIN_TOKEN</span>=          <span class="cm"># openssl rand -hex 32</span>
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=litestar_base
+VALKEY_HOST=localhost
+VALKEY_PORT=6379
+<span class="cm"># every other var has a default</span></pre>
+        <pre class="code envblock" data-env="full"><span class="cm"># the full contract &#183; every var, annotated</span>
+<span class="pair" data-cfg="admin">AUTH_ADMIN_TOKEN</span>=
+<span class="pair" data-cfg="secret">AUTH_JWT_SECRET</span>=
+<span class="pair" data-cfg="issuer">AUTH_JWT_ISSUER</span>=litestar-base
+<span class="pair" data-cfg="access">AUTH_JWT_ACCESS_TTL_SECONDS</span>=900
+<span class="pair" data-cfg="refresh">AUTH_JWT_REFRESH_TTL_SECONDS</span>=1209600
+<span class="pair" data-cfg="pool">AUTH_POOL_SIZE</span>=5
+<span class="cm">
+# same shape per context:
+# MEDIA_* LOG_* METRICS_* POSTGRES_* VALKEY_*</span></pre>
       </div>
     </div>
     <p class="note">One <span class="mono">env_prefix</span> per context:
-    <span class="mono">MEDIA_ · AUTH_ · LOG_ · METRICS_ · POSTGRES_ · VALKEY_ · DB_EXAMPLE_LITESTAR_</span>
-    -- two contexts can both hold a <span class="mono">POOL_SIZE</span> without collision.</p>
+    <span class="mono">MEDIA_ &#183; AUTH_ &#183; LOG_ &#183; METRICS_ &#183; POSTGRES_ &#183; VALKEY_ &#183; DB_EXAMPLE_LITESTAR_</span>
+    -- two contexts can both hold a <span class="mono">POOL_SIZE</span> without collision,
+    and each class validates only its own slice of the environment.</p>
     <ul class="facts">
       <li><b>The domain can't see the environment.</b> No
-      <span class="mono">os.environ</span> in any <span class="mono">domain/</span>
-      or <span class="mono">app/</span> across every context (grep-verified);
-      config arrives only as constructor arguments.</li>
+      <span class="mono">os.environ</span> in any <span class="mono">domain/</span> or
+      <span class="mono">app/</span> across every context (grep-verified); config
+      arrives only as constructor arguments.</li>
       <li><b>Two templates bound the surface.</b>
       <span class="mono">.env.example</span> is the 12-var minimum to boot;
-      <span class="mono">.env.full.example</span> is the complete contract. Secrets
-      are empty placeholders with a generation hint; <span class="mono">.env</span>
-      is gitignored. <span class="tag tag-c">convention</span></li>
+      <span class="mono">.env.full.example</span> is the complete contract. Secrets are
+      empty placeholders with a generation hint; <span class="mono">.env</span> is
+      gitignored. <span class="tag tag-c">convention</span></li>
     </ul>
-    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/auth/config.py">auth/config.py →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/.env.full.example">.env.full.example →</a></p>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/src/auth/config.py">auth/config.py &#8594;</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/.env.full.example">.env.full.example &#8594;</a></p>
   </div>
 </section>
 
@@ -649,37 +698,31 @@ VALKEY_HOST=   VALKEY_PORT=
 
 <section id="observability">
   <div class="container">
-    <div class="overline"><i class="geo g-moss">▢</i>observability on the layers</div>
+    <div class="overline"><i class="geo g-moss">&#9634;</i>observability on the layers</div>
     <h2>Bind the trace once. Each layer signs its own line.</h2>
-    <p class="lede"><span class="mono">merge_contextvars</span> is the first
-    processor, so <span class="mono">trace_id</span> -- bound once at the ASGI edge --
-    rides every lower line for free. Each layer adds only its own slice. Hover a key
-    to see which layer stamps it.</p>
-    <div class="cols">
-      <div class="spine">
-        <div class="lrow" data-l="edge"><span class="ln-k">transport edge</span><span class="ln-v">TraceIdMiddleware ─▶ <span class="st">trace_id</span> <span class="cl">(bound once)</span></span></div>
-        <div class="lrow" data-l="app"><span class="ln-k">app</span><span class="ln-v">"video registered" ─▶ <span class="st">video_id</span> <span class="cl">· the cross-service key</span></span></div>
-        <div class="lrow" data-l="domain"><span class="ln-k">domain</span><span class="ln-v">never logs <span class="cl">· pure · no Layer.DOMAIN</span></span></div>
-        <div class="lrow" data-l="ports-driven"><span class="ln-k">ports/driven</span><span class="ln-v">layer=<span class="st">ports_driven</span> <span class="cl">· on failure</span></span></div>
-        <div class="lrow" data-l="adapters-driven"><span class="ln-k">adapters/driven</span><span class="ln-v">OutboxRelay ─▶ count · access edge ─▶ <span class="st">duration_ms</span></span></div>
+    <p class="lede"><span class="mono">trace_id</span> is created once, at the
+    driving-adapter edge. Below it nobody passes it along --
+    <span class="mono">merge_contextvars</span> is the first processor, so every layer
+    inherits it and adds only its own slice. Pick a layer to see the line it really
+    writes.</p>
+    <div class="obs">
+      <div class="olayers" id="olayers">
+        <div class="olay sel" data-lay="ad"><span class="ok">adapters/driving</span><span class="oq">binds trace_id</span></div>
+        <div class="olay" data-lay="pdg"><span class="ok">ports/driving</span><span class="oq">silent</span></div>
+        <div class="olay" data-lay="app"><span class="ok">app</span><span class="oq">inherits</span></div>
+        <div class="olay" data-lay="dom"><span class="ok">domain</span><span class="oq">never logs</span></div>
+        <div class="olay" data-lay="pdv"><span class="ok">ports/driven</span><span class="oq">inherits</span></div>
+        <div class="olay" data-lay="adv"><span class="ok">adapters/driven</span><span class="oq">no trace_id</span></div>
       </div>
-      <div>
-        <div class="logj"><span class="row" data-l="app">{ <span class="k">"event"</span>: <span class="v">"video registered"</span>,  <span class="cm">// app · stable literal</span></span>
-<span class="row" data-l="app">  <span class="k">"video_id"</span>: <span class="v">"e3b0…"</span>,         <span class="cm">// app · crosses the stream</span></span>
-<span class="row" data-l="edge">  <span class="k">"trace_id"</span>: <span class="v">"9f2a…"</span>,         <span class="cm">// edge · pins request · absent on worker</span></span>
-<span class="row" data-l="app">  <span class="k">"layer"</span>: <span class="v">"app"</span>,               <span class="cm">// explicit bind · 1 of 5 · never DOMAIN</span></span>
-<span class="row" data-l="edge">  <span class="k">"app"</span>: <span class="v">"litestar_backend"</span>,   <span class="cm">// bound once at startup</span></span>
-<span class="row">  <span class="k">"level"</span>:<span class="v">"info"</span>, <span class="k">"logger"</span>:<span class="v">"UploadVideoUC"</span> <span class="cm">// processors</span></span>
-}</div>
-        <p class="note" style="margin-top:14px">One process writes stdout <em>and</em>
-        the JSONL file the admin UI tails · <span class="mono">video_id</span> crosses
-        the Valkey stream, <span class="mono">trace_id</span> does not (the worker has
-        no HTTP edge), so one <span class="mono">grep video_id=X</span> follows the
-        whole pipeline across both services.</p>
+      <div class="opanel">
+        <div class="oh" id="oh">adapters/driving</div>
+        <div class="ojson" id="ojson"></div>
+        <div class="odesc" id="odesc"></div>
       </div>
     </div>
-    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/infra/structlog.md">infra/structlog.md →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/subsystems/observability.md">observability.md →</a>
-    &nbsp;·&nbsp; the <span class="mono">layer</span> tag is an explicit bind, not auto-derived <span class="tag tag-c">convention</span></p>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/infra/structlog.md">infra/structlog.md &#8594;</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/subsystems/observability.md">observability.md &#8594;</a>
+    &nbsp;&#183;&nbsp; the <span class="mono">layer</span> field is an explicit bind via
+    <span class="mono">layer_logger</span>, never auto-derived <span class="tag tag-c">convention</span></p>
   </div>
 </section>
 
@@ -723,17 +766,21 @@ VALKEY_HOST=   VALKEY_PORT=
   <div class="container">
     <div class="overline"><i class="geo g-clay">◇</i>quality gates</div>
     <h2>Architecture is a test, not a diagram.</h2>
-    <p class="lede"><span class="mono">pytest</span> runs on exactly one surface --
-    the Docker tester stage -- so local and CI are byte-identical. Ten import-linter
-    contracts fail the build on a cross-layer import.</p>
+    <p class="lede">One canonical gate --
+    <span class="mono">ruff · mypy · lint-imports · pytest</span> -- lives in the
+    Docker tester image, and that is exactly what CI runs. The Taskfile reaches all
+    of it plus fast host-level test subsets; pre-commit keeps every commit
+    statically clean. Ten import-linter contracts fail the build on a cross-layer
+    import.</p>
     <div style="overflow-x:auto">
     <table class="matrix">
       <tr><th>surface</th><th>ruff</th><th>fmt</th><th>mypy</th><th>import-linter</th><th>gitleaks</th><th>pytest</th></tr>
       <tr><td>pre-commit</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td></tr>
-      <tr><td>task check</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
+      <tr><td>Taskfile</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td></tr>
       <tr><td>CI · static</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
       <tr><td>Docker tester</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="pt">✓</td></tr>
-      <tr class="note-row"><td colspan="7">Docker tester CMD: <span class="mono" style="color:var(--soft)">ruff check . &amp;&amp; mypy &amp;&amp; lint-imports &amp;&amp; pytest -q</span> · identical in both services · the only pytest surface</td></tr>
+      <tr class="note-row"><td colspan="7">Docker tester CMD: <span class="mono" style="color:var(--soft)">ruff check . &amp;&amp; mypy &amp;&amp; lint-imports &amp;&amp; pytest -q</span> · identical in both services · this is what CI runs.
+      Taskfile: <span class="mono" style="color:var(--soft)">task check</span> (static) · <span class="mono" style="color:var(--soft)">task test</span> (the Docker gate, both services) · <span class="mono" style="color:var(--soft)">task be:unit|flow|integration|e2e</span> for fast host subsets.</td></tr>
     </table>
     </div>
     <div class="chips">
@@ -885,21 +932,86 @@ document.querySelectorAll('section').forEach(function(sec){
 (function(){
   var topo = document.getElementById('topo'), seam = document.getElementById('seam');
   if(!topo) return;
-  var cards = topo.querySelectorAll('.svc');
-  cards[0].addEventListener('mouseenter', function(){ topo.classList.add('dim-right'); seam.classList.add('hot'); });
-  cards[1].addEventListener('mouseenter', function(){ topo.classList.add('dim-left'); seam.classList.add('hot'); });
+  // clear both flags on every enter -- moving card->card without leaving .topo
+  // used to leave the previous dim- class set, dimming both sides at once
+  topo.querySelectorAll('.svc').forEach(function(card, i){
+    card.addEventListener('mouseenter', function(){
+      topo.classList.remove('dim-left','dim-right');
+      topo.classList.add(i === 0 ? 'dim-right' : 'dim-left');
+      seam.classList.add('hot');
+    });
+  });
   topo.addEventListener('mouseleave', function(){ topo.classList.remove('dim-left','dim-right'); seam.classList.remove('hot'); });
 })();
 
-// lifecycle: hover a provider chip -> reveal what it binds
+// lifecycle: hover a provider -> reveal what it puts into the graph
 (function(){
-  var prov = document.getElementById('prov'), hint = document.getElementById('provhint');
-  if(!prov) return;
+  var dctx = document.getElementById('dctx'), bind = document.getElementById('dbind');
+  if(!dctx) return;
   var deflt = 'hover a provider to see what it binds';
-  prov.querySelectorAll('.p').forEach(function(p){
-    p.addEventListener('mouseenter', function(){ hint.textContent = p.dataset.hint; });
+  dctx.querySelectorAll('.dc').forEach(function(c){
+    c.addEventListener('mouseenter', function(){ bind.textContent = c.dataset.binds; });
   });
-  prov.addEventListener('mouseleave', function(){ hint.textContent = deflt; });
+  dctx.addEventListener('mouseleave', function(){ bind.textContent = deflt; });
+})();
+
+// configuration: hovering a field lights the env var it reads, and back
+document.querySelectorAll('.pair[data-cfg]').forEach(function(el){
+  el.addEventListener('mouseenter', function(){
+    document.querySelectorAll('.pair[data-cfg="'+el.dataset.cfg+'"]').forEach(function(t){ t.classList.add('pl'); });
+  });
+  el.addEventListener('mouseleave', function(){
+    document.querySelectorAll('.pair.pl').forEach(function(t){ t.classList.remove('pl'); });
+  });
+});
+
+// observability: pick a layer -> the panel shows the line that layer really writes
+(function(){
+  var wrap = document.getElementById('olayers');
+  if(!wrap) return;
+  var oh = document.getElementById('oh'), oj = document.getElementById('ojson'), od = document.getElementById('odesc');
+  var D = {
+    ad: { title:'adapters/driving · HTTP edge + stream consumers',
+      json:'{ <span class="k">"event"</span>: "request",           <span class="cm">// logger: access</span>\n'+
+           '  <span class="k">"method"</span>: "POST", <span class="k">"http_path"</span>: "/videos",\n'+
+           '  <span class="k">"status"</span>: 202, <span class="k">"duration_ms"</span>: 18.4,\n'+
+           '  <span class="tr">"trace_id"</span>: "9f2a…"          <span class="cm">// bound HERE, once</span>\n}',
+      desc:'<b>trace_id is born here.</b> TraceIdMiddleware mints it (or adopts the inbound header) and binds it into a contextvar. Nothing below ever re-passes it. The stream consumer is this layer too: it writes <span class="mono">"video_status applied"</span> with <span class="mono">layer=adapters_driving</span>.' },
+    pdg: { title:'ports/driving · facade + DTOs',
+      json:'<span class="silent">no line -- the facade translates and propagates</span>',
+      desc:'Pure translation stays quiet. Schema violations become a 400 at the edge; domain and app errors propagate up to the single mapping site instead of being logged here.' },
+    app: { title:'app · use case',
+      json:'{ <span class="k">"event"</span>: "video registered",\n'+
+           '  <span class="k">"video_id"</span>: "e3b0…",           <span class="cm">// this layer\'s own slice</span>\n'+
+           '  <span class="k">"layer"</span>: "app",                <span class="cm">// explicit bind</span>\n'+
+           '  <span class="tr">"trace_id"</span>: "9f2a…"          <span class="cm">// inherited, not passed</span>\n}',
+      desc:'The use case adds only what it knows -- <span class="mono">video_id</span>. It never touches <span class="mono">trace_id</span>: that arrives from the contextvar. <span class="mono">layer</span> comes from <span class="mono">layer_logger(Layer.APP, …)</span>, built at the operation boundary.' },
+    dom: { title:'domain · pure business logic',
+      json:'<span class="silent">nothing -- the domain never logs</span>',
+      desc:'No I/O, no logger, and no <span class="mono">Layer.DOMAIN</span> member exists at all. When the domain has something to report it raises a typed error instead.' },
+    pdv: { title:'ports/driven · repos, gateways, publishers',
+      json:'{ <span class="k">"event"</span>: "feed publish failed",\n'+
+           '  <span class="k">"video_id"</span>: "e3b0…", <span class="k">"status"</span>: "done",\n'+
+           '  <span class="k">"layer"</span>: "ports_driven",\n'+
+           '  <span class="tr">"trace_id"</span>: "9f2a…"          <span class="cm">// inherited</span>\n}',
+      desc:'The driven port owns the technology, so it owns the failure line. Raw driver exceptions (asyncpg, redis) are wrapped into <span class="mono">PortError</span> right here.' },
+    adv: { title:'adapters/driven · engines, relays, clients',
+      json:'{ <span class="k">"event"</span>: "relay published",\n'+
+           '  <span class="k">"stream"</span>: "video_uploaded",\n'+
+           '  <span class="k">"count"</span>: 12\n'+
+           '                                <span class="cm">// no trace_id</span>\n}',
+      desc:'<b>No trace_id at all.</b> The outbox relay is a lifespan-owned background task, not a request -- there is no contextvar to inherit. That is exactly why <span class="mono">video_id</span>, not <span class="mono">trace_id</span>, is the key that crosses the stream.' }
+  };
+  function show(key, el){
+    var d = D[key]; if(!d) return;
+    wrap.querySelectorAll('.olay').forEach(function(x){ x.classList.toggle('sel', x === el); });
+    oh.textContent = d.title; oj.innerHTML = d.json; od.innerHTML = d.desc;
+  }
+  wrap.querySelectorAll('.olay').forEach(function(el){
+    el.addEventListener('mouseenter', function(){ show(el.dataset.lay, el); });
+    el.addEventListener('click', function(){ show(el.dataset.lay, el); });
+  });
+  show('ad', wrap.querySelector('.olay[data-lay="ad"]'));
 })();
 
 // configuration: minimal <-> full env toggle
