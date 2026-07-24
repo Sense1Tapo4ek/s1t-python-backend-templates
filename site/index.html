@@ -230,17 +230,19 @@ footer a{color:var(--soft);font-family:var(--mono)}
 .wf-step .n{position:absolute;left:14px;top:13px;font:500 13px var(--mono);color:var(--brass)}
 .wf-step .wt{font:500 13px var(--sans);color:var(--head)}
 .wf-step .wd{font-size:12px;color:var(--faint);margin-top:3px;line-height:1.5}
+.wf .span2{grid-column:1/-1}
 .wf-step .wd code{font-family:var(--mono);font-size:11px;color:var(--soft)}
 
 
 /* observability: layer picker + fixed panel */
       display:grid;grid-template-columns:1fr auto;gap:10px;align-items:baseline;transition:border-color .15s,background .15s,box-shadow .15s}
-.opanel{border:1px solid var(--line-strong);background:var(--sunken);border-radius:4px;padding:16px 18px}
+.opanel{border:1px solid var(--line-strong);background:var(--raised);border-radius:4px;padding:16px 18px}
 .opanel .oh{font:500 10px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
-.ojson{font:400 11.5px/1.85 var(--mono);white-space:pre-wrap;color:var(--soft);min-height:96px}
+.ojson{font:400 11.5px/1.8 var(--mono);white-space:pre;color:var(--soft);background:var(--sunken);
+       border:1px solid var(--line);border-radius:4px;padding:14px 16px;height:200px;overflow:auto}
 .ojson .k{color:var(--brass)} .ojson .tr{color:var(--moss)} .ojson .cm{color:#6a5c44}
 .ojson .silent{font:italic 400 13px var(--serif);color:var(--faint)}
-.odesc{font-size:12.5px;line-height:1.6;color:var(--faint);margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.odesc{font-size:12.5px;line-height:1.6;color:var(--faint);margin-top:14px;min-height:86px}
 .odesc b{color:var(--soft);font-weight:500}
 
 /* shared layer grid: hexagon + panel (errors, observability) */
@@ -722,23 +724,19 @@ ORDER BY created_at DESC, id DESC</pre>
 
 <section id="gates">
   <div class="container">
-    <div class="overline"><i class="geo g-clay">◇</i>quality gates</div>
+    <div class="overline"><i class="geo g-clay">&#9671;</i>quality gates</div>
     <h2>Architecture is a test, not a diagram.</h2>
     <p class="lede">One canonical gate --
-    <span class="mono">ruff · mypy · lint-imports · pytest</span> -- lives in the
-    Docker tester image, and that is exactly what CI runs. The Taskfile reaches all
-    of it plus fast host-level test subsets; pre-commit keeps every commit
-    statically clean. Ten import-linter contracts fail the build on a cross-layer
-    import.</p>
+    <span class="mono">ruff &#183; mypy &#183; lint-imports &#183; pytest</span> -- lives in the
+    Docker tester image, and that is what CI runs.</p>
     <div style="overflow-x:auto">
     <table class="matrix">
       <tr><th>surface</th><th>ruff</th><th>fmt</th><th>mypy</th><th>import-linter</th><th>gitleaks</th><th>pytest</th></tr>
-      <tr><td>pre-commit</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td></tr>
-      <tr><td>Taskfile</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td></tr>
-      <tr><td>CI · static</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="n">·</td></tr>
-      <tr><td>Docker tester</td><td class="y">✓</td><td class="n">·</td><td class="y">✓</td><td class="y">✓</td><td class="n">·</td><td class="pt">✓</td></tr>
-      <tr class="note-row"><td colspan="7">Docker tester CMD: <span class="mono" style="color:var(--soft)">ruff check . &amp;&amp; mypy &amp;&amp; lint-imports &amp;&amp; pytest -q</span> · identical in both services · this is what CI runs.
-      Taskfile: <span class="mono" style="color:var(--soft)">task check</span> (static) · <span class="mono" style="color:var(--soft)">task test</span> (the Docker gate, both services) · <span class="mono" style="color:var(--soft)">task be:unit|flow|integration|e2e</span> for fast host subsets.</td></tr>
+      <tr><td>pre-commit</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="n">&#183;</td></tr>
+      <tr><td>Taskfile</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="n">&#183;</td><td class="y">&#10003;</td></tr>
+      <tr><td>CI &#183; static</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="n">&#183;</td><td class="n">&#183;</td></tr>
+      <tr><td>Docker tester</td><td class="y">&#10003;</td><td class="n">&#183;</td><td class="y">&#10003;</td><td class="y">&#10003;</td><td class="n">&#183;</td><td class="pt">&#10003;</td></tr>
+      <tr class="note-row"><td colspan="7"><span class="mono" style="color:var(--soft)">ruff check . &amp;&amp; mypy &amp;&amp; lint-imports &amp;&amp; pytest -q</span> &#183; identical in both services</td></tr>
     </table>
     </div>
     <div class="chips">
@@ -747,18 +745,12 @@ ORDER BY created_at DESC, id DESC</pre>
       <span class="chip"><b>3</b> worker</span>
       <span class="chip">ruff <b>==0.15.22</b></span>
       <span class="chip">mypy <b>==2.3.0</b></span>
-      <span class="chip">/metrics multiprocess-safe · <b>APP_WORKERS</b> scales</span>
     </div>
-    <ul class="facts">
-      <li><b>The hexagon on this page is enforced.</b> Contracts guard context
-      independence, an un-importable <span class="mono">root</span> shell, a
-      dependency-free <span class="mono">shared</span> kernel, and inward layering
-      per context. A cross-layer import fails the gate. <span class="tag tag-e">enforced</span></li>
-      <li><b>One pinned toolchain, no drift.</b> ruff and mypy are pinned
-      identically in both services and run through local hooks, so versions can't
-      diverge from CI.</li>
-    </ul>
-    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/.github/workflows/ci.yml">ci.yml →</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/pyproject.toml">import-linter contracts →</a></p>
+    <p class="note">Contracts guard context independence, an un-importable
+    <span class="mono">root</span>, a dependency-free <span class="mono">shared</span>
+    kernel and inward layering. A cross-layer import fails the build.
+    <span class="tag tag-e">enforced</span>
+    &nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/.github/workflows/ci.yml">ci.yml &#8594;</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/pyproject.toml">contracts &#8594;</a></p>
   </div>
 </section>
 
@@ -814,19 +806,18 @@ ORDER BY created_at DESC, id DESC</pre>
 
 <section id="workflow">
   <div class="container">
-    <div class="overline"><i class="geo g-brass">▵</i>feature workflow</div>
+    <div class="overline"><i class="geo g-brass">&#9650;</i>feature workflow</div>
     <h2>Every change walks the same path -- docs at both ends.</h2>
-    <p class="lede">A written convention, not a linter. You just saw the tree; step 2
-    starts at <span class="mono">architecture.md</span> and the owning context page.</p>
+    <p class="lede">Design comes from the documentation, the plan comes from the
+    code, and the docs close the loop. A written convention, not a linter.</p>
     <div class="wf">
-      <div class="wf-step"><span class="n">1</span><div class="wt">Frame the feature</div><div class="wd">Goal + boundary: which context owns it, what crosses the wire, what's out of scope.</div></div>
-      <div class="wf-step"><span class="n">2</span><div class="wt">Read the docs first</div><div class="wd"><code>architecture.md</code>, the owning context page, the relevant <code>contract/</code> pages, any constraining ADR.</div></div>
-      <div class="wf-step"><span class="n">3</span><div class="wt">Write the design</div><div class="wd">Data flow, layer placement, changed wire shapes, error cases. New decision means a new ADR (≤40 lines).</div></div>
-      <div class="wf-step"><span class="n">4</span><div class="wt">Read the code</div><div class="wd">The owning context end-to-end plus the nearest analog -- plan against what exists, not memory.</div></div>
-      <div class="wf-step"><span class="n">5</span><div class="wt">Implement inward-out</div><div class="wd">Domain first, then app, ports, adapters; a test at each level -- <code>unit → flow → integration → e2e</code>.</div></div>
-      <div class="wf-step"><span class="n">6</span><div class="wt">Update every touched doc</div><div class="wd">Context page, contract on any wire change, ADR status, env templates for new vars. A stale doc is a bug.</div></div>
+      <div class="wf-step"><span class="n">1</span><div class="wt">Frame the feature</div><div class="wd">Goal and boundary: which context owns it, what crosses the wire, what is out of scope.</div></div>
+      <div class="wf-step"><span class="n">2</span><div class="wt">Design from the docs</div><div class="wd"><code>architecture.md</code>, the owning context page, the relevant <code>contract/</code> pages, any constraining ADR. Decide how it plugs into the layers from documented knowledge -- the docs are complete enough that you do not need the code yet. A new decision means a new ADR (&#8804;40 lines).</div></div>
+      <div class="wf-step"><span class="n">3</span><div class="wt">Plan against the code</div><div class="wd">Now open the owning context end-to-end plus the nearest analog, and turn the design into a concrete plan: which files, which layers, which tests.</div></div>
+      <div class="wf-step"><span class="n">4</span><div class="wt">Implement, ideally TDD</div><div class="wd">Domain first, then app, ports, adapters -- a failing test before each slice: <code>unit &#8594; flow &#8594; integration &#8594; e2e</code>.</div></div>
+      <div class="wf-step span2"><span class="n">5</span><div class="wt">Update the documentation</div><div class="wd">Context page, contract on any wire change, ADR status, env templates for new vars. A stale doc is a bug.</div></div>
     </div>
-    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/development.md">development.md → feature workflow</a> &nbsp;<span class="tag tag-c">convention</span></p>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/development.md">development.md &#8594; feature workflow</a> &nbsp;<span class="tag tag-c">convention</span></p>
   </div>
 </section>
 
