@@ -1,4 +1,5 @@
 from .engine import build_engine, build_probe_engine, build_sessionmaker
+from .idempotency import IdempotencyMixin
 from .keyset import keyset_older_than
 from .migrations import run_migrations
 from .mixins import SoftDeleteMixin, TimestampMixin
@@ -8,6 +9,7 @@ from .uow import SqlUoW
 
 __all__ = [
     "DB_QUERY_DURATION",
+    "IdempotencyMixin",
     "OutboxMixin",
     "SoftDeleteMixin",
     "SqlUoW",

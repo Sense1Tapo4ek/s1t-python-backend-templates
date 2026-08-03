@@ -183,11 +183,12 @@ def _build_openapi_config(app_name: str) -> OpenAPIConfig:
         version=_resolve_app_version(),
         description=(
             "Litestar starter template (strict-DDD per bounded context). "
-            "Groups: Health, the two db_example CRUD contexts (raw asyncpg "
-            "vs advanced-alchemy), Admin Logs (file-tail viewer API), Metrics "
-            "(Prometheus + custom by-name metrics), and Admin UI (server-rendered "
-            "pages). The db_example_* and Metrics endpoints are illustrative "
-            "examples meant to be deleted when adapting the template."
+            "Groups: Health, Auth (JWT + API keys), media (the golden video "
+            "ingest context), db_example (advanced-alchemy CRUD), Admin Logs "
+            "(file-tail viewer API), Metrics (Prometheus + custom by-name "
+            "metrics), and Admin UI (server-rendered pages). The db_example "
+            "and Metrics endpoints are illustrative examples meant to be "
+            "deleted when adapting the template."
         ),
         use_handler_docstrings=True,
         contact=Contact(name="litestar-base maintainers"),

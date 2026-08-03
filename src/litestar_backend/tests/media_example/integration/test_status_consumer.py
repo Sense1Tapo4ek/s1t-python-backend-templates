@@ -20,18 +20,10 @@ from media_example.adapters.driving.status_consumer import (
     VIDEO_STATUS_STREAM,
     VideoStatusConsumer,
 )
-from media_example.app import (
-    DeleteVideoUC,
-    ListVideosQuery,
-    MarkDoneUC,
-    MarkFailedUC,
-    MarkProcessingUC,
-    UploadVideoUC,
-)
 from media_example.domain import Video, VideoStatus
-from media_example.ports.driven.sql_outbox_repo import SqlOutboxRepo
 from media_example.ports.driven.sql_video_repo import SqlVideoRepo
 from media_example.ports.driving import MediaFacade
+from media_example.provider import build_facade
 from shared.adapters.driven.clocks import SystemClock
 from shared.adapters.driven.postgres import SqlUoW, build_engine, build_sessionmaker
 from shared.adapters.driven.valkey import build_valkey_client
@@ -141,18 +133,11 @@ def _make_facade_factory(feed: _RecordingFeed) -> Callable[[AsyncSession], Media
     """Return a callable(session) -> MediaFacade using the recording feed."""
     clock = SystemClock()
 
+    # Reuse the production wiring instead of a hand-rolled copy: the consumer
+    # must exercise the same facade the HTTP path gets, and a copy silently
+    # drifts every time a use case gains a dependency.
     def factory(session: AsyncSession) -> MediaFacade:
-        repo = SqlVideoRepo(_session=session)
-        outbox = SqlOutboxRepo(_session=session, _clock=clock)
-        uow = SqlUoW(_session=session)
-        return MediaFacade(
-            _upload=UploadVideoUC(_repo=repo, _uow=uow, _outbox=outbox, _clock=clock),
-            _recent=ListVideosQuery(_repo=repo),
-            _mark_processing=MarkProcessingUC(_repo=repo, _uow=uow, _feed=feed),
-            _mark_done=MarkDoneUC(_repo=repo, _uow=uow, _feed=feed),
-            _mark_failed=MarkFailedUC(_repo=repo, _uow=uow, _feed=feed),
-            _delete=DeleteVideoUC(_repo=repo, _uow=uow),
-        )
+        return build_facade(session, clock, feed, idempotency_ttl_seconds=86_400)
 
     return factory
 

@@ -1,6 +1,8 @@
-# 0005 -- msgspec for wire payloads
-Status: accepted
-Date: 2026-05-06
+---
+status: accepted
+date: 2026-05-06
+---
+# 0005 - msgspec for wire payloads
 
 ## Context
 Hot paths (SSE log fan-out, NDJSON export, typed event bus) serialize

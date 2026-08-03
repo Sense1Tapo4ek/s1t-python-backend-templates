@@ -3,15 +3,17 @@ from uuid import UUID
 
 from dishka import FromDishka
 from dishka.integrations.litestar import inject
-from litestar import Controller, delete, get, post
+from litestar import Controller, Response, delete, get, post
 from litestar.exceptions import ValidationException
-from litestar.params import Parameter
+from litestar.params import HeaderParameter, Parameter
 from litestar.status_codes import HTTP_200_OK, HTTP_202_ACCEPTED
 from prometheus_client import Counter
 
 from shared.adapters.openapi import error_responses
 
 from ...ports.driving import (
+    IDEMPOTENCY_KEY_MAX_LENGTH,
+    IDEMPOTENCY_REPLAYED_HEADER,
     MediaFacade,
     Page,
     UploadVideoRequest,
@@ -32,13 +34,37 @@ class VideoController(Controller):
         status_code=HTTP_202_ACCEPTED,
         return_dto=VideoReadDTO,
         summary="Upload a video",
-        responses=error_responses(400, 503),
+        responses=error_responses(400, 422, 503),
     )
     @inject
-    async def upload(self, data: UploadVideoRequest, facade: FromDishka[MediaFacade]) -> VideoModel:
-        result = await facade.upload(data)
-        VIDEOS_UPLOADED.inc()
-        return result
+    async def upload(
+        self,
+        data: UploadVideoRequest,
+        facade: FromDishka[MediaFacade],
+        idempotency_key: Annotated[
+            str | None,
+            HeaderParameter(
+                name="Idempotency-Key",
+                required=False,
+                min_length=1,
+                max_length=IDEMPOTENCY_KEY_MAX_LENGTH,
+                description=(
+                    "Opaque client-chosen retry key. Repeating a request with the same "
+                    "key returns the first result instead of creating a second video."
+                ),
+            ),
+        ] = None,
+    ) -> Response[VideoModel]:
+        result = await facade.upload(data, idempotency_key)
+        if not result.replayed:
+            VIDEOS_UPLOADED.inc()
+        return Response(
+            content=result.video,
+            status_code=HTTP_202_ACCEPTED,
+            headers={IDEMPOTENCY_REPLAYED_HEADER: str(result.replayed).lower()}
+            if idempotency_key is not None
+            else {},
+        )
 
     @get("/", summary="List videos (keyset)", responses=error_responses(400, 503))
     @inject

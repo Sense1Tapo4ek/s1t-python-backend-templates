@@ -1,7 +1,8 @@
-# 0029 -- Layer JWT auth on the static admin token
-
-Status: accepted
-Date: 2026-06-15
+---
+status: accepted
+date: 2026-06-15
+---
+# 0029 - Layer JWT auth on the static admin token
 
 ## Context
 

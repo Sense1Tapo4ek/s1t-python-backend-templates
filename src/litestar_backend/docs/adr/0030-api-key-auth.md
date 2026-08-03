@@ -1,7 +1,8 @@
-# 0030 -- DB-backed hashed API keys
-
-Status: accepted
-Date: 2026-06-15
+---
+status: accepted
+date: 2026-06-15
+---
+# 0030 - DB-backed hashed API keys
 
 ## Context
 

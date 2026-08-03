@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-03
+---
 # 0019 - Migrate the template from SQLite to PostgreSQL
-Status: accepted
-Date: 2026-06-03
 
 ## Context
 The template shipped on SQLite. It is not representative of a production

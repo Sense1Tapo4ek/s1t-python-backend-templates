@@ -31,5 +31,6 @@ contracts live in the root tree: [docs/architecture.md](../../../docs/architectu
 
 ## Run card
 
-Install, env, and Docker instructions: [README.md](../../../README.md) at
-the repo root; monorepo dev tooling: [docs/development.md](../../../docs/development.md).
+This service's commands: [README.md](../README.md). Repo-wide install and env:
+[README.md](../../../README.md) at the root; monorepo dev tooling:
+[docs/development.md](../../../docs/development.md).

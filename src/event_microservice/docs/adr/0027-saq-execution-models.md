@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-08
+---
 # 0027 - Map the three SAQ jobs to distinct execution models
-Status: accepted
-Date: 2026-06-08
 
 ## Context
 The worker showcase must teach how to run heterogeneous work from a single async

@@ -7,10 +7,10 @@ Valkey Stream and fans heavy work out to SAQ jobs, joined in Valkey. Shares no
 code with `litestar_backend` -- only the wire contract (see
 [../../../docs/architecture.md](../../../docs/architecture.md)).
 
-Status: fully implemented. The `media_processing` context, the three SAQ
-execution models, and the Valkey join are live. The full loop is closed:
-return events flow back to `litestar_backend` over the `video_status` stream
-(see [../../../docs/contract/video_status.md](../../../docs/contract/video_status.md)).
+The loop is closed in both directions: this service consumes `video_uploaded`
+and publishes processing results back to `litestar_backend` over the
+`video_status` stream (see
+[../../../docs/contract/video_status.md](../../../docs/contract/video_status.md)).
 
 ## Layout
 
@@ -19,9 +19,7 @@ return events flow back to `litestar_backend` over the `video_status` stream
 - `src/shared/` -- own Valkey client, structlog setup, base errors/config.
 - `src/media_processing/` -- the bounded context: domain (JobKind, JoinPolicy), app (use cases), ports (facade, Valkey join store, SAQ queue), adapters (FastStream consumer, 3 SAQ jobs).
 
-## Run
+## Run card
 
-```bash
-docker compose up event_microservice        # FastStream consumer
-docker compose run --rm event_microservice_test
-```
+This service's commands: [README.md](../README.md). Monorepo dev tooling:
+[docs/development.md](../../../docs/development.md).

@@ -1,6 +1,8 @@
-# 0008 -- Jinja2 for server-side HTML, single `static/` root for assets
-Status: accepted
-Date: 2026-05-13
+---
+status: accepted
+date: 2026-05-13
+---
+# 0008 - Jinja2 for server-side HTML, single `static/` root for assets
 
 ## Context
 Three admin pages (`/admin/`, `/admin/login`, `/admin/metrics/{,slug}`) were

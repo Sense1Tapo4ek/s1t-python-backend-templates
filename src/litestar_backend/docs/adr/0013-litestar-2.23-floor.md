@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-01
+---
 # 0013 - Litestar minimum version raised to 2.23.0
-Status: accepted
-Date: 2026-06-01
 
 ## Context
 advanced-alchemy 1.11's Litestar extension uses `litestar.di.NamedDependency`,

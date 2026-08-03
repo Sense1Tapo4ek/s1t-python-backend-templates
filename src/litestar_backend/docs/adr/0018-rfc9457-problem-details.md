@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-02
+---
 # 0018 - Render all errors as RFC 9457 problem+json
-Status: accepted
-Date: 2026-06-02
 
 ## Context
 Error bodies were hand-rolled `{"detail": ...}` payloads, non-standard and

@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-08
+---
 # 0022 - Three transports with distinct roles in the video pipeline
-Status: accepted
-Date: 2026-06-08
 
 ## Context
 `media_example` fans one video ingest out to two consumers: backend processing

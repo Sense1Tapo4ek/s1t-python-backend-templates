@@ -3,6 +3,7 @@ from uuid import UUID
 
 import pytest
 
+from media_example.app import StoredUpload
 from media_example.domain import Video, VideoUploaded
 
 
@@ -65,6 +66,24 @@ class FakeUoW:
         self.exited += 1
 
 
+class FakeIdempotencyStore:
+    """In-memory stand-in: a dict IS the unique index the real store relies on."""
+
+    def __init__(self) -> None:
+        self._rows: dict[str, StoredUpload] = {}
+        self.claims: int = 0
+
+    async def claim(self, key: str, *, fingerprint: str, video: Video) -> bool:
+        self.claims += 1
+        if key in self._rows:
+            return False
+        self._rows[key] = StoredUpload(fingerprint=fingerprint, video=video)
+        return True
+
+    async def find(self, key: str) -> StoredUpload | None:
+        return self._rows.get(key)
+
+
 class FakeClock:
     FIXED = datetime(2026, 1, 1, tzinfo=UTC)
 
@@ -90,6 +109,11 @@ def fake_uow() -> FakeUoW:
 @pytest.fixture
 def fake_clock() -> FakeClock:
     return FakeClock()
+
+
+@pytest.fixture
+def fake_idempotency() -> FakeIdempotencyStore:
+    return FakeIdempotencyStore()
 
 
 class FakeFeed:

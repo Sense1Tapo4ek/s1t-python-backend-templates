@@ -1,6 +1,8 @@
-# 0031 -- Promote outbox, keyset pagination, and event envelope into shared
-Status: accepted
-Date: 2026-07-21
+---
+status: accepted
+date: 2026-07-21
+---
+# 0031 - Promote outbox, keyset pagination, and event envelope into shared
 
 ## Context
 The transactional outbox (table + relay), the keyset cursor codec + page

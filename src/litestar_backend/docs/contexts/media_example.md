@@ -56,13 +56,28 @@ live-browser update).
 
 | Method | Path | Request | Response | Status |
 |:---|:---|:---|:---|:---|
-| POST | `/videos` | `UploadVideoRequest` (source_key, optional `document` JSONB) | `VideoModel` (incl. `document`) | 202 |
+| POST | `/videos` | `UploadVideoRequest` (source_key, optional `document` JSONB); optional `Idempotency-Key` header | `VideoModel` (incl. `document`) | 202, 422 on key reuse with a different payload |
 | GET | `/videos` | `?limit=1-200` (default 50), `?cursor=<token>` (optional) | `Page[VideoModel] {items, next_cursor}` | 200, 400 on bad cursor |
 | DELETE | `/videos/{id}` | -- | -- | 204, 404 unknown id |
 | POST | `/videos/{id}/cancel` | -- | -- | 200, 409 if already terminal, 404 unknown id |
 | GET | `/videos/feed` | -- | SSE stream | 200 |
 
-`POST /videos` increments the `videos_uploaded_total` Prometheus counter.
+`POST /videos` increments the `videos_uploaded_total` Prometheus counter --
+on a first write only, never on an idempotent replay.
+
+**Idempotent upload.** With an `Idempotency-Key` header the upload claims that
+key in the SAME transaction as the video row and the outbox row
+(`INSERT ... ON CONFLICT DO NOTHING` against `media.idempotency_keys`). The
+claim carries a JSONB snapshot of the created video, so a retry returns the
+first response verbatim under `Idempotency-Replayed: true` instead of the
+current state. Because claim and effect share one commit there is no visible
+in-flight state: a concurrent duplicate blocks on the primary key until the
+first transaction resolves, then replays it. Payload identity is a SHA-256
+over the canonicalised command (mapping keys sorted at every depth), so a
+reordered JSON body still replays; a genuinely different body under the same
+key raises `IdempotencyKeyReused` (422). The wire rules are in
+[contract/common.md](../../../../docs/contract/common.md#idempotency);
+the reasoning is [ADR 0033](../adr/0033-idempotency-keys-in-the-write-transaction.md).
 
 These routes are **intentionally unauthenticated** -- an explorable example
 surface, like the `db_example_litestar` CRUD. Before any real deployment add
@@ -84,6 +99,8 @@ connected subscribers.
 | `MEDIA_STATUS_BATCH` | `100` | entries per XREADGROUP read |
 | `MEDIA_STATUS_BLOCK_MS` | `1000` | XREADGROUP blocking timeout (ms) |
 | `MEDIA_STATUS_CLAIM_IDLE_MS` | `60000` | idle threshold for XAUTOCLAIM recovery |
+| `MEDIA_IDEMPOTENCY_TTL_SECONDS` | `86400` | how long a claimed key replays before it is swept |
+| `MEDIA_IDEMPOTENCY_PURGE_INTERVAL_SECONDS` | `3600` | how often the retention sweep runs |
 
 ### Schema and tables
 
@@ -94,7 +111,9 @@ the composite `(uploaded_at DESC, id DESC)` required for stable keyset paging;
 mixins and replaces the full keyset index with a partial one covering only active
 rows (`WHERE deleted_at IS NULL`). Reads always filter `deleted_at IS NULL`. `004`
 adds the free-form `document` JSONB column (carried on upload and read) with a GIN
-index for containment (`@>`) queries.
+index for containment (`@>`) queries. `005` adds `idempotency_keys` (key PK,
+fingerprint, response snapshot, `expires_at` + its index), swept by the shared
+`IdempotencySweeper` lifespan task.
 
 ```
 schema media

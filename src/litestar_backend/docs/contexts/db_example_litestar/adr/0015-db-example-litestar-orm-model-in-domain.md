@@ -1,6 +1,12 @@
+---
+status: superseded
+date: 2026-06-02
+superseded_by: 0016-db-example-litestar-orm-model-in-ports-root.md
+superseded_on: 2026-06-02
+---
 # 0015 - db_example_litestar: ORM model lives in domain/
-Status: superseded by 0016
-Date: 2026-06-02
+
+**Superseded by [ADR 0016](0016-db-example-litestar-orm-model-in-ports-root.md).**
 
 ## Context
 ADR 0012 placed the SQLAlchemy models in `adapters/driven/db/`. But the model

@@ -1,6 +1,8 @@
-# 0010 -- Prometheus multiprocess mode replaces Valkey cross-worker aggregation; metrics UI removed
-Status: accepted
-Date: 2026-06-01
+---
+status: accepted
+date: 2026-06-01
+---
+# 0010 - Prometheus multiprocess mode replaces Valkey cross-worker aggregation; metrics UI removed
 
 ## Context
 The custom Valkey-backed aggregation (per-worker snapshot hashes, TTL-bounded

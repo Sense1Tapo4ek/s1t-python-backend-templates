@@ -50,6 +50,7 @@ rules: [docs/architecture.md](docs/architecture.md).
 |---|---|---|
 | Transactional outbox | row + event commit atomically; relay drains to a Valkey Stream | [`shared/adapters/driven/outbox_relay.py`](src/litestar_backend/src/shared/adapters/driven/outbox_relay.py) · [ADR 0031](src/litestar_backend/docs/adr/0031-shared-generic-patterns.md) |
 | Inbox dedup | at-least-once delivery, exactly-once effect via `event_id` inbox | [delivery-guarantees.md](src/event_microservice/docs/subsystems/delivery-guarantees.md) |
+| Idempotent write | `Idempotency-Key` claimed in the write's own transaction; a retry replays the first response | [`shared/adapters/driven/postgres/idempotency.py`](src/litestar_backend/src/shared/adapters/driven/postgres/idempotency.py) · [ADR 0033](src/litestar_backend/docs/adr/0033-idempotency-keys-in-the-write-transaction.md) |
 | Composite auth chain | JWT -> API-key -> static token, first match wins, fail-closed | [`auth/ports/driven/composite_token_resolver.py`](src/litestar_backend/src/auth/ports/driven/composite_token_resolver.py) · [ADR 0032](src/litestar_backend/docs/adr/0032-user-identity-model.md) |
 | Keyset pagination | opaque cursors, stable pages under writes, one generic `Page[T]` | [`shared/generics/pagination.py`](src/litestar_backend/src/shared/generics/pagination.py) |
 | Integration-event envelope | `event_id` + `version` + `occurred_at` on every wire event by construction | [`shared/generics/integration_event.py`](src/litestar_backend/src/shared/generics/integration_event.py) |
@@ -152,9 +153,9 @@ levels). Use **`db_example_litestar`** only for thin CRUD with no invariants.
 Canonical path is Docker Compose -- same toolchain as the app images:
 
 ```bash
-docker compose run --rm litestar_backend_test                        # ruff + mypy + pytest
-docker compose run --rm litestar_backend_test pytest -m unit -q      # any subset
-docker compose run --rm event_microservice_test
+docker compose run --build --rm litestar_backend_test                        # ruff + mypy + pytest
+docker compose run --build --rm litestar_backend_test pytest -m unit -q      # any subset
+docker compose run --build --rm event_microservice_test
 ```
 
 Local `uv` inner loop (from the service root, e.g. `src/litestar_backend/`):
@@ -162,7 +163,7 @@ Local `uv` inner loop (from the service root, e.g. `src/litestar_backend/`):
 ```bash
 uv run pytest -m "unit or flow"   # instant, no DB
 uv run pytest                     # full suite -- needs Docker (testcontainers)
-uv run ruff check . && uv run mypy
+uv run ruff check . && uv run mypy && uv run lint-imports
 ```
 
 Tests are grouped by context first, then level -- `tests/<context>/{unit,flow,
@@ -178,10 +179,10 @@ The [`Taskfile`](Taskfile.yml) wraps these (`task test`, `task be:unit`) and
 | Section | Contents |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Both services: contexts, layers, error hierarchy, DI, lifespan, invariants. |
-| [docs/contract/](docs/contract/README.md) | Wire contracts: `video_uploaded`, `video_status`, the HTTP error envelope. |
+| [docs/contract/](docs/contract/README.md) | Wire contracts: shared rules (`common.md`), `video_uploaded`, `video_status`, `user_registered`. |
 | [docs/adr/](docs/adr/README.md) | Project-scope ADRs (MADR); service- and context-scope trees live with their service. |
-| [src/litestar_backend/docs/](src/litestar_backend/docs/index.md) | Backend: `contexts/`, `subsystems/`, `infra/`, service ADRs. |
-| [src/event_microservice/docs/](src/event_microservice/docs/index.md) | Worker: `contexts/media_processing.md`, `infra/` (faststream, saq), service ADRs. |
+| [src/litestar_backend/](src/litestar_backend/README.md) | Backend run card, then [docs/](src/litestar_backend/docs/index.md): `contexts/`, `subsystems/`, `infra/`, service ADRs. |
+| [src/event_microservice/](src/event_microservice/README.md) | Worker run card, then [docs/](src/event_microservice/docs/index.md): `contexts/media_processing.md`, `infra/` (faststream, saq), service ADRs. |
 | [docs/development.md](docs/development.md) | Dev workflow: Taskfile, pre-commit gate, pinned toolchain. |
 | [docs/infra/](docs/infra/) | Platform substrate: Postgres, Valkey. |
 

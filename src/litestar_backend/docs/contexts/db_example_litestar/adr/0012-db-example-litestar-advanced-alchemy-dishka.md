@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-01
+---
 # 0012 - db_example_litestar: advanced-alchemy under Dishka, hybrid layering, create_all
-Status: accepted
-Date: 2026-06-01
 
 ## Context
 The db_example_litestar context demonstrates the SQLAlchemy path.

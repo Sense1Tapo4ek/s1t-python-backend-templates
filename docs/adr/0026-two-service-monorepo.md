@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-08
+---
 # 0026 - Split the repo into two independent services
-Status: accepted
-Date: 2026-06-08
 
 ## Context
 The template needs to demonstrate an event-driven worker (FastStream consumer +

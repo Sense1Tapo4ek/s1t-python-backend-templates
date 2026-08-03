@@ -13,7 +13,7 @@ status update. Entry point only -- every fact lives on the linked pages.
 |   (one transaction)          |        |            |                     |
 |        |                     |        |            v                     |
 |        v                     |        |  SAQ jobs (fan-out)              |
-|  OutboxRelay (lifespan task) |        |    metadata / plagiarism /       |
+|  OutboxRelay (lifespan task) |        |    stt / plagiarism /            |
 |        |                     |        |    transcode                     |
 |        v                     |        |            |                     |
 |  ==== video_uploaded ====================>         v                    |

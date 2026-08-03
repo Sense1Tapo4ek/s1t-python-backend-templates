@@ -6,7 +6,12 @@ from sqlalchemy import DateTime, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from shared.adapters.driven.postgres import OutboxMixin, SoftDeleteMixin, TimestampMixin
+from shared.adapters.driven.postgres import (
+    IdempotencyMixin,
+    OutboxMixin,
+    SoftDeleteMixin,
+    TimestampMixin,
+)
 
 
 class Base(DeclarativeBase):
@@ -27,3 +32,7 @@ class VideoRow(TimestampMixin, SoftDeleteMixin, Base):
 
 class OutboxRow(OutboxMixin, Base):
     __tablename__ = "outbox_messages"
+
+
+class IdempotencyRow(IdempotencyMixin, Base):
+    __tablename__ = "idempotency_keys"

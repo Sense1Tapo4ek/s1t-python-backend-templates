@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-08
+---
 # 0025 - Standardize the template on SQLAlchemy; retire the raw asyncpg path
-Status: accepted
-Date: 2026-06-08
 
 ## Context
 Plan A shipped `media_example` on raw asyncpg (hand-written SQL, manual

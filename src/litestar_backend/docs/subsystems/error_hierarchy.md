@@ -115,5 +115,5 @@ hand-written `HTTPException` catch-all.
   `src/root/composition/app.py` (wiring),
   `src/shared/adapters/openapi.py` (`ProblemDetail` schema),
   `src/admin/adapters/driving/error_handlers.py` (401/403 SSR handlers).
-- Wire contract: [../../../../docs/contract/errors.md](../../../../docs/contract/errors.md).
+- Wire contract: [../../../../docs/contract/common.md](../../../../docs/contract/common.md).
 - ADR: [../adr/0018-rfc9457-problem-details.md](../adr/0018-rfc9457-problem-details.md).

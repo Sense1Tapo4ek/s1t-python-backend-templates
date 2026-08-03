@@ -21,3 +21,4 @@ Numbering is per-tree; relocated ADRs keep their historical numbers
 | [0030 API-key auth](0030-api-key-auth.md) | accepted | own |
 | [0031 Shared generic patterns](0031-shared-generic-patterns.md) | accepted | own |
 | [0032 User identity model](0032-user-identity-model.md) | accepted | own |
+| [0033 Idempotency keys in the write transaction](0033-idempotency-keys-in-the-write-transaction.md) | accepted | own |

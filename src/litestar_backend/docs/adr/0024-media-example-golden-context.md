@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-08
+---
 # 0024 - media_example is the single golden context
-Status: accepted (data-layer choice revised by 0025: SQLAlchemy, not raw asyncpg)
-Date: 2026-06-08
 
 ## Context
 The template carried two partial examples: `orders` (event showcase, at-most-
@@ -14,6 +16,10 @@ transactional outbox + relay to a Valkey Stream, a Litestar SSE feed, full
 S-DDD layering (domain/app/ports/adapters), and the full test pyramid
 (unit/flow/integration/e2e). It is the primary worked reference;
 `db_example_litestar` stays only as the SQLAlchemy / advanced-alchemy variant.
+
+The data-layer clause above is revised in part by
+[ADR 0025](0025-standardize-on-sqlalchemy.md): `media_example` runs on plain
+SQLAlchemy 2.0, not raw asyncpg. The rest of this decision stands.
 
 ## Consequences
 - + One coherent end-to-end example instead of two partial ones; shows outbox /

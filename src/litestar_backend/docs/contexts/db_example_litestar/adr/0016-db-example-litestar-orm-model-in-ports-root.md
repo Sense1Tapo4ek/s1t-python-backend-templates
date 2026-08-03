@@ -1,9 +1,12 @@
+---
+status: accepted
+date: 2026-06-02
+---
 # 0016 - db_example_litestar: ORM model at the ports/ root
-Status: accepted
-Date: 2026-06-02
 
 ## Context
-ADR 0015 placed the ORM model in `domain/` to avoid `driving <-> driven`
+[ADR 0015](0015-db-example-litestar-orm-model-in-domain.md), which this record
+supersedes, placed the ORM model in `domain/` to avoid `driving <-> driven`
 imports. But the model is not a domain type -- it carries no business logic; it
 is a translation type, the persistence-side analog of the DTO schemas. The
 project rule (structure.md §2.2) places a model by *who uses it*. This model is

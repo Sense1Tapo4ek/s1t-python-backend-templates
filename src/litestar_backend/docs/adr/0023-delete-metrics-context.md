@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-08
+---
 # 0023 - Dissolve the standalone metrics context into shared
-Status: accepted
-Date: 2026-06-08
 
 ## Context
 An earlier decision (since removed from the log) promoted metrics to a top-level context with a by-name facade

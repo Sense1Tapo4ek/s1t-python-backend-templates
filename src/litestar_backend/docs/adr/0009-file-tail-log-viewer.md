@@ -1,6 +1,8 @@
-# 0009 -- File-tail log viewer supersedes the out-of-process sink
-Status: accepted
-Date: 2026-06-01
+---
+status: accepted
+date: 2026-06-01
+---
+# 0009 - File-tail log viewer supersedes the out-of-process sink
 
 ## Context
 The log subsystem (first SQLite+FTS5, then a Valkey-Streams sink) was

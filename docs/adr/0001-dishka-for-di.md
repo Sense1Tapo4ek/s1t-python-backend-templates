@@ -1,6 +1,8 @@
-# 0001 -- Dishka for dependency injection
-Status: accepted
-Date: 2026-05-06
+---
+status: accepted
+date: 2026-05-06
+---
+# 0001 - Dishka for dependency injection
 
 ## Context
 The template needs an async-friendly DI container with explicit scopes

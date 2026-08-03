@@ -15,6 +15,20 @@ from ...app import (
 )
 from .video_dto import UploadVideoRequest, VideoModel, to_model
 
+# Single source of truth for the idempotency wire vocabulary: the controller
+# validates the inbound header against the length cap and echoes the outcome
+# under the response header. Both live here, on the public driving port.
+IDEMPOTENCY_KEY_MAX_LENGTH = 255
+IDEMPOTENCY_REPLAYED_HEADER = "Idempotency-Replayed"
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UploadedVideo:
+    """An upload result plus whether it came from an idempotent replay."""
+
+    video: VideoModel
+    replayed: bool
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class MediaFacade:
@@ -33,19 +47,28 @@ class MediaFacade:
     _mark_failed: MarkFailedUC
     _delete: DeleteVideoUC
 
-    async def upload(self, request: UploadVideoRequest) -> VideoModel:
+    async def upload(
+        self, request: UploadVideoRequest, idempotency_key: str | None = None
+    ) -> UploadedVideo:
         """Register a newly uploaded video and stage its outbox event.
 
-        Triggered by POST of a source key. Persists the video and a
-        VideoUploaded outbox row in one transaction, then returns the
-        created video as a wire model. Raises EmptySourceKey (domain) on a
-        blank key, PortError on a storage failure.
+        Triggered by POST of a source key. Persists the video, its
+        idempotency claim (when `idempotency_key` is given) and a
+        VideoUploaded outbox row in one transaction, then returns the created
+        video as a wire model. With a key already used for the same payload
+        nothing is written and the first result is returned with
+        `replayed=True`. Raises EmptySourceKey (domain) on a blank key,
+        IdempotencyKeyReused (app) when the key was used with a different
+        payload, PortError on a storage failure.
         """
-        return to_model(
-            await self._upload(
-                UploadVideoCommand(source_key=request.source_key, document=request.document)
+        result = await self._upload(
+            UploadVideoCommand(
+                source_key=request.source_key,
+                document=request.document,
+                idempotency_key=idempotency_key,
             )
         )
+        return UploadedVideo(video=to_model(result.video), replayed=result.replayed)
 
     async def list_page(self, after: tuple[datetime, UUID] | None, limit: int) -> Page[VideoModel]:
         """Return one keyset page of videos as wire models, newest-first.

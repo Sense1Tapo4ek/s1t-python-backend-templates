@@ -67,8 +67,10 @@ See [infra/valkey.md](infra/valkey.md).
 
 ## 2. Layers (S-DDD)
 
-Every context has the same five layers. Rules are non-negotiable; relaxing
-them is what kills the template's ability to grow.
+Every context has the same four layers -- `domain/`, `app/`, `ports/`,
+`adapters/`. `ports/` and `adapters/` each split into a driving and a driven
+**side**; a side is not a layer, it is which direction the call flows. Rules
+are non-negotiable; relaxing them is what kills the template's ability to grow.
 
 ```
 <context>/
@@ -91,8 +93,10 @@ them is what kills the template's ability to grow.
 
 ## 3. Error hierarchy
 
-Defined in `src/litestar_backend/src/shared/generics/errors.py`. Three subtypes of `LayerError`
-map to HTTP status codes (DomainError -> 409, AppError -> 422, PortError -> 503).
+Defined in `src/litestar_backend/src/shared/generics/errors.py`. Subtypes of
+`LayerError` map to HTTP status codes: DomainError -> 409, AppError -> 422,
+NotFoundError (nested under AppError, so 404 wins by MRO) -> 404,
+PortError -> 503.
 A truly unexpected failure renders a generic 500 via the PROD catch-all
 (`unexpected_to_problem`). Every error renders as RFC 9457 `application/problem+json`
 (ADR 0018). 5xx never carries a traceback. (The canonical ruleset's `AdapterError`
@@ -101,7 +105,7 @@ is deliberately omitted -- no honest raise-site; see the error-hierarchy subsyst
 Full hierarchy, raise/catch contract, handler registration, snitchbot
 interaction, and DEV vs PROD behaviour:
 [litestar_backend/docs/subsystems/error_hierarchy.md](../src/litestar_backend/docs/subsystems/error_hierarchy.md).
-Wire contract: [contract/errors.md](contract/errors.md).
+Wire contract: [contract/common.md](contract/common.md).
 
 ---
 

@@ -74,7 +74,7 @@ lives in the converters in `shared/adapters/problem_details.py`, wired in
 (e.g. `VideoNotFound`) / advanced-alchemy NotFoundError->404, validation->400, PortError->503,
 NotAuthorized->401, PermissionDenied->403. App-wide there is no reachable 422
 path declared on an endpoint, so it is not documented. The full wire contract
-is [../../../../docs/contract/errors.md](../../../../docs/contract/errors.md).
+is [../../../../docs/contract/common.md](../../../../docs/contract/common.md).
 
 ## Invariants
 

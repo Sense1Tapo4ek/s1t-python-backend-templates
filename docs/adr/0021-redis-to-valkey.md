@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-08
+---
 # 0021 - Replace the Redis image with Valkey
-Status: accepted
-Date: 2026-06-08
 
 ## Context
 The template uses a Redis-protocol store only as a transport: the

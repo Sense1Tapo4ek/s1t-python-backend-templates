@@ -16,3 +16,5 @@ class MediaConfig(BaseAppConfig):
     status_claim_idle_ms: int = Field(default=60_000, ge=0)
     feed_max_connections: int = Field(default=100, ge=1, le=10_000)
     feed_heartbeat_seconds: float = Field(default=15.0, ge=1.0, le=300.0)
+    idempotency_ttl_seconds: int = Field(default=86_400, ge=60)
+    idempotency_purge_interval_seconds: float = Field(default=3600.0, ge=60.0)

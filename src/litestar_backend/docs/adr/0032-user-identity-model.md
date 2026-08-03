@@ -1,6 +1,8 @@
-# 0032 -- Store user identity inside the auth context
-Status: accepted
-Date: 2026-07-21
+---
+status: accepted
+date: 2026-07-21
+---
+# 0032 - Store user identity inside the auth context
 
 ## Context
 JWT and API-key auth (0029, 0030) authenticated a single admin identity; a

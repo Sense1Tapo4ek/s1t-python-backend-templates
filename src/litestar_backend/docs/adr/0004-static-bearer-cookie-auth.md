@@ -1,6 +1,8 @@
-# 0004 -- Static bearer/cookie auth for admin surfaces
-Status: accepted
-Date: 2026-05-06
+---
+status: accepted
+date: 2026-05-06
+---
+# 0004 - Static bearer/cookie auth for admin surfaces
 
 ## Context
 The starter must demonstrate the middleware + facade auth pattern (every

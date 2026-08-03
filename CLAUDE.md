@@ -38,11 +38,11 @@ Two always-on example contexts ship in the template:
 ## Quick verifications
 
 Canonical (Docker Compose — `tester` stage layers the `dev` group + `tests/`
-onto the app's uv venv; full gate = `ruff check . && mypy && pytest -q`):
+onto the app's uv venv; full gate = `ruff check . && mypy && lint-imports && pytest -q`):
 
 ```bash
-docker compose run --rm litestar_backend_test                       # full gate
-docker compose run --rm litestar_backend_test pytest -m unit -q     # any subset
+docker compose run --build --rm litestar_backend_test                       # full gate
+docker compose run --build --rm litestar_backend_test pytest -m unit -q     # any subset
 ```
 
 Or via `Taskfile` (monorepo command surface; wraps the same commands): `task --list`
@@ -69,7 +69,7 @@ uv run pytest -m unit                # domain only, instant, no DB
 uv run pytest -m flow                # app-level with mocked interfaces, no DB
 uv run pytest -m integration         # FileLogReader (tmp_path) + real Postgres (testcontainer)
 uv run pytest -m e2e                 # full app via AsyncTestClient + Postgres
-uv run ruff check . && uv run mypy
+uv run ruff check . && uv run mypy && uv run lint-imports
 ```
 
 Tests are grouped by context first, then level: `tests/<context>/<level>/`

@@ -381,7 +381,7 @@ footer a{color:var(--soft);font-family:var(--mono)}
   <div class="container">
     <div class="overline"><i class="geo g-brass">▵</i>production-ready python backend templates</div>
     <h1>Navigate by <em>location</em>.</h1>
-    <p>Every bounded context is the same six-layer hexagon, so a class's folder is
+    <p>Every bounded context is the same four-layer hexagon, so a class's folder is
     its job and its name is its role. The payoff: maximally explicit dependencies,
     and contracts that live on the boundary instead of in your head.</p>
     <div class="decoder mono">
@@ -704,15 +704,18 @@ ORDER BY created_at DESC, id DESC</pre>
       </div>
     </div>
     <ul class="facts">
-      <li><b>One 6-entry map is the whole translation layer.</b> Four base classes
-      plus two framework cases. A new context error inherits its status and a stable
+      <li><b>One 6-entry map is the whole translation layer.</b> Four base classes,
+      one framework case (advanced-alchemy's <span class="mono">NotFoundError</span>)
+      and one config error that needs its own status
+      (<span class="mono">JwtDisabledError</span> &rarr; 503).
+      A new context error inherits its status and a stable
       <span class="mono">urn:litestar-base:error:&lt;slug&gt;</span> for free.
       <span class="tag tag-e">enforced at one site</span></li>
       <li><b>Two honest deviations.</b> No <span class="mono">AdapterError</span>
       exists here (no raise-site), and <span class="mono">NotFoundError</span> nests
       under <span class="mono">AppError</span> so 404 wins over 422 by MRO.</li>
     </ul>
-    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/contract/errors.md">contract/errors.md &#8594;</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/subsystems/error_hierarchy.md">error_hierarchy.md &#8594;</a></p>
+    <p class="note"><a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/docs/contract/common.md">contract/common.md &#8594;</a>&nbsp;&nbsp;<a href="https://github.com/Sense1Tapo4ek/s1t-python-backend-templates/blob/main/src/litestar_backend/docs/subsystems/error_hierarchy.md">error_hierarchy.md &#8594;</a></p>
   </div>
 </section>
 
@@ -764,12 +767,12 @@ ORDER BY created_at DESC, id DESC</pre>
     context with zero hand-kept markers.</p>
     <div class="pyr" id="pyr">
       <div class="tier t-unit"><span class="tl">unit</span><span class="tr"><span class="tc">114</span> · domain only · no DB · <span style="color:var(--clay)">mocks forbidden</span></span></div>
-      <div class="tier t-flow"><span class="tl">flow</span><span class="tr"><span class="tc">76</span> · app over fakes · no DB</span></div>
-      <div class="tier t-integ"><span class="tl">integration</span><span class="tr"><span class="tc">87</span> · one port+adapter · real Postgres 18 + Valkey 8</span></div>
-      <div class="tier t-e2e"><span class="tl">e2e</span><span class="tr"><span class="tc">94</span> · full app · AsyncTestClient · no mocks</span></div>
+      <div class="tier t-flow"><span class="tl">flow</span><span class="tr"><span class="tc">80</span> · app over fakes · no DB</span></div>
+      <div class="tier t-integ"><span class="tl">integration</span><span class="tr"><span class="tc">91</span> · one port+adapter · real Postgres 18 + Valkey 8</span></div>
+      <div class="tier t-e2e"><span class="tl">e2e</span><span class="tr"><span class="tc">99</span> · full app · AsyncTestClient · no mocks</span></div>
     </div>
-    <p class="tcap" style="text-align:center"><b class="mono" style="color:var(--brass)">371</b> total ·
-    backend <b class="mono">340</b> + worker <b class="mono">31</b> · tiers rank by isolation, not head-count (a template proves itself end-to-end, so e2e runs heavy)</p>
+    <p class="tcap" style="text-align:center"><b class="mono" style="color:var(--brass)">384</b> total ·
+    backend <b class="mono">353</b> + worker <b class="mono">31</b> · tiers rank by isolation, not head-count (a template proves itself end-to-end, so e2e runs heavy)</p>
 
     <p class="subh" style="margin-top:26px">standalone for the fast loop, together for the proof</p>
     <div class="tctx">
@@ -848,7 +851,7 @@ ORDER BY created_at DESC, id DESC</pre>
           <tr><td>feature map</td><td class="st">100</td><td>docs/features</td></tr>
           <tr><td>ADR</td><td class="st">40</td><td>nearest of 4 trees</td></tr>
         </table>
-        <p class="note"><b class="mono" style="color:var(--head)">26 decisions</b>
+        <p class="note"><b class="mono" style="color:var(--head)">27 decisions</b>
         across <b class="mono" style="color:var(--head)">4</b> independently-numbered
         MADR trees -- ≤40 lines, never renumbered, superseded-not-edited.
         <span class="tag tag-c">convention</span></p>

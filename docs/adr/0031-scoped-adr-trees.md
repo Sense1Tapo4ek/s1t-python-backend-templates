@@ -1,6 +1,8 @@
-# 0031 -- Split the single ADR folder into scope-level trees
-Status: accepted
-Date: 2026-07-20
+---
+status: accepted
+date: 2026-07-20
+---
+# 0031 - Split the single ADR folder into scope-level trees
 
 ## Context
 All ADRs lived in one root `docs/adr/` while the repo grew into a 2-service

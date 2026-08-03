@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-01
+---
 # 0014 - db_example_litestar: facade as the context's single public API
-Status: accepted
-Date: 2026-06-01
 
 ## Context
 The hybrid layering of db_example_litestar (ADR 0012) initially let HTTP

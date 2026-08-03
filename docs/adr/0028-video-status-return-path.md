@@ -1,6 +1,8 @@
+---
+status: accepted
+date: 2026-06-12
+---
 # 0028 - Return events on one direct-publish video_status stream
-Status: accepted
-Date: 2026-06-12
 
 ## Context
 Phase C closes the pipeline loop: the worker must report
